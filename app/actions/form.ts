@@ -1,0 +1,498 @@
+'use server';
+
+import { currentUser } from '@clerk/nextjs';
+import { Prisma } from '@prisma/client';
+import prisma from '@/lib/prisma';
+import { FormSchema, formSchema } from '@/schemas/form';
+import { FormElementInstance } from '../(dashboard)/_components/FormElements';
+import { AuthRequiredError, ForbiddenError, getCurrentEmployee } from '@/lib/auth';
+import { canAccessForm, FormAccessBlockedError, FormAccessRecord, getFormAccessErrorMessage } from '@/lib/form-access';
+
+class UserNotFoundErr extends Error {}
+
+type AccessMode = 'PUBLIC' | 'AUTHENTICATED' | 'RESTRICTED';
+
+type FormSettingsInput = {
+  accessMode: AccessMode;
+  oneResponsePerUser: boolean;
+  loginRequired: boolean;
+  startDate?: string | null;
+  endDate?: string | null;
+  responseLimit?: number | null;
+  allowedRoles?: Array<'ADMIN' | 'HR' | 'MANAGER' | 'EMPLOYEE'>;
+  allowedDepartments?: number[];
+  allowedBranches?: number[];
+  allowedEmployees?: number[];
+};
+
+function mapFormAccessRecord(form: any): FormAccessRecord {
+  return {
+    id: form.id,
+    userId: form.userId,
+    status: form.status,
+    published: form.published,
+    accessMode: form.accessMode,
+    loginRequired: form.loginRequired,
+    oneResponsePerUser: form.oneResponsePerUser,
+    startDate: form.startDate,
+    endDate: form.endDate,
+    responseLimit: form.responseLimit,
+    submissions: form.submissions,
+    allowedRoles: form.allowedRoles,
+    allowedDepartments: form.allowedDepartments,
+    allowedBranches: form.allowedBranches,
+    allowedEmployees: form.allowedEmployees,
+  };
+}
+
+function normalizeOptionalDate(value?: string | null) {
+  if (!value) return null;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return date;
+}
+
+export async function GetFormStats() {
+  const user = await currentUser();
+
+  if (!user) {
+    throw new UserNotFoundErr();
+  }
+
+  const stats = await prisma.form.aggregate({
+    where: {
+      userId: user.id,
+    },
+    _sum: {
+      visits: true,
+      submissions: true,
+    },
+  });
+
+  const visits = stats._sum.visits || 0;
+  const submissions = stats._sum.submissions || 0;
+
+  let submissionsRate = 0;
+
+  if (visits > 0) {
+    submissionsRate = (submissions / visits) * 100;
+  }
+
+  const bounceRate = 100 - submissionsRate;
+
+  return {
+    visits,
+    submissions,
+    submissionsRate,
+    bounceRate,
+  };
+}
+
+export async function CreateForm(data: FormSchema) {
+  const user = await currentUser();
+  const validation = formSchema.safeParse(data);
+
+  if (!validation.success) {
+    throw new Error('Invalid form data');
+  }
+
+  if (!user) {
+    throw new UserNotFoundErr();
+  }
+
+  const { name, description, content } = data;
+
+  const form = await prisma.form.create({
+    data: {
+      userId: user.id,
+      name,
+      description,
+      content: content || '[]',
+      accessMode: 'PUBLIC',
+      loginRequired: false,
+      oneResponsePerUser: false,
+      status: 'DRAFT',
+      published: false,
+    },
+  });
+
+  if (!form) {
+    throw new Error('Failed to create form');
+  }
+
+  return form.id;
+}
+
+export async function GetForm() {
+  const user = await currentUser();
+
+  if (!user) {
+    throw new UserNotFoundErr();
+  }
+
+  const form = await prisma.form.findMany({
+    where: {
+      userId: user.id,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  return form;
+}
+
+export async function GetFormById(id: number) {
+  const user = await currentUser();
+
+  if (!user) {
+    throw new UserNotFoundErr();
+  }
+
+  const form = await prisma.form.findFirst({
+    where: {
+      userId: user.id,
+      id,
+    },
+    include: {
+      allowedRoles: true,
+      allowedDepartments: true,
+      allowedBranches: true,
+      allowedEmployees: true,
+    },
+  });
+
+  return form;
+}
+
+export async function UpdateFormContent(id: number, jsonContent: string) {
+  const user = await currentUser();
+
+  if (!user) {
+    throw new UserNotFoundErr();
+  }
+
+  const form = await prisma.form.findFirst({
+    where: {
+      userId: user.id,
+      id,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!form) {
+    throw new Error('Form not found');
+  }
+
+  return await prisma.form.update({
+    where: {
+      id,
+    },
+    data: {
+      content: jsonContent,
+    },
+  });
+}
+
+export async function UpdateFormSettings(id: number, settings: FormSettingsInput) {
+  const user = await currentUser();
+
+  if (!user) {
+    throw new UserNotFoundErr();
+  }
+
+  const form = await prisma.form.findFirst({
+    where: {
+      id,
+      userId: user.id,
+    },
+  });
+
+  if (!form) {
+    throw new Error('Form not found');
+  }
+
+  const accessMode = settings.accessMode;
+  const isRestricted = accessMode === 'RESTRICTED';
+  const isAuthenticated = accessMode === 'AUTHENTICATED';
+  const loginRequired = accessMode === 'PUBLIC' ? false : true;
+  const oneResponsePerUser = accessMode === 'PUBLIC' ? false : settings.oneResponsePerUser;
+
+  const startDate = normalizeOptionalDate(settings.startDate ?? null);
+  const endDate = normalizeOptionalDate(settings.endDate ?? null);
+
+  return await prisma.$transaction(async (tx) => {
+    const updatedForm = await tx.form.update({
+      where: { id },
+      data: {
+        accessMode,
+        loginRequired,
+        oneResponsePerUser,
+        startDate,
+        endDate,
+        responseLimit: settings.responseLimit ?? null,
+      },
+    });
+
+    await tx.formAllowedRole.deleteMany({ where: { formId: id } });
+    await tx.formAllowedDepartment.deleteMany({ where: { formId: id } });
+    await tx.formAllowedBranch.deleteMany({ where: { formId: id } });
+    await tx.formAllowedEmployee.deleteMany({ where: { formId: id } });
+
+    if (isRestricted) {
+      if (settings.allowedRoles?.length) {
+        await tx.formAllowedRole.createMany({
+          data: settings.allowedRoles.map((role) => ({ formId: id, role })),
+        });
+      }
+
+      if (settings.allowedDepartments?.length) {
+        await tx.formAllowedDepartment.createMany({
+          data: settings.allowedDepartments.map((departmentId) => ({ formId: id, departmentId })),
+        });
+      }
+
+      if (settings.allowedBranches?.length) {
+        await tx.formAllowedBranch.createMany({
+          data: settings.allowedBranches.map((branchId) => ({ formId: id, branchId })),
+        });
+      }
+
+      if (settings.allowedEmployees?.length) {
+        await tx.formAllowedEmployee.createMany({
+          data: settings.allowedEmployees.map((employeeId) => ({ formId: id, employeeId })),
+        });
+      }
+    }
+
+    return updatedForm;
+  });
+}
+
+export async function PublishForm(id: number) {
+  const user = await currentUser();
+
+  if (!user) {
+    throw new UserNotFoundErr();
+  }
+
+  return await prisma.form.update({
+    data: {
+      published: true,
+      status: 'PUBLISHED',
+    },
+    where: {
+      id,
+      userId: user.id,
+    },
+  });
+}
+
+export async function GetFormContentByUrl(formUrl: string) {
+  const user = await currentUser();
+
+  const form = await prisma.form.findUnique({
+    where: {
+      shareUrl: formUrl,
+    },
+    include: {
+      allowedRoles: true,
+      allowedDepartments: true,
+      allowedBranches: true,
+      allowedEmployees: true,
+    },
+  });
+
+  if (!form) {
+    throw new Error('Form not found');
+  }
+
+  const access = await canAccessForm(mapFormAccessRecord(form), user ? { id: user.id } : null);
+
+  if (!access.allowed) {
+    if (access.reason === 'login-required') {
+      throw new AuthRequiredError();
+    }
+
+    throw new FormAccessBlockedError(access.reason, getFormAccessErrorMessage(access.reason));
+  }
+
+  return await prisma.form.update({
+    select: {
+      content: true,
+    },
+    data: {
+      visits: {
+        increment: 1,
+      },
+    },
+    where: {
+      shareUrl: formUrl,
+    },
+  });
+}
+
+export async function SubmitForm(formUrl: string, content: string) {
+  const user = await currentUser();
+
+  const form = await prisma.form.findUnique({
+    where: {
+      shareUrl: formUrl,
+    },
+    include: {
+      allowedRoles: true,
+      allowedDepartments: true,
+      allowedBranches: true,
+      allowedEmployees: true,
+    },
+  });
+
+  if (!form) {
+    throw new Error('Form not found');
+  }
+
+  const access = await canAccessForm(mapFormAccessRecord(form), user ? { id: user.id } : null);
+
+  if (!access.allowed) {
+    if (access.reason === 'login-required') {
+      throw new AuthRequiredError();
+    }
+
+    throw new FormAccessBlockedError(access.reason, getFormAccessErrorMessage(access.reason));
+  }
+
+  const employee = user ? await getCurrentEmployee() : null;
+
+  if (form.oneResponsePerUser && employee) {
+    const duplicate = await prisma.formSubmissions.findFirst({
+      where: {
+        formId: form.id,
+        employeeId: employee.id,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (duplicate) {
+      throw new ForbiddenError('You have already submitted this form');
+    }
+  }
+
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const updatedForm = await tx.form.update({
+        where: {
+          id: form.id,
+        },
+        data: {
+          submissions: {
+            increment: 1,
+          },
+        },
+      });
+
+      const submission = await tx.formSubmissions.create({
+        data: {
+          formId: form.id,
+          employeeId: employee?.id ?? null,
+          clerkUserId: user?.id ?? null,
+          content,
+        },
+      });
+
+      return {
+        form: updatedForm,
+        submission,
+      };
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      throw new ForbiddenError('Duplicate submission');
+    }
+
+    throw error;
+  }
+}
+
+export async function GetFormSubmissions(id: number) {
+  const user = await currentUser();
+
+  if (!user) {
+    throw new UserNotFoundErr();
+  }
+
+  return await prisma.form.findFirst({
+    where: {
+      userId: user.id,
+      id,
+    },
+    include: {
+      FormSubmissions: {
+        include: {
+          employee: {
+            include: {
+              department: true,
+              branch: true,
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+export async function DeleteForm(id: number) {
+  const user = await currentUser();
+
+  if (!user) {
+    throw new UserNotFoundErr();
+  }
+
+  return await prisma.form.deleteMany({
+    where: {
+      userId: user.id,
+      id,
+    },
+  });
+}
+
+export async function deleteElementInstance(id: number, elementId: string) {
+  const user = await currentUser();
+
+  if (!user) {
+    throw new UserNotFoundErr();
+  }
+
+  const getContent = await prisma.form.findFirst({
+    where: {
+      userId: user.id,
+      id,
+    },
+    select: {
+      content: true,
+    },
+  });
+
+  if (!getContent) return;
+
+  const content = JSON.parse(getContent.content);
+
+  const newContent = content.filter(
+    (element: FormElementInstance) => element.id !== elementId
+  );
+
+  return await prisma.form.update({
+    where: {
+      id,
+      userId: user.id,
+    },
+    data: {
+      content: JSON.stringify(newContent),
+    },
+  });
+}
