@@ -4,11 +4,7 @@ import React, { PropsWithChildren } from 'react';
 
 export default function LayoutSubmit({ children }: PropsWithChildren) {
   return (
-    <div className="flex min-h-screen min-w-full flex-col bg-background">
-      <nav className="flex h-[64px] items-center justify-between border-b border-border px-4 shadow-md">
-        <Logo />
-        <ThemeSwitcher />
-      </nav>
+    <div className="flex min-h-screen min-w-full flex-col bg-[#f0ebf8] dark:bg-[#121016] google-form-container">
       {children}
     </div >
   );

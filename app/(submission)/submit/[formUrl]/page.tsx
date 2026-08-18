@@ -56,6 +56,8 @@ export default async function SubmitPage({
   return (
     <FormSubmitComponent
       formUrl={formUrl}
+      formName={form.name}
+      formDescription={form.description || ''}
       content={formContent}
     />
   );

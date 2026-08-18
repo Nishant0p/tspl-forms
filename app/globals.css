@@ -132,3 +132,95 @@
     background-position: -5020px 4196px;
   }
 }
+
+/* ========================================== */
+/* Google Form Aesthetics                     */
+/* ========================================== */
+
+.google-form-container {
+  font-family: 'Roboto', 'Inter', sans-serif;
+  background-color: #f0ebf8;
+}
+
+.dark .google-form-container {
+  background-color: #0f0e13;
+}
+
+/* Style questions / inputs inside Google Form container */
+.google-form-container input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.google-form-container textarea {
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: 1px solid hsl(var(--border)) !important;
+  border-radius: 0px !important;
+  box-shadow: none !important;
+  padding-left: 0px !important;
+  padding-right: 0px !important;
+  background-color: transparent !important;
+  transition: border-color 0.2s ease-in-out, border-width 0.1s ease-in-out;
+  width: 100%;
+}
+
+.google-form-container input:focus,
+.google-form-container textarea:focus {
+  border-bottom: 2px solid #673ab7 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.dark .google-form-container input:focus,
+.dark .google-form-container textarea:focus {
+  border-bottom: 2px solid #a78bfa !important;
+}
+
+/* Labels / Titles styling inside form container */
+.google-form-container label {
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  color: hsl(var(--foreground)) !important;
+  margin-bottom: 12px !important;
+  display: block !important;
+  line-height: 1.5 !important;
+}
+
+/* Checkbox and Radio buttons color */
+.google-form-container button[role="radio"][aria-checked="true"] {
+  border-color: #673ab7 !important;
+  color: #673ab7 !important;
+}
+.google-form-container button[role="radio"][aria-checked="true"] > span {
+  background-color: #673ab7 !important;
+}
+
+.google-form-container button[role="checkbox"][data-state="checked"] {
+  background-color: #673ab7 !important;
+  border-color: #673ab7 !important;
+}
+
+.google-form-container button[role="checkbox"] {
+  border-color: hsl(var(--muted-foreground)) !important;
+}
+
+.dark .google-form-container button[role="radio"][aria-checked="true"] {
+  border-color: #a78bfa !important;
+  color: #a78bfa !important;
+}
+.dark .google-form-container button[role="radio"][aria-checked="true"] > span {
+  background-color: #a78bfa !important;
+}
+.dark .google-form-container button[role="checkbox"][data-state="checked"] {
+  background-color: #a78bfa !important;
+  border-color: #a78bfa !important;
+}
+
+/* Header card style */
+.google-form-header-card {
+  border-top: 10px solid #673ab7 !important;
+  border-radius: 8px !important;
+}
+
+.dark .google-form-header-card {
+  border-top: 10px solid #a78bfa !important;
+}
+

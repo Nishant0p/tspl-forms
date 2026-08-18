@@ -173,7 +173,7 @@ export default function FormBuilder({ form, departments, branches, employees }: 
             )}
           </div>
         </div>
-        <div className="relative flex h-[200px] w-full grow items-center justify-center overflow-hidden bg-accent bg-paper-pattern dark:bg-paper-pattern-dark">
+        <div className="relative flex h-[200px] w-full grow items-center justify-center overflow-hidden bg-[#f0ebf8] dark:bg-[#121016] google-form-container">
           <Designer formId={form.id} initialContent={form.content} />
         </div>
       </main>
