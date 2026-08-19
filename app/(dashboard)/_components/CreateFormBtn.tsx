@@ -179,17 +179,17 @@ export default function CreateFormBtn() {
           </p>
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Create TSPL Form</DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="break-words">
             Start a new internal form for HR, recruitment, feedback, approvals, or operations.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
           <div className="flex items-center gap-2 text-sm font-semibold">
-            <Sparkles className="h-4 w-4" />
+            <Sparkles className="h-4 w-4 text-primary" />
             Quick-start templates
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -200,12 +200,14 @@ export default function CreateFormBtn() {
                 variant="outline"
                 onClick={() => createFromTemplate(template.key)}
                 disabled={creatingTemplate !== null}
-                className="h-auto flex-col items-start justify-start gap-1 p-4 text-left">
-                <span className="flex items-center gap-2 font-semibold">
+                className="h-auto w-full flex-col items-start justify-start gap-1 p-3 text-left whitespace-normal break-words hover:border-primary transition-all">
+                <span className="flex items-center gap-2 font-semibold text-sm w-full">
                   {template.label}
-                  {creatingTemplate === template.key && <Loader className="h-4 w-4 animate-spin" />}
+                  {creatingTemplate === template.key && <Loader className="h-4 w-4 animate-spin shrink-0" />}
                 </span>
-                <span className="text-xs text-muted-foreground">{template.description}</span>
+                <span className="text-xs text-muted-foreground whitespace-normal break-words w-full">
+                  {template.description}
+                </span>
               </Button>
             ))}
           </div>
@@ -215,7 +217,7 @@ export default function CreateFormBtn() {
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-2">
+            className="space-y-4">
             <FormField
               control={form.control}
               name="name"
@@ -243,7 +245,7 @@ export default function CreateFormBtn() {
                   <FormControl>
                     <Textarea
                       id="description"
-                      rows={5}
+                      rows={3}
                       placeholder="Add the purpose, department, approval route, or audience for this form..."
                       {...field}
                     />
@@ -261,7 +263,7 @@ export default function CreateFormBtn() {
           <Button
             onClick={form.handleSubmit(onSubmit)}
             disabled={form.formState.isSubmitting}
-            className="mt-4 w-full font-semibold text-zinc-50">
+            className="mt-2 w-full font-semibold text-zinc-50">
             {!form.formState.isSubmitting && <span>Create Form</span>}
             {form.formState.isSubmitting && (
               <div className="inline-flex items-center gap-2">

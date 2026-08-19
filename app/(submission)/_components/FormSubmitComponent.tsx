@@ -8,7 +8,7 @@ import { SubmitForm } from '@/app/actions/form';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
-import { Loader, AlertCircle } from 'lucide-react';
+import { Loader, AlertCircle, CheckCircle2, PartyPopper, ExternalLink } from 'lucide-react';
 import { useRef, useState, useTransition } from 'react';
 
 interface Props {
@@ -26,8 +26,11 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
   const [submitted, setSubmitted] = useState(false);
   const [pending, startTransition] = useTransition();
 
+  // Filter out layout elements during validation
+  const questionsContent = content.filter((el) => el.type !== 'ThankYouField');
+
   const validateForm: () => boolean = () => {
-    for (const field of content) {
+    for (const field of questionsContent) {
       const actualValue = formValues.current[field.id] || '';
       const valid = FormElements[field.type].validate(field, actualValue);
 
@@ -77,39 +80,83 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
   };
 
   if (submitted) {
+    // Check if form layout has a custom Thank You element
+    const customThankYou = content.find((el) => el.type === 'ThankYouField');
+    const extra = customThankYou?.extraAttributes || {};
+
+    const customTitle = extra.title || formName;
+    const customMessage = extra.message || 'Your response has been recorded.';
+    const customImageUrl = extra.imageUrl || '';
+    const customBtnText = extra.buttonText || 'Submit another response';
+    const customBtnUrl = extra.buttonUrl || '';
+    const showBtn = extra.showRedirectButton ?? true;
+
     return (
       <div className="flex min-h-screen w-full items-start justify-center p-4 sm:p-8 google-form-container bg-[#f0ebf8] dark:bg-[#121016]">
         <div
           key={renderKey}
-          className="flex w-full max-w-[640px] flex-col gap-4 google-form-header-card bg-card text-card-foreground p-8 rounded-lg shadow-sm border border-border mt-10">
-          <h1 className="text-3xl font-normal text-foreground border-b pb-4">
-            {formName}
-          </h1>
-          <p className="text-sm mt-2 text-foreground/80">
-            Your response has been recorded.
-          </p>
-          <div className="mt-6">
-            <a
-              href={`/form/${formUrl}`}
-              className="text-sm text-violet-600 hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-300 underline"
-              onClick={(e) => {
-                e.preventDefault();
-                setSubmitted(false);
-                formValues.current = {};
-                formErrors.current = {};
-                setRenderKey(new Date().getTime());
-              }}
-            >
-              Submit another response
-            </a>
+          className="flex w-full max-w-[640px] flex-col gap-6 google-form-header-card bg-card text-card-foreground p-8 rounded-lg shadow-md border border-border mt-10 overflow-hidden">
+          
+          {/* Custom Banner / Image if configured */}
+          {customImageUrl && (
+            <div className="w-full max-h-56 overflow-hidden rounded-md border bg-muted/20">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={customImageUrl}
+                alt="Thank You Illustration"
+                className="h-full w-full object-cover"
+              />
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 border-b pb-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+              {customThankYou ? <PartyPopper className="h-6 w-6" /> : <CheckCircle2 className="h-6 w-6" />}
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-semibold text-foreground">
+                {customTitle}
+              </h1>
+            </div>
           </div>
+
+          <p className="text-base text-foreground/85 whitespace-pre-wrap leading-relaxed">
+            {customMessage}
+          </p>
+
+          {showBtn && (
+            <div className="mt-4 pt-2">
+              {customBtnUrl ? (
+                <a
+                  href={customBtnUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-md bg-[#673ab7] hover:bg-[#5e35b1] text-white px-6 py-2.5 text-sm font-medium shadow-sm hover:shadow-md transition-all"
+                >
+                  <span>{customBtnText}</span>
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              ) : (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setSubmitted(false);
+                    formValues.current = {};
+                    formErrors.current = {};
+                    setRenderKey(new Date().getTime());
+                  }}
+                  className="text-sm font-medium text-violet-600 hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-300 underline"
+                >
+                  {customBtnText}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
-  // Filter out pure layout elements that don't take user inputs to display them as decorative,
-  // but let them render inside their own clean cards.
   return (
     <div className="flex min-h-screen w-full items-start justify-center p-4 sm:p-8 google-form-container bg-[#f0ebf8] dark:bg-[#121016]">
       <div
@@ -131,10 +178,10 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
         </div>
 
         {/* Form Question Cards */}
-        {content.map((element) => {
+        {questionsContent.map((element) => {
           const FormElement = FormElements[element.type].formComponent;
           const isInvalid = formErrors.current[element.id];
-          const isLayout = ['TitleField', 'SubTitleField', 'ParagraphField', 'SeperatorField', 'SpacerField', 'SectionHeaderField'].includes(element.type);
+          const isLayout = ['TitleField', 'SubTitleField', 'ParagraphField', 'SeperatorField', 'SpacerField', 'SectionHeaderField', 'BannerField'].includes(element.type);
 
           return (
             <div
