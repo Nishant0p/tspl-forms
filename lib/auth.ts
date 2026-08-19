@@ -98,7 +98,7 @@ export async function requireRole(allowedRoles: EmployeeRole[]) {
     employee.status !== 'ACTIVE' ||
     !allowedRoles.includes(employee.role as EmployeeRole)
   ) {
-    throw new ForbiddenError();
+    redirect('/access-denied');
   }
 
   return employee;

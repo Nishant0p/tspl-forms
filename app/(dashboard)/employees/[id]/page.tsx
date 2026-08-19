@@ -5,15 +5,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { updateEmployeeStatus } from '@/app/actions/employee';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 
 export default async function EmployeeDetailPage({ params }: { params: { id: string } }) {
   await requireRole(['SUPER_ADMIN', 'ADMIN', 'HR']);
   const caller = await requireEmployee();
+  const employeeId = Number(params.id);
+
+  if (!Number.isInteger(employeeId) || employeeId <= 0) {
+    notFound();
+  }
 
   const db = prisma as any;
   const employee = await db.employee.findUnique({
     where: {
-      id: Number(params.id),
+      id: employeeId,
     },
     include: {
       department: true,
@@ -23,7 +29,7 @@ export default async function EmployeeDetailPage({ params }: { params: { id: str
   });
 
   if (!employee) {
-    throw new Error('Employee not found');
+    notFound();
   }
 
   // Enforce termination constraints:
