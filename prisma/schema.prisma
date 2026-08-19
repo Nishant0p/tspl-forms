@@ -6,13 +6,14 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 enum EmployeeRole {
   SUPER_ADMIN
   ADMIN
+  EDITOR
   HR
   MANAGER
   EMPLOYEE
@@ -74,6 +75,7 @@ model Employee {
   firstName   String
   lastName    String
   email       String
+  password    String?
   phone       String?
   departmentId Int?
   branchId    Int?
@@ -89,6 +91,8 @@ model Employee {
   directReports Employee[] @relation("EmployeeManager")
   responses    FormSubmissions[]
   allowedForms FormAllowedEmployee[]
+  formRequestsRaised   FormRequest[] @relation("RequestedBy")
+  formRequestsAssigned FormRequest[] @relation("AssignedTo")
 
   @@index([clerkUserId])
   @@index([employeeId])
@@ -198,3 +202,33 @@ model FormAllowedEmployee {
   @@unique([formId, employeeId])
   @@index([employeeId])
 }
+
+enum FormRequestStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+}
+
+model FormRequest {
+  id              Int               @id @default(autoincrement())
+  title           String
+  description     String            @db.Text
+  formType        String            @default("Other")
+  priority        String            @default("NORMAL")
+  status          FormRequestStatus @default(PENDING)
+  requestedById   Int
+  assignedToId    Int?
+  completedFormId Int?
+  notes           String?           @db.Text
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  requestedBy     Employee          @relation("RequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
+  assignedTo      Employee?         @relation("AssignedTo",  fields: [assignedToId],  references: [id], onDelete: SetNull)
+
+  @@index([requestedById])
+  @@index([assignedToId])
+  @@index([status])
+}
+

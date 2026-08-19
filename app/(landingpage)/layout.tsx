@@ -1,13 +1,11 @@
 import Navbar from '@/components/Navbar';
 import React, { PropsWithChildren } from 'react';
-import Footer from './_components/Footer';
 
 export default function layout({ children }: PropsWithChildren) {
   return (
-    <>
+    <div className="flex h-screen flex-col overflow-hidden">
       <Navbar />
-      <main className='flex-1'>{children}</main>
-      <Footer />
-    </>
+      <main className="flex-1 overflow-hidden">{children}</main>
+    </div>
   );
 }

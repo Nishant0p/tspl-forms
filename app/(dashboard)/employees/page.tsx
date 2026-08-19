@@ -4,9 +4,11 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
+import AddEmployeeDialog from '@/components/AddEmployeeDialog';
 
 export default async function EmployeesPage() {
-  await requireRole(['SUPER_ADMIN', 'ADMIN', 'HR']);
+  const caller = await requireRole(['SUPER_ADMIN', 'ADMIN', 'HR']);
+  const isSuperAdmin = caller.role === 'SUPER_ADMIN';
 
   const db = prisma as any;
   const employees = await db.employee.findMany({
@@ -22,7 +24,10 @@ export default async function EmployeesPage() {
     <div className="container py-8">
       <Card>
         <CardHeader>
-          <CardTitle>Employees</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Employees</CardTitle>
+            {isSuperAdmin && <AddEmployeeDialog />}
+          </div>
         </CardHeader>
         <CardContent>
           <Table>

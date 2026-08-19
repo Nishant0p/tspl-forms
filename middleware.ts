@@ -1,20 +1,33 @@
-import { authMiddleware } from "@clerk/nextjs";
- 
-// This example protects all routes including api/trpc routes
-// Please edit this to allow other routes to be public as needed.
-// See https://clerk.com/docs/references/nextjs/auth-middleware for more information about configuring your Middleware
-export default authMiddleware({
-  publicRoutes: [
-    '/',
-    '/platform',
-    '/submit(.*)',
-    '/access-denied(.*)',
-    '/sign-in(.*)',
-    '/sign-up(.*)'
-  ]
-});
- 
+import { NextRequest, NextResponse } from 'next/server';
+
+const PUBLIC_ROUTES = ['/', '/platform', '/sign-in', '/sign-up', '/access-denied'];
+
+function isPublic(pathname: string) {
+  return (
+    PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/')) ||
+    pathname.startsWith('/submit/') ||
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/api/') ||
+    /\.[^/]+$/.test(pathname) // static files
+  );
+}
+
+export function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  if (isPublic(pathname)) return NextResponse.next();
+
+  const session = req.cookies.get('session_user')?.value;
+  if (!session) {
+    const signIn = req.nextUrl.clone();
+    signIn.pathname = '/sign-in';
+    signIn.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(signIn);
+  }
+
+  return NextResponse.next();
+}
+
 export const config = {
-  matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
- 

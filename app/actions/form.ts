@@ -1,11 +1,10 @@
 'use server';
 
-import { currentUser } from '@clerk/nextjs';
+import { getCurrentUser, AuthRequiredError, ForbiddenError, getCurrentEmployee } from '@/lib/auth';
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { FormSchema, formSchema } from '@/schemas/form';
 import { FormElementInstance } from '../(dashboard)/_components/FormElements';
-import { AuthRequiredError, ForbiddenError, getCurrentEmployee } from '@/lib/auth';
 import { canAccessForm, FormAccessBlockedError, FormAccessRecord, getFormAccessErrorMessage } from '@/lib/form-access';
 
 class UserNotFoundErr extends Error {}
@@ -55,7 +54,7 @@ function normalizeOptionalDate(value?: string | null) {
 }
 
 export async function GetFormStats() {
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     throw new UserNotFoundErr();
@@ -91,7 +90,7 @@ export async function GetFormStats() {
 }
 
 export async function CreateForm(data: FormSchema) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   const validation = formSchema.safeParse(data);
 
   if (!validation.success) {
@@ -104,10 +103,27 @@ export async function CreateForm(data: FormSchema) {
 
   const { name, description, content } = data;
 
+  // Auto-increment the name if a form with the same name already exists for this user
+  let uniqueName = name;
+  let count = 1;
+  while (true) {
+    const existing = await prisma.form.findUnique({
+      where: {
+        userId_name: {
+          userId: user.id,
+          name: uniqueName,
+        },
+      },
+    });
+    if (!existing) break;
+    uniqueName = `${name} (${count})`;
+    count++;
+  }
+
   const form = await prisma.form.create({
     data: {
       userId: user.id,
-      name,
+      name: uniqueName,
       description,
       content: content || '[]',
       accessMode: 'PUBLIC',
@@ -126,7 +142,7 @@ export async function CreateForm(data: FormSchema) {
 }
 
 export async function GetForm() {
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     throw new UserNotFoundErr();
@@ -145,7 +161,7 @@ export async function GetForm() {
 }
 
 export async function GetFormById(id: number) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     throw new UserNotFoundErr();
@@ -168,7 +184,7 @@ export async function GetFormById(id: number) {
 }
 
 export async function UpdateFormContent(id: number, jsonContent: string) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     throw new UserNotFoundErr();
@@ -199,7 +215,7 @@ export async function UpdateFormContent(id: number, jsonContent: string) {
 }
 
 export async function UpdateFormSettings(id: number, settings: FormSettingsInput) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     throw new UserNotFoundErr();
@@ -274,7 +290,7 @@ export async function UpdateFormSettings(id: number, settings: FormSettingsInput
 }
 
 export async function PublishForm(id: number) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     throw new UserNotFoundErr();
@@ -293,7 +309,7 @@ export async function PublishForm(id: number) {
 }
 
 export async function GetFormContentByUrl(formUrl: string) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   const form = await prisma.form.findUnique({
     where: {
@@ -337,7 +353,7 @@ export async function GetFormContentByUrl(formUrl: string) {
 }
 
 export async function SubmitForm(formUrl: string, content: string) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   const form = await prisma.form.findUnique({
     where: {
@@ -420,7 +436,7 @@ export async function SubmitForm(formUrl: string, content: string) {
 }
 
 export async function GetFormSubmissions(id: number) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     throw new UserNotFoundErr();
@@ -447,7 +463,7 @@ export async function GetFormSubmissions(id: number) {
 }
 
 export async function DeleteForm(id: number) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     throw new UserNotFoundErr();
@@ -462,7 +478,7 @@ export async function DeleteForm(id: number) {
 }
 
 export async function deleteElementInstance(id: number, elementId: string) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     throw new UserNotFoundErr();

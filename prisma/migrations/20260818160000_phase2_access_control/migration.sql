@@ -68,7 +68,7 @@ ADD COLUMN "responseLimit" INTEGER;
 
 -- Backfill form status from existing publish flag.
 UPDATE "Form"
-SET "status" = CASE WHEN "published" = true THEN 'PUBLISHED' ELSE 'DRAFT' END;
+SET "status" = CASE WHEN "published" = true THEN 'PUBLISHED'::"FormStatus" ELSE 'DRAFT'::"FormStatus" END;
 
 -- AlterTable
 ALTER TABLE "FormSubmissions" ADD COLUMN "submittedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

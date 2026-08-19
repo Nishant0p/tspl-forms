@@ -1,17 +1,17 @@
 import Link from 'next/link';
-import React from 'react';
+import Image from 'next/image';
 
 export default function Logo() {
   return (
-    <Link
-      href={'/'}
-      className="text-xl font-bold">
-      <h1>
-        TSPL
-        <span className="ml-1 rounded-md bg-gradient-to-br from-violet-400 to-cyan-500 p-1 text-background">
-          Group
-        </span>
-      </h1>
+    <Link href={'/'} className="flex items-center">
+      <Image
+        src="/TSPL Logo preloader.png"
+        alt="TSPL Group"
+        width={160}
+        height={64}
+        className="h-14 w-auto object-contain"
+        priority
+      />
     </Link>
   );
 }
