@@ -125,7 +125,7 @@ export default function FormRequestsPage() {
           <CardContent className="flex flex-col items-center py-16 text-center text-muted-foreground gap-3">
             <ClipboardList className="h-12 w-12 opacity-30" />
             <p className="font-medium">No form requests yet.</p>
-            <p className="text-sm">Click "New Form Request" to ask the editor team to build a form.</p>
+            <p className="text-sm">Click &quot;New Form Request&quot; to ask the editor team to build a form.</p>
           </CardContent>
         </Card>
       ) : (
