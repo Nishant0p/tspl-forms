@@ -1,6 +1,8 @@
 import Navbar from '@/components/Navbar';
 import React, { PropsWithChildren } from 'react';
 
+export const dynamic = 'force-dynamic';
+
 export default function DashboardLayout({ children }: PropsWithChildren) {
   return (
     <>
