@@ -29,11 +29,27 @@ export default function DashboardPage() {
 }
 
 async function CardStatsWrapper() {
-  const stats = await GetFormStats();
+  try {
+    const stats = await GetFormStats();
+    return (
+      <StatsCard
+        loading={false}
+        data={stats}
+      />
+    );
+  } catch (error) {
+    console.error('Failed to load dashboard stats', error);
+  }
+
   return (
     <StatsCard
       loading={false}
-      data={stats}
+      data={{
+        visits: 0,
+        submissions: 0,
+        submissionsRate: 0,
+        bounceRate: 0,
+      }}
     />
   );
 }

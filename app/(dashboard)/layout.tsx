@@ -1,9 +1,12 @@
 import Navbar from '@/components/Navbar';
 import React, { PropsWithChildren } from 'react';
+import { requireEmployee } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-export default function DashboardLayout({ children }: PropsWithChildren) {
+export default async function DashboardLayout({ children }: PropsWithChildren) {
+  await requireEmployee();
+
   return (
     <>
       <Navbar />
