@@ -6,6 +6,7 @@ import prisma from '@/lib/prisma';
 import { FormSchema, formSchema } from '@/schemas/form';
 import { FormElementInstance } from '../(dashboard)/_components/FormElements';
 import { canAccessForm, FormAccessBlockedError, FormAccessRecord, getFormAccessErrorMessage } from '@/lib/form-access';
+import { redirect } from 'next/navigation';
 
 class UserNotFoundErr extends Error {}
 
@@ -57,7 +58,7 @@ export async function GetFormStats() {
   const user = await getCurrentUser();
 
   if (!user) {
-    throw new UserNotFoundErr();
+    redirect('/sign-in');
   }
 
   const stats = await prisma.form.aggregate({
@@ -145,7 +146,7 @@ export async function GetForm() {
   const user = await getCurrentUser();
 
   if (!user) {
-    throw new UserNotFoundErr();
+    redirect('/sign-in');
   }
 
   const form = await prisma.form.findMany({
