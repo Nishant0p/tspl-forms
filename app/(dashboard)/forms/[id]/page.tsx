@@ -15,6 +15,7 @@ import { ElementsType, FormElementInstance } from '../../_components/FormElement
 import FormLinkShare from '../../_components/FormLinkShare';
 import FormShareDialog from '../../_components/FormShareDialog';
 import VisitBtn from '../../_components/VisitBtn';
+import ExportXlsxBtn from '../../_components/ExportXlsxBtn';
 import { buildFormSubmitUrl } from '@/lib/url';
 import { headers } from 'next/headers';
 
@@ -198,7 +199,15 @@ async function SubMissionTable({ id }: { id: number }) {
 
   return (
     <>
-      <h2 className="my-4 text-2xl font-bold">Table Submissions</h2>
+      <div className="my-4 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold">Table Submissions</h2>
+          <p className="text-sm text-muted-foreground">
+            Total responses: {rows.length}
+          </p>
+        </div>
+        <ExportXlsxBtn formTitle={form.name} columns={columns} rows={rows} />
+      </div>
       <Table>
         <TableHeader>
           <TableRow>

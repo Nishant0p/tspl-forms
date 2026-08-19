@@ -21,12 +21,14 @@ export default function SignInPage() {
     e.preventDefault();
     setError('');
     startTransition(async () => {
-      const result = await loginUser(email, password);
-      if (result?.success) {
-        router.push('/dashboard');
-        router.refresh();
-      } else {
-        setError(result?.error || 'Login failed');
+      try {
+        const result = await loginUser(email, password);
+        if (result?.success) {
+          router.push('/dashboard');
+          router.refresh();
+        }
+      } catch (err: any) {
+        setError(err.message || 'Invalid email/IDP or password');
       }
     });
   };
@@ -46,21 +48,21 @@ export default function SignInPage() {
         <Card className="shadow-xl border-border/60">
           <CardHeader className="pb-4">
             <CardTitle className="text-xl">Welcome back</CardTitle>
-            <CardDescription>Enter your email and password to continue</CardDescription>
+            <CardDescription>Enter your email or Employee ID and password</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="email">Email address</Label>
+                <Label htmlFor="email">Email or Employee ID</Label>
                 <Input
                   id="email"
-                  type="email"
-                  placeholder="you@tspl.group"
+                  type="text"
+                  placeholder="admin@tspl.group or EMP001"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isPending}
-                  autoComplete="email"
+                  autoComplete="username"
                   className="h-11"
                 />
               </div>

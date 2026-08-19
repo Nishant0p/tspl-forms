@@ -1,8 +1,8 @@
 'use server';
 
 import { getCurrentUser, AuthRequiredError, ForbiddenError, getCurrentEmployee } from '@/lib/auth';
-import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
+import { generateCustomSlug } from '@/lib/url';
 import { FormSchema, formSchema } from '@/schemas/form';
 import { FormElementInstance } from '../(dashboard)/_components/FormElements';
 import { canAccessForm, FormAccessBlockedError, FormAccessRecord, getFormAccessErrorMessage } from '@/lib/form-access';
@@ -54,6 +54,7 @@ function normalizeOptionalDate(value?: string | null) {
   return date;
 }
 
+/** Aggregate stats globally for all forms across the platform */
 export async function GetFormStats() {
   const user = await getCurrentUser();
 
@@ -62,9 +63,6 @@ export async function GetFormStats() {
   }
 
   const stats = await prisma.form.aggregate({
-    where: {
-      userId: user.id,
-    },
     _sum: {
       visits: true,
       submissions: true,
@@ -104,21 +102,28 @@ export async function CreateForm(data: FormSchema) {
 
   const { name, description, content } = data;
 
-  // Auto-increment the name if a form with the same name already exists for this user
+  // Auto-increment the name if a form with the same name already exists globally
   let uniqueName = name;
   let count = 1;
   while (true) {
-    const existing = await prisma.form.findUnique({
+    const existing = await prisma.form.findFirst({
       where: {
-        userId_name: {
-          userId: user.id,
-          name: uniqueName,
-        },
+        name: uniqueName,
       },
     });
     if (!existing) break;
     uniqueName = `${name} (${count})`;
     count++;
+  }
+
+  // Generate unique custom slug shareUrl (first 3 letters + last 3 letters + random hash)
+  let customShareUrl = generateCustomSlug(uniqueName);
+  while (true) {
+    const existingShare = await prisma.form.findUnique({
+      where: { shareUrl: customShareUrl },
+    });
+    if (!existingShare) break;
+    customShareUrl = generateCustomSlug(uniqueName);
   }
 
   const form = await prisma.form.create({
@@ -132,6 +137,7 @@ export async function CreateForm(data: FormSchema) {
       oneResponsePerUser: false,
       status: 'DRAFT',
       published: false,
+      shareUrl: customShareUrl,
     },
   });
 
@@ -142,6 +148,7 @@ export async function CreateForm(data: FormSchema) {
   return form.id;
 }
 
+/** Get all forms globally so any admin, HR, or editor can view and manage forms */
 export async function GetForm() {
   const user = await getCurrentUser();
 
@@ -150,9 +157,6 @@ export async function GetForm() {
   }
 
   const form = await prisma.form.findMany({
-    where: {
-      userId: user.id,
-    },
     orderBy: {
       createdAt: 'desc',
     },
@@ -170,7 +174,6 @@ export async function GetFormById(id: number) {
 
   const form = await prisma.form.findFirst({
     where: {
-      userId: user.id,
       id,
     },
     include: {
@@ -193,7 +196,6 @@ export async function UpdateFormContent(id: number, jsonContent: string) {
 
   const form = await prisma.form.findFirst({
     where: {
-      userId: user.id,
       id,
     },
     select: {
@@ -225,7 +227,6 @@ export async function UpdateFormSettings(id: number, settings: FormSettingsInput
   const form = await prisma.form.findFirst({
     where: {
       id,
-      userId: user.id,
     },
   });
 
@@ -242,7 +243,7 @@ export async function UpdateFormSettings(id: number, settings: FormSettingsInput
   const startDate = normalizeOptionalDate(settings.startDate ?? null);
   const endDate = normalizeOptionalDate(settings.endDate ?? null);
 
-  return await prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx: any) => {
     const updatedForm = await tx.form.update({
       where: { id },
       data: {
@@ -304,7 +305,6 @@ export async function PublishForm(id: number) {
     },
     where: {
       id,
-      userId: user.id,
     },
   });
 }
@@ -385,12 +385,23 @@ export async function SubmitForm(formUrl: string, content: string) {
   }
 
   const employee = user ? await getCurrentEmployee() : null;
+  let validEmployeeId: number | null = null;
 
-  if (form.oneResponsePerUser && employee) {
+  if (employee && typeof employee.id === 'number') {
+    const existingEmp = await prisma.employee.findUnique({
+      where: { id: employee.id },
+      select: { id: true },
+    });
+    if (existingEmp) {
+      validEmployeeId = existingEmp.id;
+    }
+  }
+
+  if (form.oneResponsePerUser && validEmployeeId) {
     const duplicate = await prisma.formSubmissions.findFirst({
       where: {
         formId: form.id,
-        employeeId: employee.id,
+        employeeId: validEmployeeId,
       },
       select: {
         id: true,
@@ -403,7 +414,7 @@ export async function SubmitForm(formUrl: string, content: string) {
   }
 
   try {
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx: any) => {
       const updatedForm = await tx.form.update({
         where: {
           id: form.id,
@@ -418,7 +429,7 @@ export async function SubmitForm(formUrl: string, content: string) {
       const submission = await tx.formSubmissions.create({
         data: {
           formId: form.id,
-          employeeId: employee?.id ?? null,
+          employeeId: validEmployeeId,
           clerkUserId: user?.id ?? null,
           content,
         },
@@ -429,8 +440,8 @@ export async function SubmitForm(formUrl: string, content: string) {
         submission,
       };
     });
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+  } catch (error: any) {
+    if (error?.code === 'P2002') {
       throw new ForbiddenError('Duplicate submission');
     }
 
@@ -447,7 +458,6 @@ export async function GetFormSubmissions(id: number) {
 
   return await prisma.form.findFirst({
     where: {
-      userId: user.id,
       id,
     },
     include: {
@@ -474,7 +484,6 @@ export async function DeleteForm(id: number) {
 
   return await prisma.form.deleteMany({
     where: {
-      userId: user.id,
       id,
     },
   });
@@ -489,7 +498,6 @@ export async function deleteElementInstance(id: number, elementId: string) {
 
   const getContent = await prisma.form.findFirst({
     where: {
-      userId: user.id,
       id,
     },
     select: {
@@ -508,7 +516,6 @@ export async function deleteElementInstance(id: number, elementId: string) {
   return await prisma.form.update({
     where: {
       id,
-      userId: user.id,
     },
     data: {
       content: JSON.stringify(newContent),

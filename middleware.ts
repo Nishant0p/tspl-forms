@@ -17,6 +17,7 @@ function isPublic(pathname: string) {
   return (
     PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/')) ||
     pathname.startsWith('/submit/') ||
+    pathname.startsWith('/form/') ||
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/api/') ||
     /\.[^/]+$/.test(pathname) // static files

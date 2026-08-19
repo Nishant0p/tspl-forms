@@ -20,6 +20,7 @@ import { TextAreaFieldFormElement } from '@/components/fields/TextareaField';
 import { TitleFieldFormElement } from '@/components/fields/TitleField';
 import { TimeFieldFormElement } from '@/components/fields/TimeField';
 import { VideoFieldFormElement } from '@/components/fields/VideoField';
+import { BannerFieldFormElement } from '@/components/fields/BannerField';
 
 export type ElementsType =
   'TextField'
@@ -43,7 +44,8 @@ export type ElementsType =
   | 'SignatureField'
   | 'ImageField'
   | 'VideoField'
-  | 'SectionHeaderField';
+  | 'SectionHeaderField'
+  | 'BannerField';
 
 export type SubmitFunction = (key: string, value: string) => void;
 
@@ -106,4 +108,5 @@ export const FormElements: FormElementsType = {
   ImageField: ImageFieldFormElement,
   VideoField: VideoFieldFormElement,
   SectionHeaderField: SectionHeaderFieldFormElement,
+  BannerField: BannerFieldFormElement,
 };

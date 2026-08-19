@@ -90,7 +90,7 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
           </p>
           <div className="mt-6">
             <a
-              href={`/submit/${formUrl}`}
+              href={`/form/${formUrl}`}
               className="text-sm text-violet-600 hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-300 underline"
               onClick={(e) => {
                 e.preventDefault();

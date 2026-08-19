@@ -37,9 +37,27 @@ export function getAppBaseUrl() {
   return `${protocol}://${host}`.replace(/\/+$/, '');
 }
 
+export function generateCustomSlug(name: string): string {
+  const clean = name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+  let namePart = '';
+  if (clean.length >= 6) {
+    const first3 = clean.slice(0, 3);
+    const last3 = clean.slice(-3);
+    namePart = `${first3}${last3}`;
+  } else if (clean.length > 0) {
+    namePart = clean;
+  } else {
+    namePart = 'form';
+  }
+
+  const randomHash = Math.random().toString(36).substring(2, 8);
+  return `${namePart}-${randomHash}`;
+}
+
 export function buildFormSubmitUrl(formUrl: string, source?: 'qr' | 'link' | string) {
   const cleanFormUrl = formUrl.replace(/^\/+/, '');
-  const url = new URL(`/submit/${cleanFormUrl}`, getAppBaseUrl());
+  const url = new URL(`/form/${cleanFormUrl}`, getAppBaseUrl());
 
   if (source) {
     url.searchParams.set('source', source);

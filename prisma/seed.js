@@ -4,6 +4,10 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seeding database...');
   
+  const superAdminEmail = (process.env.SUPER_ADMIN_EMAIL || 'admin@tspl.group').trim().toLowerCase();
+  const superAdminIdp = (process.env.SUPER_ADMIN_IDP || 'EMP001').trim();
+  const superAdminPass = process.env.SUPER_ADMIN_PASSWORD || 'DefaultPass123!';
+
   // 1. Create Department
   const dept = await prisma.department.upsert({
     where: { code: 'ENG' },
@@ -32,17 +36,17 @@ async function main() {
 
   // 3. Create Super Admin Employee
   const employee = await prisma.employee.upsert({
-    where: { clerkUserId: 'mock_user_1' },
+    where: { clerkUserId: 'super_admin_seed' },
     update: {
-      password: 'SecurePassword123'
+      password: superAdminPass
     },
     create: {
-      clerkUserId: 'mock_user_1',
-      employeeId: 'EMP001',
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@tspl.group',
-      password: 'SecurePassword123',
+      clerkUserId: 'super_admin_seed',
+      employeeId: superAdminIdp,
+      firstName: 'Tech',
+      lastName: 'Admin',
+      email: superAdminEmail,
+      password: superAdminPass,
       phone: '1234567890',
       role: 'SUPER_ADMIN',
       status: 'ACTIVE',
@@ -50,51 +54,7 @@ async function main() {
       branchId: branch.id
     }
   });
-  console.log('Employee created/found:', employee.firstName, employee.lastName);
-
-  // 4. Create Admin Employee
-  const admin = await prisma.employee.upsert({
-    where: { clerkUserId: 'mock_admin_1' },
-    update: {
-      password: 'SecurePassword123'
-    },
-    create: {
-      clerkUserId: 'mock_admin_1',
-      employeeId: 'EMP002',
-      firstName: 'Jane',
-      lastName: 'Smith',
-      email: 'jane.smith@tspl.group',
-      password: 'SecurePassword123',
-      phone: '0987654321',
-      role: 'ADMIN',
-      status: 'ACTIVE',
-      departmentId: dept.id,
-      branchId: branch.id
-    }
-  });
-  console.log('Admin created/found:', admin.firstName, admin.lastName);
-
-  // 5. Create Editor Employee
-  const editor = await prisma.employee.upsert({
-    where: { clerkUserId: 'mock_editor_1' },
-    update: {
-      password: 'SecurePassword123'
-    },
-    create: {
-      clerkUserId: 'mock_editor_1',
-      employeeId: 'EMP003',
-      firstName: 'Bob',
-      lastName: 'Johnson',
-      email: 'bob.johnson@tspl.group',
-      password: 'SecurePassword123',
-      phone: '5555555555',
-      role: 'EDITOR',
-      status: 'ACTIVE',
-      departmentId: dept.id,
-      branchId: branch.id
-    }
-  });
-  console.log('Editor created/found:', editor.firstName, editor.lastName);
+  console.log('Super Admin created/found:', employee.firstName, employee.lastName);
 }
 
 main()

@@ -11,6 +11,7 @@ export default function FormElementsSidebar() {
       <Separator className='my-2' />
       <div className='grid grid-cols-1 place-items-center gap-4 md:grid-cols-2 lg:gap-2'>
         <p className='col-span-1 my-2 place-self-start text-sm md:col-span-2'>Layout Elements</p>
+        <SidebarBtnElement formElement={FormElements.BannerField} />
         <SidebarBtnElement formElement={FormElements.TitleField} />
         <SidebarBtnElement formElement={FormElements.SubTitleField} />
         <SidebarBtnElement formElement={FormElements.ParagraphField} />

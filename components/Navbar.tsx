@@ -3,9 +3,9 @@ import ThemeSwitcher from './ThemeSwitcher';
 import { Button } from './ui/button';
 import Logo from './Logo';
 import Link from 'next/link';
-import { cookies } from 'next/headers';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, ShieldCheck } from 'lucide-react';
 import { logoutUser } from '@/app/actions/employee';
+import { getCurrentUser, isSuperAdmin as checkSuperAdmin } from '@/lib/auth';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,61 +15,68 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-function getSession() {
-  try {
-    const raw = cookies().get('session_user')?.value;
-    if (!raw) return null;
-    return JSON.parse(raw) as {
-      firstName: string;
-      lastName: string;
-      email: string;
-      role: string;
-      imageUrl?: string;
-    };
-  } catch {
-    return null;
-  }
-}
-
-export default function Navbar() {
-  const session = getSession();
+export default async function Navbar() {
+  const user = await getCurrentUser();
+  const isSuperAdmin = await checkSuperAdmin();
 
   return (
     <nav className="flex h-[64px] items-center justify-between border-b border-border px-4 shadow-md">
       <Logo />
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         <Button asChild variant={'link'}>
-          <Link href={'/platform'} className="text-lg">Platform</Link>
+          <Link href={'/platform'} className="text-base sm:text-lg">Platform</Link>
         </Button>
-        {session && (
+        {user && (
           <>
             <Button asChild variant={'link'}>
-              <Link href={'/dashboard'} className="text-lg">Dashboard</Link>
+              <Link href={'/dashboard'} className="text-base sm:text-lg">Dashboard</Link>
             </Button>
             <Button asChild variant={'link'}>
-              <Link href={'/employees'} className="text-lg">Employees</Link>
+              <Link href={'/employees'} className="text-base sm:text-lg">Employees</Link>
             </Button>
             <Button asChild variant={'link'}>
-              <Link href={'/form-requests'} className="text-lg">Requests</Link>
+              <Link href={'/form-requests'} className="text-base sm:text-lg">Requests</Link>
             </Button>
+            {isSuperAdmin && (
+              <Button asChild variant={'link'} className="text-purple-600 dark:text-purple-400 font-bold">
+                <Link href={'/super-admin'} className="flex items-center gap-1.5 text-base sm:text-lg">
+                  <ShieldCheck className="h-4 w-4" /> Super Admin
+                </Link>
+              </Button>
+            )}
           </>
         )}
         <ThemeSwitcher />
 
-        {session ? (
+        {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold shadow hover:opacity-90 transition-opacity">
-                {session.firstName?.[0]}{session.lastName?.[0]}
+                {user.firstName?.[0]}{user.lastName?.[0]}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
-                <p className="font-semibold">{session.firstName} {session.lastName}</p>
-                <p className="text-xs text-muted-foreground font-normal truncate">{session.email}</p>
-                <p className="text-xs text-muted-foreground font-normal">{session.role}</p>
+                <p className="font-semibold">{user.fullName}</p>
+                <p className="text-xs text-muted-foreground font-normal truncate">
+                  {user.primaryEmailAddress.emailAddress}
+                </p>
+                <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold mt-0.5">
+                  {user.role}
+                </p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              {isSuperAdmin && (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link href="/super-admin" className="flex w-full items-center gap-2 cursor-pointer text-purple-600 dark:text-purple-400 font-semibold">
+                      <ShieldCheck className="h-4 w-4" />
+                      Super Admin Portal
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
               <form action={logoutUser}>
                 <DropdownMenuItem asChild>
                   <button type="submit" className="flex w-full items-center gap-2 cursor-pointer text-destructive focus:text-destructive">

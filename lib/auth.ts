@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 
 export type EmployeeRole = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'HR' | 'MANAGER' | 'EMPLOYEE';
+export type EmployeeStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 
 export class AuthRequiredError extends Error {
   constructor(message = 'Authentication required') {
@@ -18,21 +19,37 @@ export class ForbiddenError extends Error {
   }
 }
 
-// ── Hardcoded permanent super admin ─────────────────────────────────────────
-const HARDCODED_ADMIN_SESSION = {
-  clerkUserId: 'hardcoded_tech_admin',
-  id:          1000000,
-  employeeId:  'EMP000',
-  firstName:   'Tech',
-  lastName:    'Admin',
-  email:       'tech@tsplgroup.in',
-  role:        'SUPER_ADMIN' as EmployeeRole,
-  status:      'ACTIVE',
-  department:  null,
-  branch:      null,
-  manager:     null,
-  imageUrl:    'https://api.dicebear.com/7.x/initials/svg?seed=TA',
-};
+/** Get Super Admin IDP settings strictly from process.env (no hardcoded fallback credentials) */
+export function getSuperAdminIdpConfig() {
+  return {
+    idp: (process.env.SUPER_ADMIN_IDP || '').trim(),
+    email: (process.env.SUPER_ADMIN_EMAIL || '').trim().toLowerCase(),
+    password: process.env.SUPER_ADMIN_PASSWORD || '',
+    route: (process.env.SUPER_ADMIN_ROUTE || '/super-admin').trim(),
+  };
+}
+
+/** Super admin session generated strictly from .env variables */
+export function getHardcodedAdminSession() {
+  const config = getSuperAdminIdpConfig();
+  if (!config.idp || !config.email || !config.password) {
+    return null;
+  }
+  return {
+    clerkUserId: config.idp,
+    id: 1000000,
+    employeeId: config.idp,
+    firstName: 'Super',
+    lastName: 'Admin',
+    email: config.email,
+    role: 'SUPER_ADMIN' as EmployeeRole,
+    status: 'ACTIVE' as EmployeeStatus,
+    department: null,
+    branch: null,
+    manager: null,
+    imageUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(config.idp)}`,
+  };
+}
 
 /** Read and parse the session cookie. Returns null if not set. */
 export function getSessionData(): Record<string, any> | null {
@@ -45,10 +62,81 @@ export function getSessionData(): Record<string, any> | null {
   }
 }
 
-/** Legacy Clerk-compat helper – returns a minimal user object. */
+export async function getCurrentEmployee() {
+  const session = getSessionData();
+  if (!session) return null;
+
+  const idpConfig = getSuperAdminIdpConfig();
+
+  // Check if current session matches process.env Super Admin IDP
+  if (
+    idpConfig.idp &&
+    idpConfig.email &&
+    (session.id === idpConfig.idp ||
+      session.employeeId === idpConfig.idp ||
+      session.email?.toLowerCase() === idpConfig.email)
+  ) {
+    const adminSession = getHardcodedAdminSession();
+    if (adminSession) return adminSession as any;
+  }
+
+  // Real-time lookup in DB by clerkUserId, employeeId, or email
+  return await prisma.employee.findFirst({
+    where: {
+      OR: [
+        { clerkUserId: session.id },
+        { employeeId: session.employeeId || session.id },
+        { email: session.email?.toLowerCase() },
+      ],
+    },
+    include: { department: true, branch: true, manager: true },
+  });
+}
+
+/** Authenticated user helper returning real-time role & status */
 export async function getCurrentUser() {
   const session = getSessionData();
   if (!session) return null;
+
+  const idpConfig = getSuperAdminIdpConfig();
+  if (
+    idpConfig.idp &&
+    idpConfig.email &&
+    (session.id === idpConfig.idp ||
+      session.employeeId === idpConfig.idp ||
+      session.email?.toLowerCase() === idpConfig.email)
+  ) {
+    const admin = getHardcodedAdminSession();
+    if (admin) {
+      return {
+        id: admin.clerkUserId,
+        firstName: admin.firstName,
+        lastName: admin.lastName,
+        fullName: `${admin.firstName} ${admin.lastName}`,
+        emailAddresses: [{ emailAddress: admin.email }],
+        primaryEmailAddress: { emailAddress: admin.email },
+        role: admin.role as EmployeeRole,
+        status: admin.status as EmployeeStatus,
+        imageUrl: admin.imageUrl,
+      };
+    }
+  }
+
+  const employee = await getCurrentEmployee();
+  if (employee) {
+    return {
+      id: employee.clerkUserId,
+      firstName: employee.firstName,
+      lastName: employee.lastName,
+      fullName: `${employee.firstName} ${employee.lastName}`,
+      emailAddresses: [{ emailAddress: employee.email }],
+      primaryEmailAddress: { emailAddress: employee.email },
+      role: employee.role as EmployeeRole,
+      status: employee.status as EmployeeStatus,
+      imageUrl: employee.imageUrl || session.imageUrl,
+    };
+  }
+
   return {
     id: session.id,
     firstName: session.firstName,
@@ -56,6 +144,8 @@ export async function getCurrentUser() {
     fullName: `${session.firstName} ${session.lastName}`,
     emailAddresses: [{ emailAddress: session.email }],
     primaryEmailAddress: { emailAddress: session.email },
+    role: (session.role || 'EMPLOYEE') as EmployeeRole,
+    status: (session.status || 'ACTIVE') as EmployeeStatus,
     imageUrl: session.imageUrl,
   };
 }
@@ -68,27 +158,12 @@ export async function requireAuth() {
   return user;
 }
 
-export async function getCurrentEmployee() {
-  const session = getSessionData();
-  if (!session) return null;
-
-  // Hardcoded tech admin – return synthetic employee record
-  if (session.id === 'hardcoded_tech_admin') {
-    return HARDCODED_ADMIN_SESSION as any;
-  }
-
-  return await prisma.employee.findUnique({
-    where: { clerkUserId: session.id },
-    include: { department: true, branch: true, manager: true },
-  });
-}
-
 export async function requireEmployee() {
   const employee = await getCurrentEmployee();
-  if (!employee) {
-    redirect('/sign-in');
+  if (!employee || employee.status !== 'ACTIVE') {
+    redirect('/access-denied');
   }
-  return employee!;
+  return employee;
 }
 
 export async function requireRole(allowedRoles: EmployeeRole[]) {
@@ -102,4 +177,33 @@ export async function requireRole(allowedRoles: EmployeeRole[]) {
   }
 
   return employee;
+}
+
+export async function isSuperAdmin() {
+  const employee = await getCurrentEmployee();
+  if (!employee) return false;
+
+  if (employee.role === 'SUPER_ADMIN') {
+    return true;
+  }
+
+  const idpConfig = getSuperAdminIdpConfig();
+  if (
+    (idpConfig.email && employee.email?.toLowerCase() === idpConfig.email) ||
+    (idpConfig.idp && employee.employeeId === idpConfig.idp) ||
+    (idpConfig.idp && employee.clerkUserId === idpConfig.idp)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+export async function requireSuperAdmin() {
+  const allowed = await isSuperAdmin();
+  if (!allowed) {
+    redirect('/access-denied');
+  }
+  const employee = await getCurrentEmployee();
+  return employee!;
 }
