@@ -94,10 +94,16 @@ export default function Hero() {
         {/* Hero Logo & Orbital Frame */}
         <div className="relative flex items-center justify-center py-2">
           {/* Subtle Outer Orbital Rings */}
-          <div className="absolute h-44 w-44 rounded-full border border-primary/15 animate-spin [animation-duration:25s] border-dashed" />
-          <div className="absolute h-52 w-52 rounded-full border border-purple-500/10 animate-spin [animation-duration:35s] [animation-direction:reverse]" />
+          <div 
+            className="absolute h-44 w-44 rounded-full border border-primary/20 animate-spin border-dashed" 
+            style={{ animationDuration: '25s' }}
+          />
+          <div 
+            className="absolute h-52 w-52 rounded-full border border-purple-500/20 animate-spin" 
+            style={{ animationDuration: '35s', animationDirection: 'reverse' }}
+          />
 
-          <div className="relative z-10 flex items-center justify-center rounded-2xl bg-background/60 p-4 shadow-xl backdrop-blur-xl border border-border/50 transition-transform duration-300 hover:scale-105">
+          <div className="relative z-10 flex items-center justify-center rounded-2xl bg-background/80 p-4 shadow-xl backdrop-blur-xl border border-border transition-transform duration-300 hover:scale-105">
             <Image
               src="/TSPL Logo preloader.png"
               alt="TSPL Group"
