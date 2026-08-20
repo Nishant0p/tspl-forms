@@ -12,8 +12,9 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
+import { copyToClipboard } from '@/lib/utils';
 import QRCode from 'qrcode';
-import { Copy, Download, ExternalLink, Share2, QrCodeIcon } from 'lucide-react';
+import { Check, Copy, Download, ExternalLink, Share2, QrCodeIcon } from 'lucide-react';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 
 export type FormShareDialogForm = {
@@ -62,6 +63,7 @@ function formatAccessLabel(accessMode?: FormShareDialogForm['accessMode']) {
 export default function FormShareDialog({ form, trigger }: { form: FormShareDialogForm; trigger?: ReactNode }) {
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const shareUrl = useMemo(() => buildFormSubmitUrl(form.shareUrl, 'link'), [form.shareUrl]);
   const qrUrl = useMemo(() => buildFormSubmitUrl(form.shareUrl, 'qr'), [form.shareUrl]);
@@ -91,13 +93,15 @@ export default function FormShareDialog({ form, trigger }: { form: FormShareDial
   }, [qrUrl]);
 
   async function copyLink() {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
+    const success = await copyToClipboard(shareUrl);
+    if (success) {
+      setCopied(true);
       toast({
         title: 'Link copied',
         description: 'The form URL is now in your clipboard.',
       });
-    } catch (error) {
+      setTimeout(() => setCopied(false), 2000);
+    } else {
       toast({
         title: 'Copy failed',
         description: 'Unable to copy the form URL automatically.',
@@ -146,9 +150,18 @@ export default function FormShareDialog({ form, trigger }: { form: FormShareDial
             <div className="text-sm font-medium text-muted-foreground">Form URL</div>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Input value={shareUrl} readOnly className="min-w-0 flex-1" />
-              <Button onClick={copyLink} variant="secondary" className="shrink-0">
-                <Copy className="mr-2 h-4 w-4" />
-                Copy link
+              <Button onClick={copyLink} variant={copied ? "default" : "secondary"} className="shrink-0 transition-all">
+                {copied ? (
+                  <>
+                    <Check className="mr-2 h-4 w-4 text-emerald-400" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copy link
+                  </>
+                )}
               </Button>
             </div>
             <div className="flex flex-wrap gap-2">

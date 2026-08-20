@@ -3,8 +3,9 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
+import { copyToClipboard } from '@/lib/utils';
 import QRCode from 'qrcode';
-import { Copy, Download, ExternalLink, QrCodeIcon } from 'lucide-react';
+import { Check, Copy, Download, ExternalLink, QrCodeIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 function normalizeShareUrl(value: string) {
@@ -18,6 +19,7 @@ function normalizeShareUrl(value: string) {
 export default function FormLinkShare({ shareUrl }: { shareUrl: string }) {
   const [mounted, setMounted] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState('');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -65,16 +67,18 @@ export default function FormLinkShare({ shareUrl }: { shareUrl: string }) {
   }
 
   async function copyLink() {
-    try {
-      await navigator.clipboard.writeText(resolvedShareUrl);
+    const success = await copyToClipboard(resolvedShareUrl);
+    if (success) {
+      setCopied(true);
       toast({
         title: 'Copied to clipboard!',
-        description: 'You can now paste the link anywhere you want',
+        description: 'You can now paste the link anywhere you want.',
       });
-    } catch {
+      setTimeout(() => setCopied(false), 2000);
+    } else {
       toast({
         title: 'Copy failed',
-        description: 'Unable to copy the form URL automatically.',
+        description: 'Unable to copy the form URL automatically. Please copy manually.',
         variant: 'destructive',
       });
     }
@@ -98,9 +102,18 @@ export default function FormLinkShare({ shareUrl }: { shareUrl: string }) {
       <div className="flex items-center gap-3">
         <Input value={resolvedShareUrl} readOnly className="min-w-0 flex-1" />
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" onClick={copyLink}>
-            <Copy className="mr-2 h-4 w-4" />
-            Copy
+          <Button variant={copied ? "default" : "secondary"} onClick={copyLink} className="transition-all">
+            {copied ? (
+              <>
+                <Check className="mr-2 h-4 w-4 text-emerald-400" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Copy className="mr-2 h-4 w-4" />
+                Copy
+              </>
+            )}
           </Button>
           <Button variant="outline" onClick={openForm}>
             <ExternalLink className="mr-2 h-4 w-4" />

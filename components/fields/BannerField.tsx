@@ -101,8 +101,6 @@ function BannerDisplay({ extraAttrs }: { extraAttrs: typeof extraAttributes }) {
   const isPreset = preset && preset !== 'custom' && PRESETS[preset];
   const bgStyle = isPreset
     ? { backgroundImage: PRESETS[preset].bg }
-    : imageUrl
-    ? { backgroundImage: `url(${imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
     : { backgroundImage: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' };
 
   return (
@@ -113,25 +111,34 @@ function BannerDisplay({ extraAttrs }: { extraAttrs: typeof extraAttributes }) {
         height: height || '200px',
       }}
     >
+      {/* Explicit img element for fail-safe data URL & Web image display */}
+      {imageUrl && (!isPreset || preset === 'custom') && (
+        <img
+          src={imageUrl}
+          alt={title || 'Form banner'}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      )}
+
       {!imageUrl && !isPreset && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-muted/60 text-muted-foreground">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-muted/60 text-muted-foreground backdrop-blur-xs">
           <ImageIcon className="h-10 w-10 opacity-50" />
           <p className="text-sm font-medium">Click settings to upload custom banner image</p>
         </div>
       )}
 
       {overlay && (title || subtitle) && (
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent z-10" />
       )}
 
       {(title || subtitle) && (
         <div
-          className="relative z-10 p-6 text-white"
+          className="relative z-20 p-6 text-white"
           style={{ textAlign: (textAlign as any) || 'center' }}
         >
-          {title && <h2 className="text-2xl font-bold tracking-tight md:text-3xl">{title}</h2>}
+          {title && <h2 className="text-2xl font-bold tracking-tight md:text-3xl drop-shadow-sm">{title}</h2>}
           {subtitle && (
-            <p className="mt-1 text-sm text-white/90 md:text-base">{subtitle}</p>
+            <p className="mt-1 text-sm text-white/90 md:text-base drop-shadow-sm">{subtitle}</p>
           )}
         </div>
       )}
@@ -291,9 +298,15 @@ function PropertiesComponent({
                     placeholder="https://example.com/banner.jpg"
                     onChange={(e) => {
                       field.onChange(e);
-                      if (e.target.value) {
+                      const url = e.target.value;
+                      if (url) {
                         form.setValue('preset', 'custom');
                       }
+                      applyChanges({
+                        ...form.getValues(),
+                        imageUrl: url,
+                        preset: url ? 'custom' : form.getValues('preset'),
+                      });
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') e.currentTarget.blur();

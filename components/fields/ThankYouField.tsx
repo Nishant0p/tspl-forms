@@ -7,8 +7,7 @@ import {
 } from '@/app/(dashboard)/_components/FormElements';
 import { useDesginerStore } from '@/store/store';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Label } from '@/components/ui/label';
-import { PartyPopper, CheckCircle2, ExternalLink } from 'lucide-react';
+import { PartyPopper, CheckCircle2, ExternalLink, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -24,6 +23,7 @@ import {
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
+import { Button } from '../ui/button';
 
 const type: ElementsType = 'ThankYouField';
 
@@ -38,10 +38,10 @@ const extraAttributes = {
 
 const propertiesSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
-  message: z.string().max(500),
-  imageUrl: z.string().max(500),
-  buttonText: z.string().max(50),
-  buttonUrl: z.string().max(500),
+  message: z.string().max(1000),
+  imageUrl: z.string().optional(),
+  buttonText: z.string().max(100),
+  buttonUrl: z.string().optional(),
   showRedirectButton: z.boolean(),
 });
 
@@ -89,9 +89,9 @@ function DesignerComponent({
       </div>
 
       {imageUrl && (
-        <div className="relative w-full max-h-40 overflow-hidden rounded-md border bg-muted/20">
+        <div className="relative w-full max-h-48 overflow-hidden rounded-md border bg-muted/20">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imageUrl} alt="Thank you banner" className="h-full w-full object-cover" />
+          <img src={imageUrl} alt="Thank you banner" className="w-full max-h-48 object-cover rounded-md" />
         </div>
       )}
 
@@ -163,6 +163,32 @@ function PropertiesComponent({
     });
   }
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      form.setValue('imageUrl', dataUrl);
+      const updated = {
+        ...form.getValues(),
+        imageUrl: dataUrl,
+      };
+      applyChanges(updated);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    form.setValue('imageUrl', '');
+    const updated = {
+      ...form.getValues(),
+      imageUrl: '',
+    };
+    applyChanges(updated);
+  };
+
   return (
     <Form {...form}>
       <form
@@ -215,28 +241,74 @@ function PropertiesComponent({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="imageUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Image / Banner URL</FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  placeholder="https://example.com/thankyou-banner.png"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.currentTarget.blur();
-                  }}
-                />
-              </FormControl>
-              <FormDescription>
-                Optional image or logo shown at the top of the thank you screen.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
+        {/* Upload Image Section */}
+        <div className="space-y-3 rounded-lg border border-border p-4 bg-muted/20">
+          <FormLabel className="font-semibold flex items-center gap-2 text-xs">
+            <ImageIcon className="h-4 w-4 text-primary" /> Thank You Banner / Image
+          </FormLabel>
+
+          {form.watch('imageUrl') ? (
+            <div className="relative overflow-hidden rounded-md border border-border group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={form.watch('imageUrl')}
+                alt="Thank You Banner preview"
+                className="h-28 w-full object-cover"
+              />
+              <Button
+                type="button"
+                variant="destructive"
+                size="icon"
+                className="absolute right-2 top-2 h-7 w-7 rounded-full shadow"
+                onClick={handleRemoveImage}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="relative flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-5 text-center hover:bg-muted/30 transition-all">
+              <Upload className="h-8 w-8 text-muted-foreground" />
+              <div className="text-xs text-muted-foreground">
+                <span className="font-semibold text-primary">Click to upload</span> image
+                <p className="text-[10px] opacity-75">PNG, JPG, WEBP, GIF up to 5MB</p>
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="absolute inset-0 cursor-pointer opacity-0"
+              />
+            </div>
           )}
-        />
+
+          <FormField
+            control={form.control}
+            name="imageUrl"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs text-muted-foreground">Or Image Web URL</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="https://example.com/thankyou-banner.png"
+                    onChange={(e) => {
+                      field.onChange(e);
+                      const url = e.target.value;
+                      applyChanges({
+                        ...form.getValues(),
+                        imageUrl: url,
+                      });
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') e.currentTarget.blur();
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <FormField
           control={form.control}
@@ -271,6 +343,13 @@ function PropertiesComponent({
                 <Input
                   {...field}
                   placeholder="https://tsplgroup.in (Leave blank for response reset)"
+                  onChange={(e) => {
+                    field.onChange(e);
+                    applyChanges({
+                      ...form.getValues(),
+                      buttonUrl: e.target.value,
+                    });
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') e.currentTarget.blur();
                   }}

@@ -18,7 +18,8 @@ import { useDesginerStore } from '@/store/store';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import { Copy } from 'lucide-react';
+import { copyToClipboard } from '@/lib/utils';
+import { Check, Copy } from 'lucide-react';
 import Link from 'next/link';
 import Confetti from 'react-confetti';
 import { buildFormSubmitUrl } from '@/lib/url';
@@ -53,6 +54,7 @@ type FormBuilderProps = {
 export default function FormBuilder({ form, departments, branches, employees }: FormBuilderProps) {
   const { setElements } = useDesginerStore();
   const { innerWidth, innerHeight } = typeof window !== 'undefined' ? window : { innerWidth: 0, innerHeight: 0 };
+  const [copied, setCopied] = React.useState(false);
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -76,6 +78,24 @@ export default function FormBuilder({ form, departments, branches, employees }: 
 
   const shareUrl = buildFormSubmitUrl(form.shareUrl, 'link');
 
+  const handleCopy = async () => {
+    const success = await copyToClipboard(shareUrl);
+    if (success) {
+      setCopied(true);
+      toast({
+        title: 'Copied',
+        description: 'Copied to clipboard.',
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } else {
+      toast({
+        title: 'Copy failed',
+        description: 'Unable to copy URL automatically.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (form.published) {
     return (
       <>
@@ -96,17 +116,20 @@ export default function FormBuilder({ form, departments, branches, employees }: 
                 value={shareUrl}
               />
               <Button
-                onClick={() => {
-                  navigator.clipboard.writeText(shareUrl);
-                  toast({
-                    title: 'Copied',
-                    description: 'Copied to clipboard.',
-                  });
-                }}
+                onClick={handleCopy}
                 className="w-full text-zinc-50"
                 size={'sm'}>
-                <Copy className="mr-2 h-4 w-4" />
-                Copy
+                {copied ? (
+                  <>
+                    <Check className="mr-2 h-4 w-4 text-emerald-400" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copy
+                  </>
+                )}
               </Button>
             </div>
             <div className="mb-4 flex justify-center">

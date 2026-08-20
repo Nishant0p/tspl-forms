@@ -99,12 +99,12 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
           
           {/* Custom Banner / Image if configured */}
           {customImageUrl && (
-            <div className="w-full max-h-56 overflow-hidden rounded-md border bg-muted/20">
+            <div className="w-full overflow-hidden rounded-md border border-border/50 bg-muted/20">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={customImageUrl}
                 alt="Thank You Illustration"
-                className="h-full w-full object-cover"
+                className="w-full max-h-64 object-cover rounded-md"
               />
             </div>
           )}
@@ -188,7 +188,8 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
               key={element.id}
               className={cn(
                 "w-full bg-card text-card-foreground p-6 rounded-lg border border-border shadow-sm transition-all duration-200",
-                isInvalid && "border-red-500 border-l-[6px] border-l-red-500"
+                isInvalid && "border-red-500 border-l-[6px] border-l-red-500",
+                element.type === 'BannerField' && "p-0 border-none shadow-none bg-transparent"
               )}
             >
               <FormElement
