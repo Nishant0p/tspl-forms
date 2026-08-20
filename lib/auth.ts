@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 
-export type EmployeeRole = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'HR' | 'MANAGER' | 'EMPLOYEE';
+export type EmployeeRole = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'HR' | 'MANAGER' | 'EMPLOYEE' | 'FORM_VIEWER';
 export type EmployeeStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 
 export class AuthRequiredError extends Error {

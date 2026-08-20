@@ -18,25 +18,34 @@ import {
 export default async function Navbar() {
   const user = await getCurrentUser();
   const isSuperAdmin = await checkSuperAdmin();
+  const isFormViewer = user?.role === 'FORM_VIEWER';
 
   return (
     <nav className="flex h-[64px] items-center justify-between border-b border-border px-4 shadow-md">
       <Logo />
       <div className="flex items-center gap-3 sm:gap-4">
-        <Button asChild variant={'link'}>
-          <Link href={'/platform'} className="text-base sm:text-lg">Platform</Link>
-        </Button>
+        {!isFormViewer && (
+          <Button asChild variant={'link'}>
+            <Link href={'/platform'} className="text-base sm:text-lg">Platform</Link>
+          </Button>
+        )}
         {user && (
           <>
             <Button asChild variant={'link'}>
-              <Link href={'/dashboard'} className="text-base sm:text-lg">Dashboard</Link>
+              <Link href={'/dashboard'} className="text-base sm:text-lg">
+                {isFormViewer ? 'My Form' : 'Dashboard'}
+              </Link>
             </Button>
-            <Button asChild variant={'link'}>
-              <Link href={'/employees'} className="text-base sm:text-lg">Employees</Link>
-            </Button>
-            <Button asChild variant={'link'}>
-              <Link href={'/form-requests'} className="text-base sm:text-lg">Requests</Link>
-            </Button>
+            {!isFormViewer && (
+              <>
+                <Button asChild variant={'link'}>
+                  <Link href={'/employees'} className="text-base sm:text-lg">Employees</Link>
+                </Button>
+                <Button asChild variant={'link'}>
+                  <Link href={'/form-requests'} className="text-base sm:text-lg">Requests</Link>
+                </Button>
+              </>
+            )}
             {isSuperAdmin && (
               <Button asChild variant={'link'} className="text-purple-600 dark:text-purple-400 font-bold">
                 <Link href={'/super-admin'} className="flex items-center gap-1.5 text-base sm:text-lg">

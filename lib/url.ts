@@ -27,14 +27,8 @@ export function getAppBaseUrl() {
     return normalizeBaseUrl(configured);
   }
 
-  if (typeof window !== 'undefined') {
-    return window.location.origin;
-  }
-
-  const host = process.env.VERCEL_URL || process.env.HOSTNAME || 'localhost:3000';
-  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-
-  return `${protocol}://${host}`.replace(/\/+$/, '');
+  // Default to custom domain for form share URLs
+  return 'https://forms.tsplgroup.in';
 }
 
 export function generateCustomSlug(name: string): string {

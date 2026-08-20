@@ -148,12 +148,29 @@ export async function CreateForm(data: FormSchema) {
   return form.id;
 }
 
-/** Get all forms globally so any admin, HR, or editor can view and manage forms */
+/** Get forms - filtered strictly if current user has FORM_VIEWER role */
 export async function GetForm() {
   const user = await getCurrentUser();
 
   if (!user) {
     redirect('/sign-in');
+  }
+
+  const employee = await getCurrentEmployee();
+
+  if (employee?.role === 'FORM_VIEWER') {
+    return await prisma.form.findMany({
+      where: {
+        formViewerAccesses: {
+          some: {
+            employeeId: employee.id,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
   }
 
   const form = await prisma.form.findMany({
@@ -170,6 +187,23 @@ export async function GetFormById(id: number) {
 
   if (!user) {
     throw new UserNotFoundErr();
+  }
+
+  const employee = await getCurrentEmployee();
+
+  if (employee?.role === 'FORM_VIEWER') {
+    const hasAccess = await prisma.formViewerAccess.findUnique({
+      where: {
+        formId_employeeId: {
+          formId: id,
+          employeeId: employee.id,
+        },
+      },
+    });
+
+    if (!hasAccess) {
+      throw new ForbiddenError('You are not authorized to view this form.');
+    }
   }
 
   const form = await prisma.form.findFirst({
@@ -454,6 +488,23 @@ export async function GetFormSubmissions(id: number) {
 
   if (!user) {
     throw new UserNotFoundErr();
+  }
+
+  const employee = await getCurrentEmployee();
+
+  if (employee?.role === 'FORM_VIEWER') {
+    const hasAccess = await prisma.formViewerAccess.findUnique({
+      where: {
+        formId_employeeId: {
+          formId: id,
+          employeeId: employee.id,
+        },
+      },
+    });
+
+    if (!hasAccess) {
+      throw new ForbiddenError('You are not authorized to view submissions for this form.');
+    }
   }
 
   return await prisma.form.findFirst({

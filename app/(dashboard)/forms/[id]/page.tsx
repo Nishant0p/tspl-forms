@@ -19,6 +19,9 @@ import ExportXlsxBtn from '../../_components/ExportXlsxBtn';
 import { buildFormSubmitUrl } from '@/lib/url';
 import { headers } from 'next/headers';
 
+import FormViewerManager from '../../_components/FormViewerManager';
+import { getCurrentEmployee } from '@/lib/auth';
+
 export default async function FormDetailsPage({
   params,
 }: {
@@ -27,6 +30,9 @@ export default async function FormDetailsPage({
   const { id } = params;
 
   const form = await GetFormById(Number(id));
+  const currentEmployee = await getCurrentEmployee();
+  const isManagerOrAdmin = currentEmployee && ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'HR'].includes(currentEmployee.role);
+
   const headerList = headers()
 
   const host = headerList.get('host');
@@ -71,21 +77,26 @@ export default async function FormDetailsPage({
           <VisitBtn shareUrl={shareLink} />
         </div>
         <div className="border-b border-muted py-4">
-          <div className="container flex items-center justify-between gap-2">
+          <div className="container flex flex-wrap items-center justify-between gap-2">
             <FormLinkShare shareUrl={shareLink} />
-            <FormShareDialog
-              form={{
-                shareUrl: form.shareUrl,
-                accessMode: form.accessMode,
-                status: form.status,
-                published: form.published,
-                startDate: form.startDate,
-                endDate: form.endDate,
-                responseLimit: form.responseLimit,
-                name: form.name,
-              }}
-              trigger={<button className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Share</button>}
-            />
+            <div className="flex items-center gap-2">
+              {isManagerOrAdmin && (
+                <FormViewerManager formId={form.id} formName={form.name} />
+              )}
+              <FormShareDialog
+                form={{
+                  shareUrl: form.shareUrl,
+                  accessMode: form.accessMode,
+                  status: form.status,
+                  published: form.published,
+                  startDate: form.startDate,
+                  endDate: form.endDate,
+                  responseLimit: form.responseLimit,
+                  name: form.name,
+                }}
+                trigger={<button className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Share</button>}
+              />
+            </div>
           </div>
         </div>
       </div>
