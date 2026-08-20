@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const PUBLIC_ROUTES = ['/', '/platform', '/sign-in', '/sign-up', '/access-denied'];
+const PUBLIC_ROUTES = ['/', '/platform', '/sign-in', '/access-denied'];
 
 function hasValidSessionCookie(raw: string | undefined) {
   if (!raw) return false;

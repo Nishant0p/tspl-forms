@@ -6,8 +6,19 @@ import { loginUser } from '@/app/actions/employee';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, LogIn, Eye, EyeOff } from 'lucide-react';
+import {
+  Loader2,
+  LogIn,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  Lock,
+  User,
+  Sparkles,
+  ArrowRight,
+} from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -28,95 +39,170 @@ export default function SignInPage() {
           router.refresh();
         }
       } catch (err: any) {
-        setError(err.message || 'Invalid email/IDP or password');
+        setError(err.message || 'Invalid email/Employee ID or password');
       }
     });
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background px-4">
-      <div className="w-full max-w-md space-y-6">
-        {/* Logo / Brand */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground text-2xl font-bold shadow-lg">
-            T
+    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-background px-4 py-12">
+      {/* Ambient Radial Blur Background Effects */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-32 left-1/2 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-gradient-to-tr from-blue-600/20 via-purple-600/20 to-pink-500/10 blur-[120px]" />
+        <div className="absolute top-1/3 -left-32 h-[350px] w-[350px] rounded-full bg-violet-500/10 blur-[100px]" />
+        <div className="absolute bottom-10 -right-32 h-[350px] w-[350px] rounded-full bg-emerald-500/10 blur-[100px]" />
+
+        {/* Ambient Grid Overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.03] dark:opacity-[0.07]"
+          style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
+            backgroundSize: '32px 32px',
+          }}
+        />
+      </div>
+
+      <div className="w-full max-w-md space-y-6 text-center">
+        {/* Top Tag & Logo */}
+        <div className="flex flex-col items-center justify-center space-y-3">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary shadow-sm backdrop-blur-md transition-all hover:bg-primary/10"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-blue-500 animate-pulse" />
+            <span>TSPL Internal Portal</span>
+          </Link>
+
+          {/* Logo Frame */}
+          <div className="relative flex items-center justify-center py-2">
+            <div
+              className="absolute h-32 w-32 rounded-full border border-primary/20 animate-spin border-dashed"
+              style={{ animationDuration: '25s' }}
+            />
+            <div className="relative z-10 flex items-center justify-center rounded-2xl bg-background/80 p-3 shadow-xl backdrop-blur-xl border border-border/80 transition-transform duration-300 hover:scale-105">
+              <Image
+                src="/TSPL Logo preloader.png"
+                alt="TSPL Group"
+                width={260}
+                height={100}
+                className="h-16 w-auto object-contain drop-shadow-md"
+                priority
+              />
+            </div>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">TSPL Platform</h1>
-          <p className="text-sm text-muted-foreground">Sign in to your employee account</p>
+
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+              Sign in to{' '}
+              <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-indigo-600 bg-clip-text text-transparent dark:from-blue-400 dark:via-violet-400 dark:to-indigo-300">
+                TSPL Forms
+              </span>
+            </h1>
+            <p className="text-xs text-muted-foreground sm:text-sm mt-1">
+              Enter your credentials to access your employee workspace
+            </p>
+          </div>
         </div>
 
-        <Card className="shadow-xl border-border/60">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-xl">Welcome back</CardTitle>
-            <CardDescription>Enter your email or Employee ID and password</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email or Employee ID</Label>
+        {/* Sign In Card */}
+        <div className="rounded-3xl border border-border/80 bg-card/70 p-6 sm:p-8 shadow-2xl backdrop-blur-xl text-left space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Username / Email field */}
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <User className="h-3.5 w-3.5 text-primary" /> Email or Employee ID
+              </Label>
+              <div className="relative">
                 <Input
                   id="email"
                   type="text"
-                  placeholder="admin@tspl.group or EMP001"
+                  placeholder="e.g. admin@tspl.group or EMP001"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isPending}
                   autoComplete="username"
-                  className="h-11"
+                  className="h-12 rounded-xl bg-background/60 border-border/80 px-4 text-sm shadow-sm transition-all focus-visible:ring-2 focus-visible:ring-primary/40"
                 />
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPw ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={isPending}
-                    autoComplete="current-password"
-                    className="h-11 pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPw((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    tabIndex={-1}
-                  >
-                    {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
+            {/* Password field */}
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <Lock className="h-3.5 w-3.5 text-primary" /> Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPw ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isPending}
+                  autoComplete="current-password"
+                  className="h-12 rounded-xl bg-background/60 border-border/80 pl-4 pr-11 text-sm shadow-sm transition-all focus-visible:ring-2 focus-visible:ring-primary/40"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw((v) => !v)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground p-1"
+                  tabIndex={-1}
+                  aria-label="Toggle password visibility"
+                >
+                  {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
+            </div>
 
-              {error && (
-                <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                  {error}
-                </div>
+            {/* Error Message */}
+            {error && (
+              <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-xs text-destructive flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-destructive animate-ping shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              disabled={isPending}
+              className="w-full h-12 rounded-xl text-sm font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all gap-2"
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Signing in…
+                </>
+              ) : (
+                <>
+                  <LogIn className="h-4 w-4" /> Sign In to Workspace <ArrowRight className="h-4 w-4" />
+                </>
               )}
+            </Button>
+          </form>
 
-              <Button
-                type="submit"
-                disabled={isPending}
-                className="w-full h-11 text-base font-semibold"
-              >
-                {isPending ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Signing in…</>
-                ) : (
-                  <><LogIn className="mr-2 h-4 w-4" /> Sign In</>
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+          {/* Secure Note Box */}
+          <div className="rounded-xl border border-border/60 bg-muted/40 p-3 flex items-center gap-3 text-xs text-muted-foreground">
+            <ShieldCheck className="h-5 w-5 text-emerald-500 shrink-0" />
+            <div>
+              <strong className="block text-foreground font-semibold">Secure Sign-In Page</strong>
+              <span>Your data is protected. Internal Employee Access Only.</span>
+            </div>
+          </div>
+        </div>
 
-        <p className="text-center text-xs text-muted-foreground">
-          TSPL Forms &amp; Workflow Platform — Internal Use Only
-        </p>
+        {/* Footer */}
+        <div className="space-y-1 pt-2">
+          <p className="text-xs text-muted-foreground font-medium">
+            TSPL Forms &amp; Workflow Platform
+          </p>
+          <p className="text-[11px] text-muted-foreground/60 font-semibold tracking-wider uppercase">
+            Internal Use Only
+          </p>
+        </div>
       </div>
     </div>
   );
 }
+
