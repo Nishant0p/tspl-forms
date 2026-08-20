@@ -10,10 +10,6 @@ import {
   ShieldCheck,
   Sparkles,
   ArrowRight,
-  Zap,
-  Lock,
-  Workflow,
-  Layers,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -66,12 +62,6 @@ const navBoxes = [
   },
 ];
 
-const platformHighlights = [
-  { icon: Zap, label: 'Instant Drag & Drop Form Builder' },
-  { icon: Lock, label: 'Role-Based Access Control (RBAC)' },
-  { icon: Workflow, label: 'Automated Approval Workflows' },
-  { icon: Layers, label: 'Real-time Response Analytics' },
-];
 
 export default function Hero() {
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -146,22 +136,6 @@ export default function Hero() {
           <p className="text-sm text-muted-foreground sm:text-base lg:text-lg leading-relaxed max-w-2xl mx-auto">
             Design dynamic internal forms, streamline multi-level approvals, enforce granular employee access control, and capture actionable data insights.
           </p>
-
-          {/* Quick Platform Highlight Pills */}
-          <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-            {platformHighlights.map((item, idx) => {
-              const Icon = item.icon;
-              return (
-                <div
-                  key={idx}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-border/60 bg-card/60 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur-md shadow-sm"
-                >
-                  <Icon className="h-3.5 w-3.5 text-primary" />
-                  <span>{item.label}</span>
-                </div>
-              );
-            })}
-          </div>
         </div>
 
         {/* Action CTAs */}
