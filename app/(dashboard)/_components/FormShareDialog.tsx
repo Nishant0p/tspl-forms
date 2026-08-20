@@ -13,7 +13,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { copyToClipboard } from '@/lib/utils';
-import QRCode from 'qrcode';
+import { generateBrandedQRCode } from '@/lib/qr';
 import { Check, Copy, Download, ExternalLink, Share2, QrCodeIcon } from 'lucide-react';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 
@@ -73,16 +73,7 @@ export default function FormShareDialog({ form, trigger }: { form: FormShareDial
   useEffect(() => {
     async function generateQr() {
       try {
-        const dataUrl = await QRCode.toDataURL(qrUrl, {
-          width: 320,
-          margin: 2,
-          errorCorrectionLevel: 'M',
-          color: {
-            dark: '#0f172a',
-            light: '#ffffff',
-          },
-        });
-
+        const dataUrl = await generateBrandedQRCode(qrUrl, { width: 360, margin: 2 });
         setQrDataUrl(dataUrl);
       } catch (error) {
         setQrDataUrl('');

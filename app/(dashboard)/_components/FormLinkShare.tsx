@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { copyToClipboard } from '@/lib/utils';
-import QRCode from 'qrcode';
+import { generateBrandedQRCode } from '@/lib/qr';
 import { Check, Copy, Download, ExternalLink, QrCodeIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -44,15 +44,7 @@ export default function FormLinkShare({ shareUrl }: { shareUrl: string }) {
 
     async function generateQr() {
       try {
-        const dataUrl = await QRCode.toDataURL(qrUrl, {
-          width: 220,
-          margin: 2,
-          errorCorrectionLevel: 'M',
-          color: {
-            dark: '#0f172a',
-            light: '#ffffff',
-          },
-        });
+        const dataUrl = await generateBrandedQRCode(qrUrl, { width: 240, margin: 2 });
         setQrDataUrl(dataUrl);
       } catch {
         setQrDataUrl('');
