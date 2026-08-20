@@ -125,18 +125,7 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Hero Title & Subtitle */}
-        <div className="max-w-3xl space-y-4">
-          <h1 className="text-3xl font-black tracking-tight sm:text-5xl lg:text-6xl leading-[1.15]">
-            Next-Gen Forms &{' '}
-            <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-indigo-600 bg-clip-text text-transparent dark:from-blue-400 dark:via-violet-400 dark:to-indigo-300">
-              Automated Workflows
-            </span>
-          </h1>
-          <p className="text-sm text-muted-foreground sm:text-base lg:text-lg leading-relaxed max-w-2xl mx-auto">
-            Design dynamic internal forms, streamline multi-level approvals, enforce granular employee access control, and capture actionable data insights.
-          </p>
-        </div>
+
 
         {/* Action CTAs */}
         <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
