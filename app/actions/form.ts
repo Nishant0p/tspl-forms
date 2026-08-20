@@ -159,7 +159,7 @@ export async function GetForm() {
   const employee = await getCurrentEmployee();
 
   if (employee?.role === 'FORM_VIEWER') {
-    return await prisma.form.findMany({
+    return await (prisma as any).form.findMany({
       where: {
         formViewerAccesses: {
           some: {
@@ -192,7 +192,7 @@ export async function GetFormById(id: number) {
   const employee = await getCurrentEmployee();
 
   if (employee?.role === 'FORM_VIEWER') {
-    const hasAccess = await prisma.formViewerAccess.findUnique({
+    const hasAccess = await (prisma as any).formViewerAccess.findUnique({
       where: {
         formId_employeeId: {
           formId: id,
@@ -493,7 +493,7 @@ export async function GetFormSubmissions(id: number) {
   const employee = await getCurrentEmployee();
 
   if (employee?.role === 'FORM_VIEWER') {
-    const hasAccess = await prisma.formViewerAccess.findUnique({
+    const hasAccess = await (prisma as any).formViewerAccess.findUnique({
       where: {
         formId_employeeId: {
           formId: id,

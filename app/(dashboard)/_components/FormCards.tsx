@@ -4,14 +4,14 @@ import FormCard from './FormCard';
 
 export default async function FormCards() {
   try {
-    const form = await GetForm();
+    const formsList = await GetForm();
 
     return (
       <>
-        {form.map((form) => (
+        {formsList.map((f: any) => (
           <FormCard
-            key={form.id}
-            form={form}
+            key={f.id}
+            form={f}
           />
         ))}
       </>

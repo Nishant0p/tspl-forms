@@ -51,7 +51,7 @@ export async function createFormViewerUser(data: {
         lastName: lastName.trim(),
         email: cleanEmail,
         password: password || 'Viewer123!',
-        role: 'FORM_VIEWER',
+        role: 'FORM_VIEWER' as any,
         status: 'ACTIVE',
       },
     });
@@ -59,12 +59,12 @@ export async function createFormViewerUser(data: {
     // Elevate or update role to FORM_VIEWER if needed
     employee = await prisma.employee.update({
       where: { id: employee.id },
-      data: { role: 'FORM_VIEWER' },
+      data: { role: 'FORM_VIEWER' as any },
     });
   }
 
   // Assign access to formViewerAccess
-  await prisma.formViewerAccess.upsert({
+  await (prisma as any).formViewerAccess.upsert({
     where: {
       formId_employeeId: {
         formId,
@@ -89,7 +89,7 @@ export async function getFormViewers(formId: number) {
     throw new Error('Unauthorized');
   }
 
-  const viewers = await prisma.formViewerAccess.findMany({
+  const viewers = await (prisma as any).formViewerAccess.findMany({
     where: { formId },
     include: {
       employee: {
@@ -117,7 +117,7 @@ export async function removeFormViewerAccess(formId: number, employeeId: number)
     throw new Error('Unauthorized');
   }
 
-  await prisma.formViewerAccess.deleteMany({
+  await (prisma as any).formViewerAccess.deleteMany({
     where: {
       formId,
       employeeId,
