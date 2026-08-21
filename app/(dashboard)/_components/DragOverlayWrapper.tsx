@@ -45,7 +45,7 @@ export default function DragOverlayWrapper() {
         FormElements[element.type].designerComponent;
 
       node = (
-        <div className="pointer-events-none flex h-[120px] w-full rounded-md border bg-accent px-4 py-2 opacity-80">
+        <div className="pointer-events-none flex min-h-[120px] h-auto w-full rounded-md border bg-accent p-4 opacity-80 shadow-lg">
           <DesignerElementComponent elementInstance={element} />
         </div>
       );

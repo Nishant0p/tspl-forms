@@ -24,13 +24,13 @@ export default function SidebarBtnElement({
       ref={draggable.setNodeRef}
       variant={'outline'}
       className={cn(
-        'flex flex-col items-center gap-2 cursor-grab h-[120px] w-[120px]',
+        'flex flex-col items-center justify-center gap-2 cursor-grab h-[120px] w-[120px] p-2 text-center',
         draggable.isDragging && 'ring-2 ring-primary'
       )}
       {...draggable.attributes}
       {...draggable.listeners}>
       {icon}
-      <p className="text-xs">{label}</p>
+      <p className="text-xs text-center px-1 leading-tight">{label}</p>
     </Button>
   );
 }
@@ -45,9 +45,9 @@ export function SidebarBtnElementOverlay({
   return (
     <Button
       variant={'outline'}
-      className="flex h-[120px] w-[120px] cursor-grab flex-col items-center gap-2 opacity-50">
+      className="flex h-[120px] w-[120px] cursor-grab flex-col items-center justify-center gap-2 opacity-50 p-2 text-center">
       {icon}
-      <p className="text-xs">{label}</p>
+      <p className="text-xs text-center px-1 leading-tight">{label}</p>
     </Button>
   );
 }

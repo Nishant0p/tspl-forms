@@ -266,7 +266,7 @@ function PropertiesComponent({
               </Button>
             </div>
           ) : (
-            <div className="relative flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-5 text-center hover:bg-muted/30 transition-all">
+            <div className="relative overflow-hidden flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-5 text-center hover:bg-muted/30 transition-all">
               <Upload className="h-8 w-8 text-muted-foreground" />
               <div className="text-xs text-muted-foreground">
                 <span className="font-semibold text-primary">Click to upload</span> image

@@ -88,7 +88,7 @@ export default
         ref={draggable.setNodeRef}
         {...draggable.attributes}
         {...draggable.listeners}
-        className="relative flex h-[120px] flex-col rounded-md text-foreground ring-1 ring-inset ring-accent hover:cursor-pointer"
+        className="relative flex min-h-[120px] h-auto w-full flex-col rounded-md text-foreground ring-1 ring-inset ring-accent hover:cursor-pointer"
         onMouseOver={() => setMouseOver(true)}
         onMouseLeave={() => setMouseOver(false)}
         onClick={(e) => {
@@ -97,11 +97,11 @@ export default
         }}>
         <div
           ref={topHalf.setNodeRef}
-          className="absolute h-1/2 w-full rounded-t-md"
+          className="absolute top-0 h-1/2 w-full rounded-t-md z-0"
         />
         <div
           ref={bottomHalf.setNodeRef}
-          className="absolute bottom-0 h-1/2 w-full rounded-b-md"
+          className="absolute bottom-0 h-1/2 w-full rounded-b-md z-0"
         />
         {mouseOver && (
           <>
@@ -119,34 +119,34 @@ export default
             </div>
             <div className="absolute right-0 z-10 h-full">
               <Button
-                className="flex h-full justify-center rounded-md rounded-l-none border bg-red-500"
+                className="flex h-full justify-center rounded-md rounded-l-none border bg-red-500 text-white"
                 size={'icon'}
                 variant={'outline'}
                 onClick={(e) => {
                   e.stopPropagation();
                   removeElement(element.id);
-                  removeElementFromDatabase()
+                  removeElementFromDatabase();
                 }}>
-                <Trash className="h-6 w-6" />
+                <Trash className="h-5 w-5" />
               </Button>
             </div>
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse">
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10 bg-background/90 text-foreground px-3 py-1.5 rounded-full border border-border text-xs font-medium shadow-sm animate-pulse">
               <p>Click for properties or drag to move</p>
             </div>
           </>
         )}
         {topHalf.isOver && (
-          <div className="absolute top-0 h-[8px] w-full rounded-md rounded-b-none bg-primary" />
+          <div className="absolute top-0 h-[8px] w-full rounded-md rounded-b-none bg-primary z-20" />
         )}
         <div
           className={cn(
-            'pointer-events-none flex h-[120px] w-full items-center rounded-md bg-accent/40 px-4 py-2',
+            'pointer-events-none flex min-h-[120px] h-auto w-full items-center rounded-md bg-accent/40 p-4',
             mouseOver && 'opacity-30'
           )}>
           <DesignerElement elementInstance={element} />
         </div>
         {bottomHalf.isOver && (
-          <div className="absolute bottom-0 h-[8px] w-full rounded-md rounded-t-none bg-primary" />
+          <div className="absolute bottom-0 h-[8px] w-full rounded-md rounded-t-none bg-primary z-20" />
         )}
       </div>
     </>
