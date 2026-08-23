@@ -6,7 +6,7 @@ import React from 'react';
 import { FormElements } from './FormElements';
 import { cn } from '@/lib/utils';
 
-export default function PreviewDialogBtn() {
+export default function PreviewDialogBtn({ trigger }: { trigger?: React.ReactNode }) {
   const { elements } = useDesginerStore();
 
   const thankYouElement = elements.find((el) => el.type === 'ThankYouField');
@@ -14,12 +14,14 @@ export default function PreviewDialogBtn() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button
-          variant={'outline'}
-          className="gap-2">
-          <EyeIcon className="h-5 w-5" />
-          Preview
-        </Button>
+        {trigger || (
+          <Button
+            variant={'outline'}
+            className="gap-2">
+            <EyeIcon className="h-5 w-5" />
+            Preview
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="flex h-screen max-h-screen w-screen max-w-full grow flex-col gap-0 p-0 border-none">
         <div className="border-b px-6 py-4 bg-background">

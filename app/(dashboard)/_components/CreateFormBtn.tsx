@@ -104,7 +104,7 @@ const templateLibrary: Array<{
   },
 ];
 
-export default function CreateFormBtn() {
+export default function CreateFormBtn({ trigger }: { trigger?: React.ReactNode }) {
   const router = useRouter();
   const [creatingTemplate, setCreatingTemplate] = useState<TemplateKey | null>(null);
 
@@ -170,14 +170,12 @@ export default function CreateFormBtn() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button
-          variant={'outline'}
-          className="group flex h-[300px] w-full flex-col items-center justify-center gap-4 border border-dashed border-primary/20 hover:cursor-pointer hover:border-primary">
-          <Plus className="h-8 w-8 text-muted-foreground group-hover:text-primary" />
-          <p className="text-base font-bold text-muted-foreground group-hover:text-primary">
-            Create New Form
-          </p>
-        </Button>
+        {trigger || (
+          <Button className="bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm transition-all text-sm px-3.5 py-2 rounded-md flex items-center gap-1.5">
+            <Plus className="h-4 w-4" />
+            Create Form
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>

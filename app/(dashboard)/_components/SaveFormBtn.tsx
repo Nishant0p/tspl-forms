@@ -5,7 +5,7 @@ import { useDesginerStore } from '@/store/store';
 import { Loader2, Save } from 'lucide-react';
 import { useTransition } from 'react';
 
-export default function SaveFormBtn({ id }: { id: number }) {
+export default function SaveFormBtn({ id, iconOnly }: { id: number; iconOnly?: boolean }) {
   const { elements } = useDesginerStore();
   const [loading, startTransition] = useTransition();
 
@@ -31,17 +31,18 @@ export default function SaveFormBtn({ id }: { id: number }) {
   return (
     <Button
       variant={'secondary'}
-      className="gap-2"
+      size={iconOnly ? 'icon' : 'default'}
+      className={iconOnly ? 'h-9 w-9' : 'gap-2'}
       disabled={loading}
       onClick={() => {
         startTransition(updateFormContent);
       }}>
       {loading ? (
-        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+        <Loader2 className="h-4 w-4 animate-spin" />
       ) : (
-        <Save className="mr-2 h-5 w-5" />
+        <Save className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
       )}
-      Save
+      {!iconOnly && <span>Save</span>}
     </Button>
   );
 }

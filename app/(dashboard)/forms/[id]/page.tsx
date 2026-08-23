@@ -21,6 +21,9 @@ import { headers } from 'next/headers';
 
 import FormViewerManager from '../../_components/FormViewerManager';
 import { getCurrentEmployee } from '@/lib/auth';
+import FileViewerModal from '@/components/FileViewerModal';
+import DeleteFormBtn from '../../_components/DeleteFormBtn';
+import EditableFormName from '../../_components/EditableFormName';
 
 export default async function FormDetailsPage({
   params,
@@ -57,9 +60,9 @@ export default async function FormDetailsPage({
   return (
     <>
       <div className="py-1">
-        <div className="container flex justify-between">
+        <div className="container flex items-center justify-between gap-4">
           <div className="flex flex-col gap-2">
-            <h1 className="truncate text-4xl font-bold">{form.name}</h1>
+            <EditableFormName formId={form.id} initialName={form.name} className="text-3xl sm:text-4xl font-bold" />
             <div className="flex flex-wrap gap-2">
               <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
                 {form.status || (form.published ? 'PUBLISHED' : 'DRAFT')}
@@ -74,7 +77,12 @@ export default async function FormDetailsPage({
               )}
             </div>
           </div>
-          <VisitBtn shareUrl={shareLink} />
+          <div className="flex items-center gap-3">
+            <VisitBtn shareUrl={shareLink} />
+            {isManagerOrAdmin && (
+              <DeleteFormBtn formId={form.id} formName={form.name} />
+            )}
+          </div>
         </div>
         <div className="border-b border-muted py-4">
           <div className="container flex flex-wrap items-center justify-between gap-2">
@@ -289,24 +297,54 @@ function RowCell({ type, value }: { type: ElementsType, value: string }) {
     case "VideoField":
     case "SignatureField":
       try {
-        const parsed = JSON.parse(value) as { name?: string; dataUrl?: string };
+        const parsed = JSON.parse(value) as { name?: string; dataUrl?: string; type?: string };
         if (parsed?.dataUrl) {
+          const fileName = parsed.name || (type === 'FileUploadField' ? 'Uploaded File / CV' : type);
           if (type === 'VideoField') {
-            node = <video controls className='max-h-24 max-w-48 rounded-md' src={parsed.dataUrl} />;
+            node = (
+              <div className="flex items-center gap-2">
+                <video controls className='max-h-16 max-w-32 rounded-md' src={parsed.dataUrl} />
+                <FileViewerModal fileUrl={parsed.dataUrl} fileName={fileName} fileType={parsed.type || 'video'} />
+              </div>
+            );
           } else if (type === 'ImageField' || type === 'SignatureField') {
-            node = <img alt={parsed.name || 'Uploaded file'} className='max-h-24 max-w-48 rounded-md object-contain' src={parsed.dataUrl} />;
+            node = (
+              <div className="flex items-center gap-2">
+                <img alt={fileName} className='max-h-16 max-w-32 rounded-md object-contain border border-border' src={parsed.dataUrl} />
+                <FileViewerModal fileUrl={parsed.dataUrl} fileName={fileName} fileType={parsed.type || 'image'} />
+              </div>
+            );
           } else {
-            node = <a className='text-primary underline' href={parsed.dataUrl} target='_blank' rel='noreferrer'>{parsed.name || 'View file'}</a>;
+            node = (
+              <div className="flex items-center gap-2">
+                <span className='text-sm font-medium truncate max-w-[150px]' title={fileName}>{fileName}</span>
+                <FileViewerModal fileUrl={parsed.dataUrl} fileName={fileName} fileType={parsed.type} />
+              </div>
+            );
           }
         } else {
           node = <span className='text-sm text-muted-foreground'>{parsed?.name || value}</span>;
         }
       } catch {
         if (type === 'SignatureField' && value.startsWith('data:image')) {
-          node = <img alt="Signature" className='max-h-24 max-w-48 rounded-md object-contain' src={value} />;
+          node = (
+            <div className="flex items-center gap-2">
+              <img alt="Signature" className='max-h-16 max-w-32 rounded-md object-contain border border-border' src={value} />
+              <FileViewerModal fileUrl={value} fileName="Signature" fileType="image" />
+            </div>
+          );
           break;
         }
-        node = <span className='text-sm text-muted-foreground'>{value}</span>;
+        if (value && (value.startsWith('data:') || value.startsWith('http'))) {
+          node = (
+            <div className="flex items-center gap-2">
+              <span className='text-sm font-medium truncate max-w-[150px]'>{value}</span>
+              <FileViewerModal fileUrl={value} fileName="File" />
+            </div>
+          );
+        } else {
+          node = <span className='text-sm text-muted-foreground'>{value}</span>;
+        }
       }
       break;
   }

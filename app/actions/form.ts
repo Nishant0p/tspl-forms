@@ -221,6 +221,41 @@ export async function GetFormById(id: number) {
   return form;
 }
 
+export async function UpdateFormName(id: number, name: string) {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    throw new UserNotFoundErr();
+  }
+
+  const trimmedName = name?.trim();
+  if (!trimmedName) {
+    throw new Error('Form name cannot be empty');
+  }
+
+  const form = await prisma.form.findFirst({
+    where: {
+      id,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!form) {
+    throw new Error('Form not found');
+  }
+
+  return await prisma.form.update({
+    where: {
+      id,
+    },
+    data: {
+      name: trimmedName,
+    },
+  });
+}
+
 export async function UpdateFormContent(id: number, jsonContent: string) {
   const user = await getCurrentUser();
 

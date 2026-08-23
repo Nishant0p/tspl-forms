@@ -17,7 +17,7 @@ import { Globe, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 
-export default function PublishFormBtn({ id }: { id: number }) {
+export default function PublishFormBtn({ id, trigger }: { id: number; trigger?: React.ReactNode }) {
   const router = useRouter();
   const [loading, setTransition] = useTransition();
 
@@ -42,10 +42,12 @@ export default function PublishFormBtn({ id }: { id: number }) {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button className="gap-2 text-zinc-50">
-          <Globe className="h-5 w-5" />
-          Publish
-        </Button>
+        {trigger || (
+          <Button className="gap-2 text-zinc-50">
+            <Globe className="h-5 w-5" />
+            Publish
+          </Button>
+        )}
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>

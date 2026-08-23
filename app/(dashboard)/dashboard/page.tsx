@@ -25,14 +25,16 @@ export default async function DashboardPage() {
       <Suspense fallback={<StatsCard loading={true} />}>
         <CardStatsWrapper />
       </Suspense>
-      <h2 className="mt-10 text-4xl font-bold">
-        {isFormViewer ? 'My Assigned Forms' : 'Published Forms'}
-      </h2>
-      <Separator className="my-6" />
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-10 flex items-center justify-between gap-4">
+        <h2 className="text-2xl sm:text-4xl font-bold">
+          {isFormViewer ? 'My Assigned Forms' : 'Published Forms'}
+        </h2>
         {!isFormViewer && <CreateFormBtn />}
+      </div>
+      <Separator className="my-6" />
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <Suspense
-          fallback={[...Array(5)].map((_, i) => (
+          fallback={[...Array(4)].map((_, i) => (
             <FormCardSkeleton key={i} />
           ))}>
           <FormCards />

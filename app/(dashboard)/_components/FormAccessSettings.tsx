@@ -77,7 +77,7 @@ function toDateInputValue(value?: Date | null) {
   return local.toISOString().slice(0, 16);
 }
 
-export default function FormAccessSettings({ form, departments, branches, employees }: FormAccessSettingsProps) {
+export default function FormAccessSettings({ form, departments, branches, employees, trigger }: FormAccessSettingsProps & { trigger?: React.ReactNode }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [saving, startTransition] = useTransition();
@@ -149,10 +149,12 @@ export default function FormAccessSettings({ form, departments, branches, employ
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="secondary" className="gap-2">
-          <Settings2 className="h-4 w-4" />
-          Who can respond?
-        </Button>
+        {trigger || (
+          <Button variant="secondary" className="gap-2">
+            <Settings2 className="h-4 w-4" />
+            Who can respond?
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>

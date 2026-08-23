@@ -49,12 +49,51 @@ function DesignerComponent({ elementInstance }: { elementInstance: FormElementIn
 function toFilePayload(file: File, dataUrl: string) { return JSON.stringify({ name: file.name, type: file.type, size: file.size, dataUrl }); }
 function readFileAsDataUrl(file: File) { return new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(reader.error); reader.readAsDataURL(file); }); }
 
+import FileViewerModal from '../FileViewerModal';
+
 function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValues }: { elementInstance: FormElementInstance; submitFunction?: SubmitFunction; isInvalid?: boolean; defaultValues?: string; }) {
   const element = elementInstance as CustomInstance;
   const [value, setValue] = useState(defaultValues || '');
   const [error, setError] = useState(false);
-  const [preview, setPreview] = useState('');
+  const [preview, setPreview] = useState(() => {
+    if (!defaultValues) return '';
+    try { return JSON.parse(defaultValues).dataUrl || ''; } catch { return defaultValues; }
+  });
   useEffect(() => { setError(isInvalid === true); }, [isInvalid]);
   const { label, helperText, required } = element.extraAttributes;
-  return <div className="flex w-full flex-col gap-2"><Label className={cn('mr-2 text-foreground', error && 'text-red-500')}>{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><Input type="file" accept="image/*" onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; try { const dataUrl = await readFileAsDataUrl(file); const payload = toFilePayload(file, dataUrl); setValue(payload); setPreview(dataUrl); if (!submitFunction) return; const valid = ImageFieldFormElement.validate(element, payload); setError(!valid); submitFunction(element.id, payload); } catch { setError(true); } }} />{preview && <img src={preview} alt="Preview" className="max-h-40 rounded-md object-contain" />}{helperText && <p className={cn('text-[.8rem] text-muted-foreground', error && 'text-rose-500')}>{helperText}</p>}</div>;
+
+  return (
+    <div className="flex w-full flex-col gap-2">
+      <Label className={cn('mr-2 text-foreground', error && 'text-red-500')}>
+        {label}{required && <span className="ml-2 text-red-500">*</span>}
+      </Label>
+      <Input
+        type="file"
+        accept="image/*"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          try {
+            const dataUrl = await readFileAsDataUrl(file);
+            const payload = toFilePayload(file, dataUrl);
+            setValue(payload);
+            setPreview(dataUrl);
+            if (!submitFunction) return;
+            const valid = ImageFieldFormElement.validate(element, payload);
+            setError(!valid);
+            submitFunction(element.id, payload);
+          } catch {
+            setError(true);
+          }
+        }}
+      />
+      {preview && (
+        <div className="flex items-center gap-3 mt-1">
+          <img src={preview} alt="Preview" className="max-h-24 rounded-md object-contain border border-border" />
+          <FileViewerModal fileUrl={preview} fileName="Uploaded Image" fileType="image" />
+        </div>
+      )}
+      {helperText && <p className={cn('text-[.8rem] text-muted-foreground', error && 'text-rose-500')}>{helperText}</p>}
+    </div>
+  );
 }

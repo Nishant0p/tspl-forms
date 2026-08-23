@@ -14,6 +14,9 @@ import { Switch } from '../ui/switch';
 import { Textarea } from '../ui/textarea';
 import { cn } from '@/lib/utils';
 
+import FileViewerModal from '../FileViewerModal';
+import { FileText } from 'lucide-react';
+
 const type: ElementsType = 'FileUploadField';
 const extraAttributes = { label: 'File Upload', helperText: 'Helper Text', required: false, accept: '*' };
 const propertiesSchema = z.object({ label: z.string().min(2).max(50), helperText: z.string().max(200), required: z.boolean().default(false), accept: z.string().max(100) });
@@ -63,8 +66,54 @@ function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValu
   const element = elementInstance as CustomInstance;
   const [value, setValue] = useState(defaultValues || '');
   const [error, setError] = useState(false);
-  const [fileName, setFileName] = useState('');
+  const [fileUrl, setFileUrl] = useState(() => {
+    if (!defaultValues) return '';
+    try { return JSON.parse(defaultValues).dataUrl || ''; } catch { return defaultValues; }
+  });
+  const [fileName, setFileName] = useState(() => {
+    if (!defaultValues) return '';
+    try { return JSON.parse(defaultValues).name || 'Uploaded File'; } catch { return 'Uploaded File'; }
+  });
+
   useEffect(() => { setError(isInvalid === true); }, [isInvalid]);
   const { label, helperText, required, accept } = element.extraAttributes;
-  return <div className="flex w-full flex-col gap-2"><Label className={cn('mr-2 text-foreground', error && 'text-red-500')}>{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><Input type="file" accept={accept === '*' ? undefined : accept} onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; try { const dataUrl = await readFileAsDataUrl(file); const payload = toFilePayload(file, dataUrl); setValue(payload); setFileName(file.name); if (!submitFunction) return; const valid = FileUploadFieldFormElement.validate(element, payload); setError(!valid); submitFunction(element.id, payload); } catch { setError(true); } }} />{fileName && <p className="text-xs text-muted-foreground">Selected: {fileName}</p>}{helperText && <p className={cn('text-[.8rem] text-muted-foreground', error && 'text-rose-500')}>{helperText}</p>}</div>;
+
+  return (
+    <div className="flex w-full flex-col gap-2">
+      <Label className={cn('mr-2 text-foreground', error && 'text-red-500')}>
+        {label}{required && <span className="ml-2 text-red-500">*</span>}
+      </Label>
+      <Input
+        type="file"
+        accept={accept === '*' ? undefined : accept}
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          try {
+            const dataUrl = await readFileAsDataUrl(file);
+            const payload = toFilePayload(file, dataUrl);
+            setValue(payload);
+            setFileName(file.name);
+            setFileUrl(dataUrl);
+            if (!submitFunction) return;
+            const valid = FileUploadFieldFormElement.validate(element, payload);
+            setError(!valid);
+            submitFunction(element.id, payload);
+          } catch {
+            setError(true);
+          }
+        }}
+      />
+      {fileName && fileUrl && (
+        <div className="flex items-center justify-between rounded-md border border-border p-2 bg-muted/40">
+          <div className="flex items-center gap-2 truncate mr-2">
+            <FileText className="h-4 w-4 text-primary shrink-0" />
+            <span className="text-xs font-medium truncate">{fileName}</span>
+          </div>
+          <FileViewerModal fileUrl={fileUrl} fileName={fileName} />
+        </div>
+      )}
+      {helperText && <p className={cn('text-[.8rem] text-muted-foreground', error && 'text-rose-500')}>{helperText}</p>}
+    </div>
+  );
 }

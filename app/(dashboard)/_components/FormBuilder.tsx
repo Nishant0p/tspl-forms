@@ -19,12 +19,19 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { copyToClipboard } from '@/lib/utils';
-import { Check, Copy } from 'lucide-react';
+import { Check, Copy, Eye, Globe, Save, Settings2, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import Confetti from 'react-confetti';
 import { buildFormSubmitUrl } from '@/lib/url';
 import FormAccessSettings from './FormAccessSettings';
 import FormShareDialog from './FormShareDialog';
+import EditableFormName from './EditableFormName';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 type AccessOption = {
   id: number;
@@ -161,42 +168,119 @@ export default function FormBuilder({ form, departments, branches, employees }: 
   return (
     <DndContext sensors={sensors}>
       <main className="flex w-full flex-col">
-        <div className="flex items-center justify-between gap-3 border-b-2 p-4 text-xl">
-          <h2 className="truncate font-semibold">
-            <span className="mr-2 text-muted-foreground">Form :</span>
-            {form.name}
-          </h2>
-          <div className="flex items-center gap-2">
-            <FormShareDialog
-              form={{
-                shareUrl: form.shareUrl,
-                accessMode: form.accessMode,
-                status: form.status,
-                published: form.published,
-                startDate: form.startDate,
-                endDate: form.endDate,
-                responseLimit: form.responseLimit,
-                name: form.name,
-              }}
-              trigger={<Button variant="secondary">Share</Button>}
-            />
-            <FormAccessSettings
-              form={form}
-              departments={departments}
-              branches={branches}
-              employees={employees}
-            />
-            {/* PreviewDialogBtn */}
-            <PreviewDialogBtn />
-            {!form.published && (
-              <>
-                <SaveFormBtn id={form.id} />
-                <PublishFormBtn id={form.id} />
-              </>
-            )}
+        <div className="flex items-center justify-between gap-3 border-b-2 p-3 sm:p-4 text-xl">
+          <div className="flex items-center gap-2 overflow-hidden">
+            <span className="text-muted-foreground font-medium text-base sm:text-lg shrink-0">Form :</span>
+            <EditableFormName formId={form.id} initialName={form.name} className="text-lg sm:text-xl font-semibold" />
+          </div>
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <TooltipProvider>
+              {/* Share */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <FormShareDialog
+                      form={{
+                        shareUrl: form.shareUrl,
+                        accessMode: form.accessMode,
+                        status: form.status,
+                        published: form.published,
+                        startDate: form.startDate,
+                        endDate: form.endDate,
+                        responseLimit: form.responseLimit,
+                        name: form.name,
+                      }}
+                      trigger={
+                        <Button variant="outline" size="icon" className="h-9 w-9">
+                          <Share2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        </Button>
+                      }
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>Share</p>
+                </TooltipContent>
+              </Tooltip>
+
+              {/* Who can respond? */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <FormAccessSettings
+                      form={form}
+                      departments={departments}
+                      branches={branches}
+                      employees={employees}
+                      trigger={
+                        <Button variant="outline" size="icon" className="h-9 w-9">
+                          <Settings2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                        </Button>
+                      }
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>Who can respond?</p>
+                </TooltipContent>
+              </Tooltip>
+
+              {/* Preview */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <PreviewDialogBtn
+                      trigger={
+                        <Button variant="outline" size="icon" className="h-9 w-9">
+                          <Eye className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                        </Button>
+                      }
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>Preview</p>
+                </TooltipContent>
+              </Tooltip>
+
+              {!form.published && (
+                <>
+                  {/* Save */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div>
+                        <SaveFormBtn id={form.id} iconOnly />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>Save</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {/* Publish */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div>
+                        <PublishFormBtn
+                          id={form.id}
+                          trigger={
+                            <Button size="icon" className="h-9 w-9 bg-primary text-primary-foreground hover:bg-primary/90">
+                              <Globe className="h-4 w-4" />
+                            </Button>
+                          }
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>Publish</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </>
+              )}
+            </TooltipProvider>
           </div>
         </div>
-        <div className="relative flex h-[200px] w-full grow items-center justify-center overflow-hidden bg-[#f0ebf8] dark:bg-[#121016] google-form-container">
+        <div className="relative flex h-[calc(100vh-80px)] min-h-[600px] w-full grow items-center justify-center overflow-hidden bg-[#f0ebf8] dark:bg-[#121016] google-form-container">
           <Designer formId={form.id} initialContent={form.content} />
         </div>
       </main>

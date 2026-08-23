@@ -8,12 +8,25 @@ import { DragEndEvent } from '@dnd-kit/core/dist/types';
 import DesginerElementWrapper from './DesginerElementWrapper';
 import DesignerSidebar from './DesignerSidebar';
 import { ElementsType, FormElements } from './FormElements';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export default function Designer({ formId, initialContent }: { formId: number; initialContent: string }) {
   const { elements, addElement, selectedElement, setSelectedElement, removeElement } =
     useDesginerStore();
   const lastSavedRef = useRef(initialContent);
+  const [zoom, setZoom] = useState<number>(100);
+
+  const handleZoomIn = () => setZoom((prev) => Math.min(prev + 10, 150));
+  const handleZoomOut = () => setZoom((prev) => Math.max(prev - 10, 50));
+  const handleResetZoom = () => setZoom(100);
 
   const droppable = useDroppable({
     id: 'designer-drop-area',
@@ -134,20 +147,97 @@ export default function Designer({ formId, initialContent }: { formId: number; i
   }, [elements, formId]);
 
   return (
-    <div className="flex h-full w-full">
+    <div className="relative flex h-full w-full overflow-hidden">
+      {/* Floating Zoom Controls Widget */}
+      <div className="absolute bottom-6 left-6 z-20 flex items-center gap-1 rounded-full border border-border/80 bg-card/95 p-1 shadow-lg backdrop-blur-md transition-all">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                onClick={handleZoomOut}
+                disabled={zoom <= 50}
+              >
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p>Zoom Out (min 50%)</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleResetZoom}
+                className="min-w-[42px] px-2 py-1 text-xs font-semibold text-foreground hover:text-primary transition-colors rounded hover:bg-accent"
+              >
+                {zoom}%
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p>Reset Zoom (100%)</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                onClick={handleZoomIn}
+                disabled={zoom >= 150}
+              >
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p>Zoom In (max 150%)</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <div className="h-4 w-[1px] bg-border mx-0.5" />
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+                onClick={handleResetZoom}
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p>Reset Zoom</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
+      {/* Designer Canvas Container */}
       <div
-        className="w-full p-4"
+        className="w-full h-full p-4 overflow-auto flex flex-col items-center justify-start"
         onClick={() => {
           if (selectedElement) setSelectedElement(null);
         }}>
         <div
           ref={droppable.setNodeRef}
+          style={{
+            transform: `scale(${zoom / 100})`,
+            transformOrigin: 'top center',
+            transition: 'transform 0.15s ease-out',
+          }}
           className={cn(
-            'bg-background max-w-[920px] h-full m-auto rounded-xl flex flex-col flex-grow items-center justify-start flex-1 overflow-auto',
+            'bg-background w-full max-w-[920px] min-h-[500px] rounded-xl flex flex-col items-center justify-start overflow-visible transition-all',
             droppable.isOver && 'ring-2 ring-primary ring-inset'
           )}>
           {!droppable.isOver && elements.length === 0 && (
-            <p className="flex grow items-center text-3xl font-bold text-muted-foreground">
+            <p className="flex grow items-center text-3xl font-bold text-muted-foreground py-20">
               Drop here
             </p>
           )}
