@@ -9,38 +9,38 @@ interface Props {
 
 export default function StatsCard({ data, loading }: Props) {
   return (
-    <div className="grid w-full grid-cols-1 gap-4 pt-8 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid w-full grid-cols-1 gap-4 pt-4 md:grid-cols-2 lg:grid-cols-4">
       <CardStat
         title="Form Views"
-        icon={<EyeIcon className='h-6 w-6' />}
+        icon={<EyeIcon className='h-4 w-4 text-sky-500' />}
         text="Total form opens across the platform"
         value={data?.visits.toLocaleString() ?? '0'}
         loading={loading}
-        className='shadow-sky-500 drop-shadow-md'
+        className='shadow-sky-500/20 drop-shadow-sm'
       />
       <CardStat
         title="Responses Received"
-        icon={<StickyNoteIcon className='h-6 w-6' />}
+        icon={<StickyNoteIcon className='h-4 w-4 text-amber-500' />}
         text="All-time responses collected"
         value={data?.submissions.toLocaleString() ?? '0'}
         loading={loading}
-        className='shadow-amber-500 drop-shadow-md'
+        className='shadow-amber-500/20 drop-shadow-sm'
       />
       <CardStat
         title="Conversion Rate"
-        icon={<MousePointerClick className='h-6 w-6' />}
+        icon={<MousePointerClick className='h-4 w-4 text-emerald-500' />}
         text="Views that resulted in a response"
-        value={data?.submissionsRate.toLocaleString() + '%' ?? '0'}
+        value={data ? `${data.submissionsRate.toLocaleString()}%` : '0%'}
         loading={loading}
-        className='shadow-green-500 drop-shadow-md'
+        className='shadow-emerald-500/20 drop-shadow-sm'
       />
       <CardStat
         title="Drop-off Rate"
-        icon={<LogOut className='h-6 w-6' />}
+        icon={<LogOut className='h-4 w-4 text-rose-500' />}
         text="Views that ended without a response"
-        value={data?.bounceRate.toLocaleString() + '%' ?? '0'}
+        value={data ? `${data.bounceRate.toLocaleString()}%` : '0%'}
         loading={loading}
-        className='shadow-rose-500 drop-shadow-md'
+        className='shadow-rose-500/20 drop-shadow-sm'
       />
     </div>
   );

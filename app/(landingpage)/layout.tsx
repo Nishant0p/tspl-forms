@@ -3,9 +3,9 @@ import React, { PropsWithChildren } from 'react';
 
 export default function layout({ children }: PropsWithChildren) {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-screen w-full flex-col overflow-hidden">
       <Navbar />
-      <main className="flex-1 w-full">{children}</main>
+      <main className="flex-1 w-full overflow-hidden flex flex-col">{children}</main>
     </div>
   );
 }

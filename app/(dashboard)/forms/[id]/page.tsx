@@ -12,7 +12,6 @@ import {
 import { ReactNode } from 'react';
 import CardStat from '../../_components/CardStat';
 import { ElementsType, FormElementInstance } from '../../_components/FormElements';
-import FormLinkShare from '../../_components/FormLinkShare';
 import FormShareDialog from '../../_components/FormShareDialog';
 import VisitBtn from '../../_components/VisitBtn';
 import ExportXlsxBtn from '../../_components/ExportXlsxBtn';
@@ -77,69 +76,61 @@ export default async function FormDetailsPage({
               )}
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <VisitBtn shareUrl={shareLink} />
+            {isManagerOrAdmin && (
+              <FormViewerManager formId={form.id} formName={form.name} />
+            )}
+            <FormShareDialog
+              form={{
+                shareUrl: form.shareUrl,
+                accessMode: form.accessMode,
+                status: form.status,
+                published: form.published,
+                startDate: form.startDate,
+                endDate: form.endDate,
+                responseLimit: form.responseLimit,
+                name: form.name,
+              }}
+            />
             {isManagerOrAdmin && (
               <DeleteFormBtn formId={form.id} formName={form.name} />
             )}
           </div>
         </div>
-        <div className="border-b border-muted py-4">
-          <div className="container flex flex-wrap items-center justify-between gap-2">
-            <FormLinkShare shareUrl={shareLink} />
-            <div className="flex items-center gap-2">
-              {isManagerOrAdmin && (
-                <FormViewerManager formId={form.id} formName={form.name} />
-              )}
-              <FormShareDialog
-                form={{
-                  shareUrl: form.shareUrl,
-                  accessMode: form.accessMode,
-                  status: form.status,
-                  published: form.published,
-                  startDate: form.startDate,
-                  endDate: form.endDate,
-                  responseLimit: form.responseLimit,
-                  name: form.name,
-                }}
-                trigger={<button className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Share</button>}
-              />
-            </div>
-          </div>
-        </div>
       </div>
-      <div className="container w-full grid-cols-1 items-center gap-6 space-y-6 pt-8 md:grid md:grid-cols-2 md:space-y-0 lg:grid-cols-4">
+      <div className="container w-full grid-cols-1 items-center gap-4 space-y-4 pt-4 md:grid md:grid-cols-2 md:space-y-0 lg:grid-cols-4">
         <CardStat
           title="Total Visits"
-          icon={<EyeIcon className="h-6 w-6" />}
+          icon={<EyeIcon className="h-4 w-4 text-sky-500" />}
           text="Total visits for all your forms"
           value={visits.toLocaleString() ?? '0'}
           loading={false}
-          className="shadow-sky-500 drop-shadow-md"
+          className="shadow-sky-500/20 drop-shadow-sm"
         />
         <CardStat
           title="Total Submissions"
-          icon={<StickyNoteIcon className="h-6 w-6" />}
+          icon={<StickyNoteIcon className="h-4 w-4 text-amber-500" />}
           text="All time form submissions"
           value={submissions.toLocaleString() ?? '0'}
           loading={false}
-          className="shadow-amber-500 drop-shadow-md"
+          className="shadow-amber-500/20 drop-shadow-sm"
         />
         <CardStat
           title="Submissions Rate"
-          icon={<MousePointerClick className="h-6 w-6" />}
+          icon={<MousePointerClick className="h-4 w-4 text-emerald-500" />}
           text="Visits that resulted in a submissions"
           value={`${submissionsRate.toLocaleString()}%`}
           loading={false}
-          className="shadow-green-500 drop-shadow-md"
+          className="shadow-emerald-500/20 drop-shadow-sm"
         />
         <CardStat
           title="Bounce Rate"
-          icon={<LogOut className="h-6 w-6" />}
+          icon={<LogOut className="h-4 w-4 text-rose-500" />}
           text="Visits that leave without submitting"
           value={`${bounceRate.toLocaleString()}%`}
           loading={false}
-          className="shadow-rose-500 drop-shadow-md"
+          className="shadow-rose-500/20 drop-shadow-sm"
         />
       </div>
       <div className="container pt-10">

@@ -16,7 +16,7 @@ export async function generateBrandedQRCode(
 ): Promise<string> {
   const size = options.width || 320;
   const margin = options.margin ?? 2;
-  const logoSrc = options.logoSrc || '/tspl-icon-mark.png';
+  const logoSrc = options.logoSrc || '/image.png';
 
   // Generate base QR code with High error correction level ('H')
   const qrDataUrl = await QRCode.toDataURL(text, {

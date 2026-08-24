@@ -5,7 +5,7 @@ export default function Logo() {
   return (
     <Link href={'/'} className="flex items-center">
       <Image
-        src="/TSPL Logo preloader.png"
+        src="/image.png"
         alt="TSPL Group"
         width={160}
         height={64}

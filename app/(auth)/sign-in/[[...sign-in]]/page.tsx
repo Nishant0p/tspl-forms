@@ -81,7 +81,7 @@ export default function SignInPage() {
             />
             <div className="relative z-10 flex items-center justify-center rounded-2xl bg-background/80 p-3 shadow-xl backdrop-blur-xl border border-border/80 transition-transform duration-300 hover:scale-105">
               <Image
-                src="/TSPL Logo preloader.png"
+                src="/image.png"
                 alt="TSPL Group"
                 width={260}
                 height={100}
