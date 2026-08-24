@@ -134,6 +134,8 @@ export async function getCurrentUser() {
       role: employee.role as EmployeeRole,
       status: employee.status as EmployeeStatus,
       imageUrl: employee.imageUrl || session.imageUrl,
+      departmentId: employee.departmentId,
+      branchId: employee.branchId,
     };
   }
 
@@ -147,6 +149,8 @@ export async function getCurrentUser() {
     role: (session.role || 'EMPLOYEE') as EmployeeRole,
     status: (session.status || 'ACTIVE') as EmployeeStatus,
     imageUrl: session.imageUrl,
+    departmentId: session.departmentId || null,
+    branchId: session.branchId || null,
   };
 }
 

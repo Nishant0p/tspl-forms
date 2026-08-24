@@ -172,3 +172,62 @@ export async function getEmployeesList() {
 
   return employees;
 }
+
+export async function updateMyProfile(data: {
+  firstName?: string;
+  lastName?: string;
+  imageUrl?: string;
+  role?: string;
+  departmentId?: number | null;
+  branchId?: number | null;
+}) {
+  const employee = await requireEmployee();
+
+  const updateData: any = {};
+  if (data.firstName !== undefined) updateData.firstName = data.firstName.trim();
+  if (data.lastName !== undefined) updateData.lastName = data.lastName.trim();
+  if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl;
+  if (data.role !== undefined) updateData.role = data.role as any;
+  if (data.departmentId !== undefined) updateData.departmentId = data.departmentId;
+  if (data.branchId !== undefined) updateData.branchId = data.branchId;
+
+  const updated = await prisma.employee.update({
+    where: { id: employee.id },
+    data: updateData,
+    include: { department: true, branch: true },
+  });
+
+  // Refresh session cookie
+  const sessionData = JSON.stringify({
+    id: updated.clerkUserId || updated.employeeId,
+    employeeId: updated.employeeId,
+    firstName: updated.firstName,
+    lastName: updated.lastName,
+    email: updated.email,
+    role: updated.role,
+    status: updated.status,
+    imageUrl: (updated as any).imageUrl || null,
+  });
+
+  cookies().set('session_user', sessionData, {
+    httpOnly: true,
+    path: '/',
+    maxAge: 60 * 60 * 24 * 7,
+  });
+
+  revalidatePath('/', 'layout');
+  return updated;
+}
+
+export async function getDepartmentsAndBranches() {
+  const departments = await prisma.department.findMany({
+    where: { active: true },
+    orderBy: { name: 'asc' },
+  });
+  const branches = await prisma.branch.findMany({
+    where: { active: true },
+    orderBy: { name: 'asc' },
+  });
+
+  return { departments, branches };
+}

@@ -78,6 +78,7 @@ model Employee {
   email       String
   password    String?
   phone       String?
+  imageUrl    String?
   departmentId Int?
   branchId    Int?
   managerId   Int?
