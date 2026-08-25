@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { copyToClipboard } from '@/lib/utils';
-import { Check, Copy, Eye, Globe, Save, Settings2, Share2 } from 'lucide-react';
+import { Check, Copy, Eye, Globe, Save, Settings2, Share2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import Confetti from 'react-confetti';
 import { buildFormSubmitUrl } from '@/lib/url';
@@ -171,6 +171,20 @@ export default function FormBuilder({ form, departments, branches, employees }: 
       <main className="flex w-full flex-col">
         <div className="flex items-center justify-between gap-3 border-b-2 p-3 sm:p-4 text-xl">
           <div className="flex items-center gap-2 overflow-hidden">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button asChild variant="outline" size="icon" className="h-9 w-9 shrink-0">
+                    <Link href="/dashboard">
+                      <ArrowLeft className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>Back to Dashboard</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <EditableFormName formId={form.id} initialName={form.name} className="text-lg sm:text-xl font-semibold" />
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">

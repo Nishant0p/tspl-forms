@@ -8,6 +8,7 @@ import {
   MousePointerClick,
   StickyNoteIcon,
   Star,
+  ArrowLeft,
 } from 'lucide-react';
 import { ReactNode } from 'react';
 import CardStat from '../../_components/CardStat';
@@ -17,6 +18,8 @@ import VisitBtn from '../../_components/VisitBtn';
 import ExportXlsxBtn from '../../_components/ExportXlsxBtn';
 import { buildFormSubmitUrl } from '@/lib/url';
 import { headers } from 'next/headers';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 import FormViewerManager from '../../_components/FormViewerManager';
 import { getCurrentEmployee } from '@/lib/auth';
@@ -59,10 +62,16 @@ export default async function FormDetailsPage({
   return (
     <>
       <div className="py-1">
-        <div className="container flex items-center justify-between gap-4">
-          <div className="flex flex-col gap-2">
-            <EditableFormName formId={form.id} initialName={form.name} className="text-3xl sm:text-4xl font-bold" />
-            <div className="flex flex-wrap gap-2">
+        <div className="container flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Button asChild variant="outline" size="icon" className="h-10 w-10 shrink-0">
+              <Link href="/dashboard" title="Back to Dashboard">
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+            </Button>
+            <div className="flex flex-col gap-2">
+              <EditableFormName formId={form.id} initialName={form.name} className="text-3xl sm:text-4xl font-bold" />
+              <div className="flex flex-wrap gap-2">
               <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
                 {form.status || (form.published ? 'PUBLISHED' : 'DRAFT')}
               </span>
@@ -76,6 +85,7 @@ export default async function FormDetailsPage({
               )}
             </div>
           </div>
+        </div>
           <div className="flex flex-wrap items-center gap-3">
             <VisitBtn shareUrl={shareLink} />
             {isManagerOrAdmin && (
