@@ -92,23 +92,10 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
     const showBtn = extra.showRedirectButton ?? true;
 
     return (
-      <div className="relative flex min-h-screen w-full items-start justify-center p-4 sm:p-8 google-form-container bg-[#f0ebf8] dark:bg-[#121016] overflow-x-hidden">
-        {/* Background Watermark */}
-        <div
-          aria-hidden="true"
-          className="fixed inset-0 pointer-events-none select-none z-0 flex items-center justify-center p-4 sm:p-8 overflow-hidden"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/image.png"
-            alt="Watermark"
-            className="max-w-[75vw] max-h-[75vh] w-auto h-auto object-contain opacity-10 dark:opacity-15 filter grayscale contrast-125"
-          />
-        </div>
-
+      <div className="flex min-h-screen w-full items-start justify-center p-4 sm:p-8 google-form-container bg-[#f0ebf8] dark:bg-[#121016]">
         <div
           key={renderKey}
-          className="relative z-10 flex w-full max-w-[640px] flex-col gap-6 google-form-header-card bg-card text-card-foreground p-8 rounded-lg shadow-md border border-border mt-10 overflow-hidden">
+          className="flex w-full max-w-[640px] flex-col gap-6 google-form-header-card bg-card text-card-foreground p-8 rounded-lg shadow-md border border-border mt-10 overflow-hidden">
           
           {/* Custom Banner / Image if configured */}
           {customImageUrl && (
@@ -171,23 +158,10 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
   }
 
   return (
-    <div className="relative flex min-h-screen w-full items-start justify-center p-4 sm:p-8 google-form-container bg-[#f0ebf8] dark:bg-[#121016] overflow-x-hidden">
-      {/* Background Watermark */}
-      <div
-        aria-hidden="true"
-        className="fixed inset-0 pointer-events-none select-none z-0 flex items-center justify-center p-4 sm:p-8 overflow-hidden"
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/image.png"
-          alt="Watermark"
-          className="max-w-[75vw] max-h-[75vh] w-auto h-auto object-contain opacity-10 dark:opacity-15 filter grayscale contrast-125"
-        />
-      </div>
-
+    <div className="flex min-h-screen w-full items-start justify-center p-4 sm:p-8 google-form-container bg-[#f0ebf8] dark:bg-[#121016]">
       <div
         key={renderKey}
-        className="relative z-10 flex w-full max-w-[640px] flex-col gap-4 py-4">
+        className="flex w-full max-w-[640px] flex-col gap-4 py-4">
         
         {/* Google Form Header Card */}
         <div className="w-full bg-card text-card-foreground rounded-lg border border-border shadow-sm overflow-hidden google-form-header-card p-6 flex flex-col gap-3">
