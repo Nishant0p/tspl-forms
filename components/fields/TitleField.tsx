@@ -60,7 +60,17 @@ function FormComponent({
 
   const { title } = element.extraAttributes;
 
-  return <p className='text-xl'>{title}</p>
+  return (
+    <div className="flex items-center gap-3">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/image.png"
+        alt="TSPL Logo"
+        className="h-8 sm:h-10 w-auto object-contain shrink-0"
+      />
+      <p className="text-xl sm:text-2xl font-bold text-foreground">{title}</p>
+    </div>
+  );
 }
 
 type CustomInstance = FormElementInstance & {
@@ -78,8 +88,16 @@ function DesignerComponent({
 
   return (
     <div className="flex w-full flex-col gap-2">
-      <Label className='text-muted-foreground'>Title Field</Label>
-      <p className='text-xl'>{title}</p>
+      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Title Field</Label>
+      <div className="flex items-center gap-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/image.png"
+          alt="TSPL Logo"
+          className="h-8 sm:h-10 w-auto object-contain shrink-0"
+        />
+        <p className="text-xl sm:text-2xl font-bold text-foreground">{title}</p>
+      </div>
     </div>
   );
 }

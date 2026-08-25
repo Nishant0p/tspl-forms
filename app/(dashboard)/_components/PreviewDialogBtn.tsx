@@ -35,9 +35,17 @@ export default function PreviewDialogBtn({ trigger }: { trigger?: React.ReactNod
             
             {/* Header Card Preview */}
             <div className="w-full bg-card text-card-foreground rounded-lg border border-border shadow-sm overflow-hidden google-form-header-card p-6 flex flex-col gap-3">
-              <h1 className="text-3xl font-normal text-foreground">
-                Form Title Preview
-              </h1>
+              <div className="flex items-center gap-3 pb-1">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/image.png"
+                  alt="TSPL Logo"
+                  className="h-9 sm:h-11 w-auto object-contain shrink-0"
+                />
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+                  Form Title Preview
+                </h1>
+              </div>
               <p className="text-sm text-foreground/85">
                 This is the form description. You can configure this in your settings panel.
               </p>

@@ -165,9 +165,17 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
         
         {/* Google Form Header Card */}
         <div className="w-full bg-card text-card-foreground rounded-lg border border-border shadow-sm overflow-hidden google-form-header-card p-6 flex flex-col gap-3">
-          <h1 className="text-3xl sm:text-4xl font-normal text-foreground">
-            {formName}
-          </h1>
+          <div className="flex items-center gap-3 pb-1">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/image.png"
+              alt="TSPL Logo"
+              className="h-9 sm:h-11 w-auto object-contain shrink-0"
+            />
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+              {formName}
+            </h1>
+          </div>
           {formDescription && (
             <p className="text-sm text-foreground/85 whitespace-pre-wrap leading-relaxed mt-1">
               {formDescription}
