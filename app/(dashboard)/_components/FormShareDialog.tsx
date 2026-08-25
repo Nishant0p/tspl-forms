@@ -60,7 +60,7 @@ function formatAccessLabel(accessMode?: FormShareDialogForm['accessMode']) {
   }
 }
 
-export default function FormShareDialog({ form, trigger }: { form: FormShareDialogForm; trigger?: ReactNode }) {
+export default function FormShareDialog({ form, trigger, iconOnly }: { form: FormShareDialogForm; trigger?: ReactNode; iconOnly?: boolean }) {
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -118,15 +118,21 @@ export default function FormShareDialog({ form, trigger }: { form: FormShareDial
     link.click();
   }
 
+  const defaultTrigger = iconOnly ? (
+    <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" title="Share Form">
+      <Share2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+    </Button>
+  ) : (
+    <Button variant="secondary" className="gap-2">
+      <Share2 className="h-4 w-4" />
+      Share
+    </Button>
+  );
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {trigger ?? (
-          <Button variant="secondary" className="gap-2">
-            <Share2 className="h-4 w-4" />
-            Share
-          </Button>
-        )}
+        {trigger ?? defaultTrigger}
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
@@ -139,26 +145,29 @@ export default function FormShareDialog({ form, trigger }: { form: FormShareDial
         <div className="space-y-6">
           <div className="space-y-3">
             <div className="text-sm font-medium text-muted-foreground">Form URL</div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Input value={shareUrl} readOnly className="min-w-0 flex-1" />
-              <Button onClick={copyLink} variant={copied ? "default" : "secondary"} className="shrink-0 transition-all">
+            <div className="flex items-center gap-2">
+              <Input value={shareUrl} readOnly className="min-w-0 flex-1 h-9 text-sm" />
+              <Button
+                onClick={copyLink}
+                variant={copied ? "default" : "secondary"}
+                size="icon"
+                className="h-9 w-9 shrink-0 transition-all"
+                title={copied ? "Copied!" : "Copy link"}
+              >
                 {copied ? (
-                  <>
-                    <Check className="mr-2 h-4 w-4 text-emerald-400" />
-                    Copied!
-                  </>
+                  <Check className="h-4 w-4 text-emerald-400" />
                 ) : (
-                  <>
-                    <Copy className="mr-2 h-4 w-4" />
-                    Copy link
-                  </>
+                  <Copy className="h-4 w-4" />
                 )}
               </Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={openForm} variant="outline" className="gap-2">
+              <Button
+                onClick={openForm}
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 shrink-0"
+                title="Open form"
+              >
                 <ExternalLink className="h-4 w-4" />
-                Open form
               </Button>
             </div>
           </div>

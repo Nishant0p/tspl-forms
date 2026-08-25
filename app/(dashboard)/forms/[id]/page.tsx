@@ -27,6 +27,13 @@ import FileViewerModal from '@/components/FileViewerModal';
 import DeleteFormBtn from '../../_components/DeleteFormBtn';
 import EditableFormName from '../../_components/EditableFormName';
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
 export default async function FormDetailsPage({
   params,
 }: {
@@ -86,26 +93,72 @@ export default async function FormDetailsPage({
             </div>
           </div>
         </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <VisitBtn shareUrl={shareLink} />
-            {isManagerOrAdmin && (
-              <FormViewerManager formId={form.id} formName={form.name} />
-            )}
-            <FormShareDialog
-              form={{
-                shareUrl: form.shareUrl,
-                accessMode: form.accessMode,
-                status: form.status,
-                published: form.published,
-                startDate: form.startDate,
-                endDate: form.endDate,
-                responseLimit: form.responseLimit,
-                name: form.name,
-              }}
-            />
-            {isManagerOrAdmin && (
-              <DeleteFormBtn formId={form.id} formName={form.name} />
-            )}
+          <div className="flex items-center gap-2">
+            <TooltipProvider>
+              {/* Visit Form */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <VisitBtn shareUrl={shareLink} iconOnly />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>Visit Form</p>
+                </TooltipContent>
+              </Tooltip>
+
+              {/* Form Viewers */}
+              {isManagerOrAdmin && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <FormViewerManager formId={form.id} formName={form.name} iconOnly />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>Form Viewers</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+
+              {/* Share */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <FormShareDialog
+                      form={{
+                        shareUrl: form.shareUrl,
+                        accessMode: form.accessMode,
+                        status: form.status,
+                        published: form.published,
+                        startDate: form.startDate,
+                        endDate: form.endDate,
+                        responseLimit: form.responseLimit,
+                        name: form.name,
+                      }}
+                      iconOnly
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>Share Form</p>
+                </TooltipContent>
+              </Tooltip>
+
+              {/* Delete Form */}
+              {isManagerOrAdmin && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <DeleteFormBtn formId={form.id} formName={form.name} iconOnly />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>Delete Form</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </TooltipProvider>
           </div>
         </div>
       </div>

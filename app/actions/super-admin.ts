@@ -137,3 +137,117 @@ export async function deleteAdminUser(id: number) {
   revalidatePath('/employees');
   return deleted;
 }
+
+export async function getAllDepartmentsAndBranches() {
+  await requireSuperAdmin();
+
+  const departments = await prisma.department.findMany({
+    orderBy: { name: 'asc' },
+    include: {
+      _count: {
+        select: { employees: true },
+      },
+    },
+  });
+
+  const branches = await prisma.branch.findMany({
+    orderBy: { name: 'asc' },
+    include: {
+      _count: {
+        select: { employees: true },
+      },
+    },
+  });
+
+  return { departments, branches };
+}
+
+export async function createDepartment(data: { name: string; code: string; description?: string }) {
+  await requireSuperAdmin();
+
+  const cleanName = data.name.trim();
+  const cleanCode = data.code.trim().toUpperCase();
+
+  if (!cleanName || !cleanCode) {
+    throw new Error('Department Name and Code are required');
+  }
+
+  const existingCode = await prisma.department.findUnique({
+    where: { code: cleanCode },
+  });
+  if (existingCode) {
+    throw new Error(`Department code "${cleanCode}" already exists`);
+  }
+
+  const created = await prisma.department.create({
+    data: {
+      name: cleanName,
+      code: cleanCode,
+      description: data.description?.trim() || '',
+      active: true,
+    },
+  });
+
+  revalidatePath('/', 'layout');
+  revalidatePath('/super-admin');
+  revalidatePath('/employees');
+  return created;
+}
+
+export async function deleteDepartment(id: number) {
+  await requireSuperAdmin();
+
+  const deleted = await prisma.department.delete({
+    where: { id },
+  });
+
+  revalidatePath('/', 'layout');
+  revalidatePath('/super-admin');
+  revalidatePath('/employees');
+  return deleted;
+}
+
+export async function createBranch(data: { name: string; code: string; location?: string }) {
+  await requireSuperAdmin();
+
+  const cleanName = data.name.trim();
+  const cleanCode = data.code.trim().toUpperCase();
+
+  if (!cleanName || !cleanCode) {
+    throw new Error('Branch Name and Code are required');
+  }
+
+  const existingCode = await prisma.branch.findUnique({
+    where: { code: cleanCode },
+  });
+  if (existingCode) {
+    throw new Error(`Branch code "${cleanCode}" already exists`);
+  }
+
+  const created = await prisma.branch.create({
+    data: {
+      name: cleanName,
+      code: cleanCode,
+      location: data.location?.trim() || '',
+      active: true,
+    },
+  });
+
+  revalidatePath('/', 'layout');
+  revalidatePath('/super-admin');
+  revalidatePath('/employees');
+  return created;
+}
+
+export async function deleteBranch(id: number) {
+  await requireSuperAdmin();
+
+  const deleted = await prisma.branch.delete({
+    where: { id },
+  });
+
+  revalidatePath('/', 'layout');
+  revalidatePath('/super-admin');
+  revalidatePath('/employees');
+  return deleted;
+}

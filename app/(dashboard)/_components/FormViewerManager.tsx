@@ -19,6 +19,8 @@ import { createFormViewerUser, getFormViewers, removeFormViewerAccess } from '@/
 type FormViewerManagerProps = {
   formId: number;
   formName: string;
+  trigger?: React.ReactNode;
+  iconOnly?: boolean;
 };
 
 type ViewerUser = {
@@ -30,7 +32,7 @@ type ViewerUser = {
   role: string;
 };
 
-export default function FormViewerManager({ formId, formName }: FormViewerManagerProps) {
+export default function FormViewerManager({ formId, formName, trigger, iconOnly }: FormViewerManagerProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [viewers, setViewers] = useState<ViewerUser[]>([]);
@@ -124,13 +126,21 @@ export default function FormViewerManager({ formId, formName }: FormViewerManage
     }
   };
 
+  const defaultTrigger = iconOnly ? (
+    <Button variant="outline" size="icon" className="h-9 w-9 shrink-0 border-primary/30 hover:border-primary" title="Form Viewers">
+      <Users className="h-4 w-4 text-primary" />
+    </Button>
+  ) : (
+    <Button variant="outline" className="gap-2 border-primary/30 hover:border-primary">
+      <Users className="h-4 w-4 text-primary" />
+      <span>Form Viewers</span>
+    </Button>
+  );
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2 border-primary/30 hover:border-primary">
-          <Users className="h-4 w-4 text-primary" />
-          <span>Form Viewers</span>
-        </Button>
+        {trigger || defaultTrigger}
       </DialogTrigger>
       <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>

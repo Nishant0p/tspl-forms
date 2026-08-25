@@ -184,7 +184,6 @@ export async function updateMyProfile(data: {
   firstName?: string;
   lastName?: string;
   imageUrl?: string;
-  role?: string;
   departmentId?: number | null;
   branchId?: number | null;
 }) {
@@ -194,7 +193,6 @@ export async function updateMyProfile(data: {
   if (data.firstName !== undefined) updateData.firstName = data.firstName.trim();
   if (data.lastName !== undefined) updateData.lastName = data.lastName.trim();
   if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl;
-  if (data.role !== undefined) updateData.role = data.role as any;
   if (data.departmentId !== undefined) updateData.departmentId = data.departmentId;
   if (data.branchId !== undefined) updateData.branchId = data.branchId;
 
