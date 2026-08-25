@@ -5,6 +5,7 @@ import SaveFormBtn from '@/app/(dashboard)/_components/SaveFormBtn';
 import { Form } from '@prisma/client';
 import React, { useEffect } from 'react';
 import PublishFormBtn from './PublishFormBtn';
+import DeleteFormBtn from './DeleteFormBtn';
 import Designer from '@/app/(dashboard)/_components/Designer';
 import {
   DndContext,
@@ -170,7 +171,6 @@ export default function FormBuilder({ form, departments, branches, employees }: 
       <main className="flex w-full flex-col">
         <div className="flex items-center justify-between gap-3 border-b-2 p-3 sm:p-4 text-xl">
           <div className="flex items-center gap-2 overflow-hidden">
-            <span className="text-muted-foreground font-medium text-base sm:text-lg shrink-0">Form :</span>
             <EditableFormName formId={form.id} initialName={form.name} className="text-lg sm:text-xl font-semibold" />
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -273,6 +273,18 @@ export default function FormBuilder({ form, departments, branches, employees }: 
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
                       <p>Publish</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {/* Delete */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div>
+                        <DeleteFormBtn formId={form.id} formName={form.name} iconOnly />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>Delete Form</p>
                     </TooltipContent>
                   </Tooltip>
                 </>

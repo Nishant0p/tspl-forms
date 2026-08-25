@@ -12,13 +12,20 @@ export default async function EmployeesPage() {
 
   const db = prisma as any;
   const employees = await db.employee.findMany({
-    orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+    orderBy: { employeeId: 'asc' },
     include: {
       department: true,
       branch: true,
       manager: true,
     },
   });
+
+  employees.sort((a: any, b: any) =>
+    (a.employeeId || '').localeCompare(b.employeeId || '', undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    })
+  );
 
   return (
     <div className="container py-8">

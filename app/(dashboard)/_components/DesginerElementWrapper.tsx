@@ -21,8 +21,10 @@ export default
   const router = useRouter()
   const [mouseOver, setMouseOver] = useState(false);
   const DesignerElement = FormElements[element.type].designerComponent;
-  const { removeElement, setSelectedElement, elements, addElement } =
+  const { removeElement, setSelectedElement, selectedElement, elements, addElement } =
     useDesginerStore();
+
+  const isSelected = selectedElement?.id === element.id;
 
   const topHalf = useDroppable({
     id: element.id + '-top',
@@ -88,13 +90,22 @@ export default
         ref={draggable.setNodeRef}
         {...draggable.attributes}
         {...draggable.listeners}
-        className="relative flex min-h-[120px] h-auto w-full flex-col rounded-md text-foreground ring-1 ring-inset ring-accent hover:cursor-pointer"
+        className={cn(
+          "relative flex min-h-[120px] h-auto w-full flex-col rounded-md text-foreground ring-1 ring-inset ring-accent hover:cursor-pointer transition-all duration-200",
+          isSelected && "ring-2 ring-violet-600 dark:ring-violet-400 border-violet-600 dark:border-violet-400 shadow-md ring-offset-2 ring-offset-background"
+        )}
         onMouseOver={() => setMouseOver(true)}
         onMouseLeave={() => setMouseOver(false)}
         onClick={(e) => {
           e.stopPropagation();
           setSelectedElement(element);
         }}>
+        {isSelected && (
+          <div className="absolute -top-3 right-4 z-20 flex items-center gap-1.5 rounded-full bg-violet-600 text-white text-[11px] font-semibold px-3 py-0.5 shadow-sm border border-violet-400/30">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            Editing
+          </div>
+        )}
         <div
           ref={topHalf.setNodeRef}
           className="absolute top-0 h-1/2 w-full rounded-t-md z-0"
@@ -140,7 +151,8 @@ export default
         )}
         <div
           className={cn(
-            'pointer-events-none flex min-h-[120px] h-auto w-full items-center rounded-md bg-accent/40 p-4',
+            'pointer-events-none flex min-h-[120px] h-auto w-full items-center rounded-md bg-accent/40 p-4 transition-colors',
+            isSelected && 'bg-violet-500/10 dark:bg-violet-500/15 border-violet-500/30',
             mouseOver && 'opacity-30'
           )}>
           <DesignerElement elementInstance={element} />

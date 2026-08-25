@@ -21,9 +21,13 @@ import { useTransition } from 'react';
 export default function DeleteFormBtn({
   formId,
   formName,
+  trigger,
+  iconOnly,
 }: {
   formId: number;
   formName?: string;
+  trigger?: React.ReactNode;
+  iconOnly?: boolean;
 }) {
   const [loading, startTransition] = useTransition();
   const router = useRouter();
@@ -46,13 +50,25 @@ export default function DeleteFormBtn({
     }
   }
 
+  const defaultTrigger = iconOnly ? (
+    <Button
+      variant="outline"
+      size="icon"
+      className="h-9 w-9 shrink-0 text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-900/50 dark:hover:bg-rose-950/50"
+    >
+      <Trash2 className="h-4 w-4" />
+    </Button>
+  ) : (
+    <Button variant="destructive" className="flex items-center gap-2 text-sm font-semibold">
+      <Trash2 className="h-4 w-4" />
+      <span>Delete Form</span>
+    </Button>
+  );
+
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="destructive" className="flex items-center gap-2 text-sm font-semibold">
-          <Trash2 className="h-4 w-4" />
-          <span>Delete Form</span>
-        </Button>
+        {trigger || defaultTrigger}
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>

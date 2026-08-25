@@ -147,7 +147,7 @@ export default function Designer({ formId, initialContent }: { formId: number; i
   }, [elements, formId]);
 
   return (
-    <div className="relative flex h-full w-full overflow-hidden">
+    <div className="relative flex h-full w-full overflow-y-auto md:overflow-hidden flex-col md:flex-row">
       {/* Floating Zoom Controls Widget */}
       <div className="absolute bottom-6 left-6 z-20 flex items-center gap-1 rounded-full border border-border/80 bg-card/95 p-1 shadow-lg backdrop-blur-md transition-all">
         <TooltipProvider>

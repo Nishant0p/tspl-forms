@@ -9,8 +9,8 @@ type DesignerStore = {
 
   setElements: (element: FormElementInstance[]) => void;
 
-  selectedElement: SetStateAction<FormElementInstance | null>;
-  setSelectedElement: Dispatch<SetStateAction<FormElementInstance | null>>;
+  selectedElement: FormElementInstance | null;
+  setSelectedElement: (element: FormElementInstance | null) => void;
   updateElement: (id: string, element: FormElementInstance) => void;
 };
 

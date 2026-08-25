@@ -30,8 +30,21 @@ export default function PreviewDialogBtn({ trigger }: { trigger?: React.ReactNod
             This is what your form will look like to your users.
           </p>
         </div>
-        <div className="flex grow flex-col items-center overflow-y-auto bg-[#f0ebf8] dark:bg-[#121016] google-form-container p-4 sm:p-8">
-          <div className="flex h-full w-full max-w-[640px] grow flex-col gap-4 pb-12">
+        <div className="relative flex grow flex-col items-center overflow-y-auto bg-[#f0ebf8] dark:bg-[#121016] google-form-container p-4 sm:p-8">
+          {/* Background Watermark */}
+          <div
+            aria-hidden="true"
+            className="fixed inset-0 pointer-events-none select-none z-0 flex items-center justify-center p-4 sm:p-8 overflow-hidden"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/image.png"
+              alt="Watermark"
+              className="max-w-[75vw] max-h-[75vh] w-auto h-auto object-contain opacity-10 dark:opacity-15 filter grayscale contrast-125"
+            />
+          </div>
+
+          <div className="relative z-10 flex h-full w-full max-w-[640px] grow flex-col gap-4 pb-12">
             
             {/* Header Card Preview */}
             <div className="w-full bg-card text-card-foreground rounded-lg border border-border shadow-sm overflow-hidden google-form-header-card p-6 flex flex-col gap-3">

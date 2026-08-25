@@ -216,11 +216,11 @@
 
 /* Header card style */
 .google-form-header-card {
-  border-top: 10px solid #673ab7 !important;
+  border-top: 1px solid hsl(var(--border)) !important;
   border-radius: 8px !important;
 }
 
 .dark .google-form-header-card {
-  border-top: 10px solid #a78bfa !important;
+  border-top: 1px solid hsl(var(--border)) !important;
 }
 

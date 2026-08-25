@@ -15,6 +15,8 @@ import { formatDistance } from 'date-fns';
 import { ArrowRight, Edit, Eye, StickyNote } from 'lucide-react';
 import Link from 'next/link';
 
+import DeleteFormBtn from './DeleteFormBtn';
+
 export default function FormCard({ form }: { form: Form }) {
   return (
     <Card className="min-h-[195px] flex flex-col justify-between">
@@ -60,13 +62,16 @@ export default function FormCard({ form }: { form: Form }) {
           </Button>
         )}
         {!form.published && (
-          <Button
-            asChild
-            className="w-full gap-4 text-sm text-zinc-50">
-            <Link href={`/builder/${form.id}`}>
-              Edit Form <Edit className="h-4 w-4" />
-            </Link>
-          </Button>
+          <div className="flex w-full items-center gap-2">
+            <Button
+              asChild
+              className="flex-1 gap-2 text-sm text-zinc-50">
+              <Link href={`/builder/${form.id}`}>
+                Edit Form <Edit className="h-4 w-4" />
+              </Link>
+            </Button>
+            <DeleteFormBtn formId={form.id} formName={form.name} iconOnly />
+          </div>
         )}
       </CardFooter>
     </Card>

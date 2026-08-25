@@ -163,12 +163,19 @@ export async function getEmployeesList() {
   await requireEmployee();
 
   const employees = await prisma.employee.findMany({
-    orderBy: { createdAt: 'desc' },
+    orderBy: { employeeId: 'asc' },
     include: {
       department: true,
       branch: true,
     },
   });
+
+  employees.sort((a: any, b: any) =>
+    (a.employeeId || '').localeCompare(b.employeeId || '', undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    })
+  );
 
   return employees;
 }
