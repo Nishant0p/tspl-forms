@@ -6,6 +6,7 @@ import {
   updateAdminRoleAndStatus,
   updateAdminPassword,
   deleteAdminUser,
+  getAdminReportCard,
   CreateAdminInput,
 } from '@/app/actions/super-admin';
 import { EmployeeRole, EmployeeStatus } from '@/lib/auth';
@@ -63,6 +64,7 @@ import {
   Eye,
   EyeOff,
   BadgeCheck,
+  BarChart3,
 } from 'lucide-react';
 
 interface AdminUser {
@@ -115,6 +117,29 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
   const [newPasswordInput, setNewPasswordInput] = useState('');
   const [showResetPassword, setShowResetPassword] = useState(false);
 
+  // Report Card state
+  const [reportAdmin, setReportAdmin] = useState<AdminUser | null>(null);
+  const [reportData, setReportData] = useState<any>(null);
+  const [loadingReport, setLoadingReport] = useState(false);
+
+  const handleOpenReportCard = async (admin: AdminUser) => {
+    setReportAdmin(admin);
+    setReportData(null);
+    setLoadingReport(true);
+    try {
+      const data = await getAdminReportCard(admin.id);
+      setReportData(data);
+    } catch (err: any) {
+      toast({
+        title: 'Error Loading Report Card',
+        description: err.message || 'Failed to fetch admin report card',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingReport(false);
+    }
+  };
+
   // Form state
   const [formData, setFormData] = useState<CreateAdminInput>({
     firstName: '',
@@ -130,6 +155,9 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
   });
 
   const filteredAdmins = admins.filter((admin) => {
+    const isOnlyAdminRole = admin.role === 'ADMIN' || admin.role === 'SUPER_ADMIN';
+    if (!isOnlyAdminRole) return false;
+
     const q = search.toLowerCase();
     const matchesSearch =
       admin.firstName.toLowerCase().includes(q) ||
@@ -661,9 +689,20 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
                       </div>
                     </TableCell>
 
-                    {/* Actions: Reset Password & Delete */}
+                    {/* Actions: Report Card, Assign Forms, Reset Password & Delete */}
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {/* Report Card Button */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          title="View Admin Report Card"
+                          onClick={() => handleOpenReportCard(admin)}
+                          className="h-8 text-xs font-bold gap-1 border-purple-500/30 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10"
+                        >
+                          <BarChart3 className="h-3.5 w-3.5" /> Report Card
+                        </Button>
+
                         {/* Assign Form Access Button */}
                         <Button
                           variant="ghost"
@@ -787,6 +826,207 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Admin Performance Report Card Dialog */}
+      <Dialog open={!!reportAdmin} onOpenChange={(open) => !open && setReportAdmin(null)}>
+        <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl font-bold text-primary">
+              <BarChart3 className="h-6 w-6 text-primary" /> Admin Performance Report Card
+            </DialogTitle>
+            <DialogDescription>
+              Overview stats, created forms, and team member directory for {reportAdmin?.firstName} {reportAdmin?.lastName}.
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingReport ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-3 text-muted-foreground">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm font-medium">Generating Report Card...</p>
+            </div>
+          ) : reportData ? (
+            <div className="space-y-6 py-2">
+              {/* Admin Profile Header Summary */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-muted/40 border border-border">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 font-extrabold text-primary text-lg border border-primary/20">
+                    {reportData.admin.firstName[0]}
+                    {reportData.admin.lastName[0]}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base text-foreground flex items-center gap-2">
+                      {reportData.admin.firstName} {reportData.admin.lastName}
+                      {reportData.admin.role === 'SUPER_ADMIN' && (
+                        <BadgeCheck className="h-4 w-4 text-purple-600" />
+                      )}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      ID: <code className="font-mono text-foreground font-semibold">{reportData.admin.employeeId}</code> • {reportData.admin.email}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className={ROLE_COLORS[reportData.admin.role] || ''}>
+                    {reportData.admin.role}
+                  </Badge>
+                  {reportData.admin.branch && (
+                    <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
+                      🌿 {reportData.admin.branch.name}
+                    </Badge>
+                  )}
+                  <Badge variant={reportData.admin.status === 'ACTIVE' ? 'default' : 'destructive'}>
+                    {reportData.admin.status}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* 3 Key Metric Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="flex flex-col p-4 rounded-xl border border-purple-500/20 bg-purple-500/5 shadow-sm">
+                  <span className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText className="h-4 w-4 text-purple-600" /> Forms Created
+                  </span>
+                  <span className="text-3xl font-black mt-2 text-foreground">
+                    {reportData.stats.formsCreatedCount}
+                  </span>
+                </div>
+
+                <div className="flex flex-col p-4 rounded-xl border border-blue-500/20 bg-blue-500/5 shadow-sm">
+                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <BarChart3 className="h-4 w-4 text-blue-600" /> Total Responses
+                  </span>
+                  <span className="text-3xl font-black mt-2 text-foreground">
+                    {reportData.stats.totalSubmissionsCount}
+                  </span>
+                </div>
+
+                <div className="flex flex-col p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 shadow-sm">
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Users className="h-4 w-4 text-emerald-600" /> Team Members
+                  </span>
+                  <span className="text-3xl font-black mt-2 text-foreground">
+                    {reportData.stats.teamMembersCount}
+                  </span>
+                </div>
+              </div>
+
+              {/* Team Members List Table */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" /> Team Members Under Admin ({reportData.teamMembers.length})
+                </h4>
+                {reportData.teamMembers.length === 0 ? (
+                  <div className="p-4 text-center text-xs text-muted-foreground rounded-lg border border-dashed">
+                    No team members assigned under this admin yet.
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-border overflow-hidden">
+                    <Table>
+                      <TableHeader className="bg-muted/40">
+                        <TableRow className="text-xs">
+                          <TableHead className="font-bold">Team Member</TableHead>
+                          <TableHead className="font-bold">Employee ID</TableHead>
+                          <TableHead className="font-bold">Role</TableHead>
+                          <TableHead className="font-bold">Branch</TableHead>
+                          <TableHead className="font-bold text-right">Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {reportData.teamMembers.map((member: any) => (
+                          <TableRow key={member.id} className="text-xs hover:bg-muted/30">
+                            <TableCell>
+                              <div className="flex flex-col">
+                                <span className="font-bold text-foreground">
+                                  {member.firstName} {member.lastName}
+                                </span>
+                                <span className="text-[11px] text-muted-foreground">{member.email}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">
+                                {member.employeeId}
+                              </code>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={ROLE_COLORS[member.role] || ''}>
+                                {member.role}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {member.branch ? (
+                                <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                                  🌿 {member.branch.name}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground italic text-[11px]">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <span
+                                className={`text-[11px] font-bold ${
+                                  member.status === 'ACTIVE'
+                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                    : 'text-rose-600 dark:text-rose-400'
+                                }`}
+                              >
+                                {member.status}
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </div>
+
+              {/* Forms Created List Table */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" /> Forms Created ({reportData.forms.length})
+                </h4>
+                {reportData.forms.length === 0 ? (
+                  <div className="p-4 text-center text-xs text-muted-foreground rounded-lg border border-dashed">
+                    No forms created by this admin yet.
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-border overflow-hidden">
+                    <Table>
+                      <TableHeader className="bg-muted/40">
+                        <TableRow className="text-xs">
+                          <TableHead className="font-bold">Form Name</TableHead>
+                          <TableHead className="font-bold">Publish Status</TableHead>
+                          <TableHead className="font-bold text-right">Visits</TableHead>
+                          <TableHead className="font-bold text-right">Responses</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {reportData.forms.map((form: any) => (
+                          <TableRow key={form.id} className="text-xs hover:bg-muted/30">
+                            <TableCell className="font-bold text-foreground">{form.name}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={form.published ? 'default' : 'secondary'}
+                                className="text-[10px] font-bold"
+                              >
+                                {form.published ? 'PUBLISHED' : 'DRAFT'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-mono">{form.visits}</TableCell>
+                            <TableCell className="text-right font-mono font-bold text-primary">
+                              {form.submissions}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       {/* Assign Form Access Dialog */}
       <AssignFormAccessDialog

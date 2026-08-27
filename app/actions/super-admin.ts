@@ -21,6 +21,9 @@ export async function getAdminsList() {
   await requireSuperAdmin();
 
   const admins = await prisma.employee.findMany({
+    where: {
+      role: { in: ['SUPER_ADMIN', 'ADMIN'] },
+    },
     orderBy: { createdAt: 'desc' },
     include: {
       department: true,
@@ -37,6 +40,98 @@ export async function getAdminsList() {
   });
 
   return admins;
+}
+
+export async function getAdminReportCard(adminId: number) {
+  await requireSuperAdmin();
+
+  const db = prisma as any;
+  const admin = await db.employee.findUnique({
+    where: { id: adminId },
+    include: {
+      branch: true,
+      department: true,
+    },
+  });
+
+  if (!admin) {
+    throw new Error('Admin user not found.');
+  }
+
+  const userIds = Array.from(
+    new Set([
+      admin.clerkUserId,
+      admin.employeeId,
+      admin.email,
+      String(admin.id),
+    ])
+  ).filter(Boolean);
+
+  const forms = await db.form.findMany({
+    where: {
+      userId: { in: userIds },
+    },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      published: true,
+      status: true,
+      visits: true,
+      submissions: true,
+      createdAt: true,
+    },
+  });
+
+  const formsCreatedCount = forms.length;
+  const totalSubmissionsCount = forms.reduce((acc: number, f: any) => acc + (f.submissions || 0), 0);
+
+  const teamMembers = await db.employee.findMany({
+    where: {
+      role: { notIn: ['SUPER_ADMIN', 'ADMIN'] },
+      OR: [
+        { createdById: admin.id },
+        ...(admin.branchId ? [{ branchId: admin.branchId }] : []),
+      ],
+    },
+    include: {
+      department: true,
+      branch: true,
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return {
+    admin: {
+      id: admin.id,
+      firstName: admin.firstName,
+      lastName: admin.lastName,
+      email: admin.email,
+      employeeId: admin.employeeId,
+      role: admin.role,
+      status: admin.status,
+      branch: admin.branch,
+      department: admin.department,
+    },
+    stats: {
+      formsCreatedCount,
+      totalSubmissionsCount,
+      teamMembersCount: teamMembers.length,
+    },
+    forms,
+    teamMembers: teamMembers.map((m: any) => ({
+      id: m.id,
+      employeeId: m.employeeId,
+      firstName: m.firstName,
+      lastName: m.lastName,
+      email: m.email,
+      role: m.role,
+      status: m.status,
+      branch: m.branch,
+      department: m.department,
+    })),
+  };
 }
 
 export async function createAdminUser(data: CreateAdminInput) {
