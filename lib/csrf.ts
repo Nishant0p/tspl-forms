@@ -4,27 +4,13 @@ import crypto from 'crypto';
 const CSRF_COOKIE_NAME = 'csrf_token';
 
 /**
- * Gets the existing CSRF token from httpOnly cookie or generates a new one.
+ * Gets the existing CSRF token from httpOnly cookie.
+ * (CSRF cookies are provisioned safely in middleware to prevent Server Component cookie mutation errors)
  */
 export async function getOrCreateCsrfToken(): Promise<string> {
   const cookieStore = cookies();
   const existing = cookieStore.get(CSRF_COOKIE_NAME)?.value;
-
-  if (existing && existing.length >= 32) {
-    return existing;
-  }
-
-  const newToken = crypto.randomBytes(32).toString('hex');
-
-  cookieStore.set(CSRF_COOKIE_NAME, newToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 60 * 60 * 24, // 24 hours
-  });
-
-  return newToken;
+  return existing || '';
 }
 
 /**
