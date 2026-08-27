@@ -6,5 +6,6 @@ export const formSchema = z.object({
   name: z.string().min(4).max(50),
   description: z.string().min(4).optional(),
   content: z.string().optional(),
+  branchId: z.number().nullable().optional(),
 });
 

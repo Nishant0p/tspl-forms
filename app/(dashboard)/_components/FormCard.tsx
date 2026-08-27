@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/card';
 import { Form } from '@prisma/client';
 import { formatDistance } from 'date-fns';
-import { ArrowRight, Edit, Eye, FileText, Layout, StickyNote } from 'lucide-react';
+import { ArrowRight, Edit, Eye, FileText, GitBranch, Layout, StickyNote } from 'lucide-react';
 import Link from 'next/link';
 
 import DeleteFormBtn from './DeleteFormBtn';
@@ -91,8 +91,16 @@ export default function FormCard({ form }: { form: Form }) {
         <CardHeader className="pt-3 pb-2">
           <CardTitle className="flex items-center justify-between gap-2">
             <span className="truncate text-lg font-bold" title={form.name}>{form.name}</span>
-            {form.published && <Badge className="text-zinc-50 text-[10px] px-2 py-0.5">Published</Badge>}
-            {!form.published && <Badge variant="destructive" className="text-[10px] px-2 py-0.5">Draft</Badge>}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {(form as any).branch && (
+                <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 flex items-center gap-1">
+                  <GitBranch className="h-3 w-3" />
+                  {(form as any).branch.name}
+                </Badge>
+              )}
+              {form.published && <Badge className="text-zinc-50 text-[10px] px-2 py-0.5">Published</Badge>}
+              {!form.published && <Badge variant="destructive" className="text-[10px] px-2 py-0.5">Draft</Badge>}
+            </div>
           </CardTitle>
           <CardDescription className="flex items-center justify-between text-xs text-muted-foreground pt-1">
             <span>

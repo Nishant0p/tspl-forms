@@ -65,6 +65,7 @@ model Branch {
 
   employees           Employee[]
   allowedFormAccesses FormAllowedBranch[]
+  targetForms         Form[]               @relation("FormTargetBranch")
 
   @@index([active])
 }
@@ -124,6 +125,9 @@ model Form {
   startDate   DateTime?
   endDate     DateTime?
   responseLimit Int?
+
+  branchId    Int?
+  branch      Branch?          @relation("FormTargetBranch", fields: [branchId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   visits      Int @default(0)
   submissions Int @default(0)

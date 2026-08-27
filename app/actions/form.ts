@@ -88,7 +88,15 @@ export async function GetFormStats() {
   };
 }
 
-export async function CreateForm(data: FormSchema) {
+export async function GetActiveBranches() {
+  return await prisma.branch.findMany({
+    where: { active: true },
+    select: { id: true, name: true, code: true },
+    orderBy: { name: 'asc' },
+  });
+}
+
+export async function CreateForm(data: FormSchema & { branchId?: number | null }) {
   const user = await getCurrentUser();
   const validation = formSchema.safeParse(data);
 
@@ -100,7 +108,7 @@ export async function CreateForm(data: FormSchema) {
     throw new UserNotFoundErr();
   }
 
-  const { name, description, content } = data;
+  const { name, description, content, branchId } = data;
 
   // Auto-increment the name if a form with the same name already exists globally
   let uniqueName = name;
@@ -116,7 +124,7 @@ export async function CreateForm(data: FormSchema) {
     count++;
   }
 
-  // Generate unique custom slug shareUrl (first 3 letters + last 3 letters + random hash)
+  // Generate unique custom slug shareUrl
   let customShareUrl = generateCustomSlug(uniqueName);
   while (true) {
     const existingShare = await prisma.form.findUnique({
@@ -126,18 +134,28 @@ export async function CreateForm(data: FormSchema) {
     customShareUrl = generateCustomSlug(uniqueName);
   }
 
-  const form = await prisma.form.create({
+  const selectedBranchId = branchId && typeof branchId === 'number' ? branchId : null;
+
+  const form = await (prisma as any).form.create({
     data: {
       userId: user.id,
       name: uniqueName,
-      description,
+      description: description || '',
       content: content || '[]',
-      accessMode: 'PUBLIC',
-      loginRequired: false,
+      accessMode: selectedBranchId ? 'RESTRICTED' : 'PUBLIC',
+      loginRequired: selectedBranchId ? true : false,
       oneResponsePerUser: false,
       status: 'DRAFT',
       published: false,
       shareUrl: customShareUrl,
+      branchId: selectedBranchId,
+      allowedBranches: selectedBranchId
+        ? {
+            create: {
+              branchId: selectedBranchId,
+            },
+          }
+        : undefined,
     },
   });
 
@@ -148,7 +166,7 @@ export async function CreateForm(data: FormSchema) {
   return form.id;
 }
 
-/** Get forms - filtered strictly if current user has FORM_VIEWER role */
+/** Get forms - filtered strictly by user's branch if form has branch restriction */
 export async function GetForm() {
   const user = await getCurrentUser();
 
@@ -157,6 +175,15 @@ export async function GetForm() {
   }
 
   const employee = await getCurrentEmployee();
+
+  if (employee?.role === 'SUPER_ADMIN') {
+    return await (prisma as any).form.findMany({
+      include: { branch: true },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
 
   if (employee?.role === 'FORM_VIEWER') {
     return await (prisma as any).form.findMany({
@@ -167,19 +194,40 @@ export async function GetForm() {
           },
         },
       },
+      include: { branch: true },
       orderBy: {
         createdAt: 'desc',
       },
     });
   }
 
-  const form = await prisma.form.findMany({
+  const userBranchId = employee?.branchId || null;
+
+  const forms = await (prisma as any).form.findMany({
+    where: {
+      OR: [
+        { userId: user.id },
+        {
+          AND: [
+            { branchId: null },
+            { allowedBranches: { none: {} } },
+          ],
+        },
+        ...(userBranchId
+          ? [
+              { branchId: userBranchId },
+              { allowedBranches: { some: { branchId: userBranchId } } },
+            ]
+          : []),
+      ],
+    },
+    include: { branch: true },
     orderBy: {
       createdAt: 'desc',
     },
   });
 
-  return form;
+  return forms;
 }
 
 export async function GetFormById(id: number) {
@@ -542,11 +590,12 @@ export async function GetFormSubmissions(id: number) {
     }
   }
 
-  return await prisma.form.findFirst({
+  const form = await prisma.form.findFirst({
     where: {
       id,
     },
     include: {
+      allowedBranches: true,
       FormSubmissions: {
         include: {
           employee: {
@@ -559,6 +608,26 @@ export async function GetFormSubmissions(id: number) {
       },
     },
   });
+
+  if (!form) {
+    throw new Error('Form not found');
+  }
+
+  // Branch access enforcement for submissions
+  if (employee && employee.role !== 'SUPER_ADMIN' && form.userId !== user.id) {
+    const isRestrictedBranch = (form as any).branchId !== null || (form.allowedBranches && form.allowedBranches.length > 0);
+    if (isRestrictedBranch) {
+      const isAllowedBranch =
+        (form as any).branchId === employee.branchId ||
+        form.allowedBranches.some((b) => b.branchId === employee.branchId);
+
+      if (!isAllowedBranch) {
+        throw new ForbiddenError('You are not authorized to view responses for this branch-restricted form.');
+      }
+    }
+  }
+
+  return form;
 }
 
 export async function DeleteForm(id: number) {

@@ -14,7 +14,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 
-import { CreateForm } from '@/app/actions/form';
+import { CreateForm, GetActiveBranches } from '@/app/actions/form';
 import {
   Form,
   FormControl,
@@ -28,9 +28,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { FormSchema, formSchema } from '@/schemas/form';
 import { Badge } from '@/components/ui/badge';
-import { Loader, Plus, Sparkles } from 'lucide-react';
+import { GitBranch, Loader, Plus, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 type TemplateKey = 'joining' | 'leave' | 'expense' | 'feedback' | 'exit';
 
@@ -107,10 +114,22 @@ const templateLibrary: Array<{
 export default function CreateFormBtn({ trigger }: { trigger?: React.ReactNode }) {
   const router = useRouter();
   const [creatingTemplate, setCreatingTemplate] = useState<TemplateKey | null>(null);
+  const [branches, setBranches] = useState<Array<{ id: number; name: string; code: string }>>([]);
 
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      branchId: null,
+    },
   });
+
+  useEffect(() => {
+    GetActiveBranches()
+      .then((b) => setBranches(b))
+      .catch((err) => console.error('Failed to fetch branches', err));
+  }, []);
 
   async function onSubmit(values: FormSchema) {
     try {
@@ -126,6 +145,7 @@ export default function CreateFormBtn({ trigger }: { trigger?: React.ReactNode }
       form.reset({
         name: '',
         description: '',
+        branchId: null,
       });
     } catch (error) {
       toast({
@@ -144,10 +164,13 @@ export default function CreateFormBtn({ trigger }: { trigger?: React.ReactNode }
     try {
       setCreatingTemplate(templateKey);
 
+      const currentBranchId = form.getValues('branchId');
+
       const formId = await CreateForm({
         name: template.name,
         description: template.description,
         content: template.content,
+        branchId: currentBranchId,
       });
 
       toast({
@@ -251,6 +274,43 @@ export default function CreateFormBtn({ trigger }: { trigger?: React.ReactNode }
                   <FormMessage>
                     {formState.errors.description?.message}
                   </FormMessage>
+                </FormItem>
+              )}
+            />
+
+            {/* Target Branch Access Field */}
+            <FormField
+              control={form.control}
+              name="branchId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="branchId" className="flex items-center gap-1.5 font-bold">
+                    <GitBranch className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    Target Branch Access (Restricted Visibility)
+                  </FormLabel>
+                  <Select
+                    value={field.value ? String(field.value) : 'ALL'}
+                    onValueChange={(val) => field.onChange(val === 'ALL' ? null : Number(val))}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="h-10 text-xs font-semibold">
+                        <SelectValue placeholder="Select target branch access..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="ALL" className="font-semibold">
+                        🌐 All Branches (System-wide Access)
+                      </SelectItem>
+                      {branches.map((b) => (
+                        <SelectItem key={b.id} value={String(b.id)}>
+                          🌿 {b.name} ({b.code}) — Only this branch can view & submit
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] text-muted-foreground">
+                    If selected, only members belonging to this specific branch can view, submit, or access form responses.
+                  </p>
                 </FormItem>
               )}
             />
