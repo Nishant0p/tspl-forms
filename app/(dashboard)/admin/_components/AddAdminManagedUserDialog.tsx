@@ -235,44 +235,23 @@ export default function AddAdminManagedUserDialog({
             </div>
           </div>
 
-          {/* Role & Department */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="admin-create-role" className="text-xs flex items-center gap-1">
-                <Shield className="h-3.5 w-3.5 text-primary" /> Assign Role *
-              </Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger id="admin-create-role" className="h-9 text-sm mt-1">
-                  <SelectValue placeholder="Select Role" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ALLOWED_ROLES.map((r) => (
-                    <SelectItem key={r.value} value={r.value}>
-                      <span className="font-semibold">{r.value}</span> - <span className="text-muted-foreground text-xs">{r.desc}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="admin-create-dept" className="text-xs flex items-center gap-1">
-                <Building2 className="h-3.5 w-3.5 text-primary" /> Department
-              </Label>
-              <Select value={departmentId} onValueChange={setDepartmentId}>
-                <SelectTrigger id="admin-create-dept" className="h-9 text-sm mt-1">
-                  <SelectValue placeholder="Select Department" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">-- No Department --</SelectItem>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept.id} value={String(dept.id)}>
-                      {dept.name} ({dept.code})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Role Selection */}
+          <div>
+            <Label htmlFor="admin-create-role" className="text-xs flex items-center gap-1">
+              <Shield className="h-3.5 w-3.5 text-primary" /> Assign Role *
+            </Label>
+            <Select value={role} onValueChange={setRole}>
+              <SelectTrigger id="admin-create-role" className="h-9 text-sm mt-1">
+                <SelectValue placeholder="Select Role" />
+              </SelectTrigger>
+              <SelectContent>
+                {ALLOWED_ROLES.map((r) => (
+                  <SelectItem key={r.value} value={r.value}>
+                    <span className="font-semibold">{r.value}</span> - <span className="text-muted-foreground text-xs">{r.desc}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="pt-2">

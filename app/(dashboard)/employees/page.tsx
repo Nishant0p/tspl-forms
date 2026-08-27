@@ -10,8 +10,30 @@ export default async function EmployeesPage() {
   const caller = await requireRole(['SUPER_ADMIN', 'ADMIN', 'HR']);
   const isSuperAdmin = caller.role === 'SUPER_ADMIN';
 
+  // Get caller's assigned branch
+  const dbCaller = await prisma.employee.findFirst({
+    where: {
+      OR: [
+        { id: typeof caller.id === 'number' && caller.id < 1000000 ? caller.id : -1 },
+        { employeeId: caller.employeeId },
+        { email: caller.email?.toLowerCase() },
+      ],
+    },
+    select: { branchId: true },
+  });
+
+  const callerBranchId = dbCaller?.branchId || caller.branchId || null;
+
+  let whereClause: any = {};
+  if (!isSuperAdmin) {
+    if (callerBranchId) {
+      whereClause = { branchId: callerBranchId };
+    }
+  }
+
   const db = prisma as any;
   const employees = await db.employee.findMany({
+    where: whereClause,
     orderBy: { employeeId: 'asc' },
     include: {
       department: true,
