@@ -10,6 +10,7 @@ import UserMenu from './UserMenu';
 export default async function Navbar() {
   const user = await getCurrentUser();
   const isSuperAdmin = await checkSuperAdmin();
+  const isAdmin = user?.role === 'ADMIN' || isSuperAdmin;
   const isFormViewer = user?.role === 'FORM_VIEWER';
 
   return (
@@ -17,12 +18,12 @@ export default async function Navbar() {
       <Logo />
       <div className="flex items-center gap-3 sm:gap-4">
         {user && (
-          <NavbarNavLinks isFormViewer={isFormViewer} isSuperAdmin={isSuperAdmin} />
+          <NavbarNavLinks isFormViewer={isFormViewer} isSuperAdmin={isSuperAdmin} isAdmin={isAdmin} />
         )}
         <ThemeSwitcher />
 
         {user ? (
-          <UserMenu user={user} isSuperAdmin={isSuperAdmin} />
+          <UserMenu user={user} isSuperAdmin={isSuperAdmin} isAdmin={isAdmin} />
         ) : (
           <Button asChild variant="secondary" className="flex items-center gap-2 font-bold">
             <Link href="/sign-in">Sign In</Link>

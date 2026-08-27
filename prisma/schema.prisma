@@ -81,6 +81,7 @@ model Employee {
   imageUrl    String?
   departmentId Int?
   branchId    Int?
+  createdById Int?
   managerId   Int?
   role        EmployeeRole   @default(EMPLOYEE)
   status      EmployeeStatus @default(ACTIVE)
@@ -91,6 +92,8 @@ model Employee {
   branch      Branch?     @relation(fields: [branchId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   manager     Employee?   @relation("EmployeeManager", fields: [managerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   directReports Employee[] @relation("EmployeeManager")
+  createdBy   Employee?   @relation("CreatedEmployees", fields: [createdById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createdEmployees Employee[] @relation("CreatedEmployees")
   responses    FormSubmissions[]
   allowedForms FormAllowedEmployee[]
   formViewerAccesses FormViewerAccess[]
@@ -102,6 +105,7 @@ model Employee {
   @@index([departmentId])
   @@index([branchId])
   @@index([managerId])
+  @@index([createdById])
 }
 
 model Form {

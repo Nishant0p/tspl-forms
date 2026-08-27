@@ -116,6 +116,7 @@ export default function UserProfileModal({ user, trigger }: UserProfileModalProp
         description: 'Your profile, department, and branch have been updated successfully.',
       });
       setOpen(false);
+      window.location.reload();
     } catch (err: any) {
       toast({
         title: 'Update failed',
@@ -261,10 +262,15 @@ export default function UserProfileModal({ user, trigger }: UserProfileModalProp
             </div>
 
             <div>
-              <Label htmlFor="branch" className="text-xs flex items-center gap-1">
-                <GitBranch className="h-3.5 w-3.5 text-primary" /> Branch
+              <Label htmlFor="branch" className="text-xs flex items-center justify-between">
+                <span className="flex items-center gap-1">
+                  <GitBranch className="h-3.5 w-3.5 text-primary" /> Branch
+                </span>
+                {user.role !== 'SUPER_ADMIN' && (
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Locked (Super Admin Only)</span>
+                )}
               </Label>
-              <Select value={branchId} onValueChange={setBranchId} disabled={loadingData}>
+              <Select value={branchId} onValueChange={setBranchId} disabled={loadingData || user.role !== 'SUPER_ADMIN'}>
                 <SelectTrigger className="h-9 text-sm mt-1">
                   <SelectValue placeholder={loadingData ? 'Loading...' : 'Select Branch'} />
                 </SelectTrigger>

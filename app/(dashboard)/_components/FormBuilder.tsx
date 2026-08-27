@@ -244,6 +244,8 @@ export default function FormBuilder({ form, departments, branches, employees }: 
                 <TooltipTrigger asChild>
                   <div>
                     <PreviewDialogBtn
+                      formName={form.name}
+                      formDescription={form.description}
                       trigger={
                         <Button variant="outline" size="icon" className="h-9 w-9">
                           <Eye className="h-4 w-4 text-amber-600 dark:text-amber-400" />

@@ -25,7 +25,15 @@ export async function getAdminsList() {
     include: {
       department: true,
       branch: true,
-    },
+      createdBy: true,
+      createdEmployees: {
+        include: {
+          department: true,
+          branch: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      },
+    } as any,
   });
 
   return admins;

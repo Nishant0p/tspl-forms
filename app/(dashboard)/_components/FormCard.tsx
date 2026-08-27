@@ -12,20 +12,87 @@ import {
 } from '@/components/ui/card';
 import { Form } from '@prisma/client';
 import { formatDistance } from 'date-fns';
-import { ArrowRight, Edit, Eye, StickyNote } from 'lucide-react';
+import { ArrowRight, Edit, Eye, FileText, Layout, StickyNote } from 'lucide-react';
 import Link from 'next/link';
 
 import DeleteFormBtn from './DeleteFormBtn';
 
+function FormMiniPreview({ contentJson }: { contentJson: string }) {
+  let elements: any[] = [];
+  try {
+    if (contentJson) {
+      elements = JSON.parse(contentJson);
+    }
+  } catch (e) {
+    elements = [];
+  }
+
+  const previewElements = elements.slice(0, 2); // Show first 2 fields in mini preview
+
+  return (
+    <div className="relative h-28 w-full bg-gradient-to-br from-primary/10 via-muted/40 to-orange-500/10 border-b p-3 flex flex-col justify-between overflow-hidden group-hover:border-primary/30 transition-colors">
+      {/* Top watermark badge */}
+      <div className="flex items-center justify-between">
+        <span className="inline-flex items-center gap-1 rounded-full bg-background/90 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground backdrop-blur-xs border border-border/50">
+          <FileText className="h-3 w-3 text-primary" />
+          Mini Preview
+        </span>
+        <span className="text-[10px] text-muted-foreground font-mono font-medium">
+          {elements.length} {elements.length === 1 ? 'field' : 'fields'}
+        </span>
+      </div>
+
+      {/* Mini Form Fields Render */}
+      {previewElements.length > 0 ? (
+        <div className="space-y-1.5 opacity-90 pointer-events-none scale-95 origin-top-left mt-1">
+          {previewElements.map((el, idx) => {
+            const label = el.extraAttributes?.label || el.extraAttributes?.title || el.type;
+            const placeholder = el.extraAttributes?.placeholder || 'Input value...';
+            return (
+              <div key={idx} className="space-y-0.5">
+                <div className="text-[10px] font-semibold text-foreground/80 truncate max-w-[200px]">
+                  {label}
+                </div>
+                {['TitleField', 'SubTitleField'].includes(el.type) ? (
+                  <div className="text-[11px] font-bold text-primary truncate max-w-[200px]">
+                    {el.extraAttributes?.title || label}
+                  </div>
+                ) : el.type === 'CheckboxField' ? (
+                  <div className="flex items-center gap-1">
+                    <div className="h-2.5 w-2.5 rounded border border-primary/40 bg-background/60" />
+                    <span className="text-[9px] text-muted-foreground truncate">{label}</span>
+                  </div>
+                ) : (
+                  <div className="h-4 w-full rounded border border-border/60 bg-background/80 px-1.5 text-[9px] text-muted-foreground flex items-center truncate">
+                    {placeholder}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center h-full text-muted-foreground/50 gap-1 text-xs">
+          <Layout className="h-5 w-5 stroke-1" />
+          <span className="text-[10px]">No elements in form</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function FormCard({ form }: { form: Form }) {
   return (
-    <Card className="min-h-[195px] flex flex-col justify-between">
+    <Card className="min-h-[260px] flex flex-col justify-between overflow-hidden group hover:shadow-md transition-shadow">
       <div>
-        <CardHeader>
+        {/* Form Mini Preview above Form Name */}
+        <FormMiniPreview contentJson={form.content} />
+
+        <CardHeader className="pt-3 pb-2">
           <CardTitle className="flex items-center justify-between gap-2">
-            <span className="truncate text-xl font-bold">{form.name}</span>
-            {form.published && <Badge className='text-zinc-50'>Published</Badge>}
-            {!form.published && <Badge variant={'destructive'}>Draft</Badge>}
+            <span className="truncate text-lg font-bold" title={form.name}>{form.name}</span>
+            {form.published && <Badge className="text-zinc-50 text-[10px] px-2 py-0.5">Published</Badge>}
+            {!form.published && <Badge variant="destructive" className="text-[10px] px-2 py-0.5">Draft</Badge>}
           </CardTitle>
           <CardDescription className="flex items-center justify-between text-xs text-muted-foreground pt-1">
             <span>
@@ -47,11 +114,11 @@ export default function FormCard({ form }: { form: Form }) {
             )}
           </CardDescription>
         </CardHeader>
-        <CardContent className="h-[20px] truncate text-sm text-muted-foreground">
+        <CardContent className="h-[24px] truncate text-xs text-muted-foreground">
           {form.description || 'No description provided'}
         </CardContent>
       </div>
-      <CardFooter className='flex-col gap-2 pt-4'>
+      <CardFooter className="flex-col gap-2 pt-3 pb-3">
         {form.published && (
           <Button
             asChild

@@ -82,6 +82,8 @@ interface AdminUser {
 
 interface Props {
   initialAdmins: AdminUser[];
+  departments?: { id: number; name: string; code: string }[];
+  branches?: { id: number; name: string; code: string }[];
 }
 
 const ROLE_COLORS: Record<string, string> = {
@@ -93,12 +95,20 @@ const ROLE_COLORS: Record<string, string> = {
   EMPLOYEE: 'bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-800',
 };
 
-export default function AdminManagementTable({ initialAdmins }: Props) {
+import AssignFormAccessDialog from '@/components/AssignFormAccessDialog';
+import { FileText } from 'lucide-react';
+
+export default function AdminManagementTable({ initialAdmins, departments = [], branches = [] }: Props) {
   const [admins, setAdmins] = useState<AdminUser[]>(initialAdmins);
   const [search, setSearch] = useState('');
+  const [deptFilter, setDeptFilter] = useState<string>('ALL');
+  const [branchFilter, setBranchFilter] = useState<string>('ALL');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [pending, startTransition] = useTransition();
+
+  // Assign Forms state
+  const [assignFormsUser, setAssignFormsUser] = useState<AdminUser | null>(null);
 
   // Reset password state
   const [resetAdmin, setResetAdmin] = useState<AdminUser | null>(null);
@@ -119,13 +129,20 @@ export default function AdminManagementTable({ initialAdmins }: Props) {
 
   const filteredAdmins = admins.filter((admin) => {
     const q = search.toLowerCase();
-    return (
+    const matchesSearch =
       admin.firstName.toLowerCase().includes(q) ||
       admin.lastName.toLowerCase().includes(q) ||
       admin.email.toLowerCase().includes(q) ||
       admin.employeeId.toLowerCase().includes(q) ||
-      admin.role.toLowerCase().includes(q)
-    );
+      admin.role.toLowerCase().includes(q);
+
+    const adminDeptId = (admin as any).departmentId || admin.department?.id;
+    const matchesDept = deptFilter === 'ALL' || String(adminDeptId) === deptFilter;
+
+    const adminBranchId = (admin as any).branchId || admin.branch?.id;
+    const matchesBranch = branchFilter === 'ALL' || String(adminBranchId) === branchFilter;
+
+    return matchesSearch && matchesDept && matchesBranch;
   });
 
   const totalUsers = admins.length;
@@ -302,16 +319,48 @@ export default function AdminManagementTable({ initialAdmins }: Props) {
         </div>
       </div>
 
-      {/* Control Bar: Search & Create */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search admins by name, email, or role..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+      {/* Control Bar: Search, Department Dropdown, Branch Dropdown & Create */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col sm:flex-row items-center gap-2.5 flex-1">
+          <div className="relative flex-1 w-full max-w-xs">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, email, role..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9 text-xs"
+            />
+          </div>
+
+          {/* Department Filter Dropdown */}
+          <Select value={deptFilter} onValueChange={setDeptFilter}>
+            <SelectTrigger className="h-9 w-full sm:w-[160px] text-xs font-semibold">
+              <SelectValue placeholder="All Departments" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Departments</SelectItem>
+              {departments.map((d) => (
+                <SelectItem key={d.id} value={String(d.id)}>
+                  🏢 {d.name} ({d.code})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Branch Filter Dropdown */}
+          <Select value={branchFilter} onValueChange={setBranchFilter}>
+            <SelectTrigger className="h-9 w-full sm:w-[160px] text-xs font-semibold">
+              <SelectValue placeholder="All Branches" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Branches</SelectItem>
+              {branches.map((b) => (
+                <SelectItem key={b.id} value={String(b.id)}>
+                  🌿 {b.name} ({b.code})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
@@ -558,6 +607,17 @@ export default function AdminManagementTable({ initialAdmins }: Props) {
                     {/* Actions: Reset Password & Delete */}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
+                        {/* Assign Form Access Button */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Assign Form Access"
+                          onClick={() => setAssignFormsUser(admin)}
+                          className="h-8 w-8 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10"
+                        >
+                          <FileText className="h-4 w-4" />
+                        </Button>
+
                         {/* Reset Password Button */}
                         <Button
                           variant="ghost"
@@ -670,6 +730,13 @@ export default function AdminManagementTable({ initialAdmins }: Props) {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Assign Form Access Dialog */}
+      <AssignFormAccessDialog
+        user={assignFormsUser}
+        open={!!assignFormsUser}
+        onOpenChange={(o) => !o && setAssignFormsUser(null)}
+      />
     </div>
   );
 }

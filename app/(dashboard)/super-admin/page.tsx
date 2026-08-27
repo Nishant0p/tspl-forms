@@ -2,6 +2,7 @@ import { requireSuperAdmin } from '@/lib/auth';
 import { getAdminsList, getAllDepartmentsAndBranches } from '@/app/actions/super-admin';
 import AdminManagementTable from './_components/AdminManagementTable';
 import DepartmentAndBranchManagement from './_components/DepartmentAndBranchManagement';
+import AdminHierarchyDropdown from './_components/AdminHierarchyDropdown';
 import { ShieldCheck } from 'lucide-react';
 
 export const metadata = {
@@ -18,7 +19,7 @@ export default async function SuperAdminPage() {
   ]);
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8">
+    <div className="container mx-auto px-4 py-8 space-y-8 max-w-7xl">
       {/* Page Title & Banner Header */}
       <div className="flex flex-col gap-2 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -34,11 +35,22 @@ export default async function SuperAdminPage() {
         </div>
       </div>
 
-      {/* Department & Branch Management Section */}
-      <DepartmentAndBranchManagement initialDepartments={departments as any} initialBranches={branches as any} />
+      {/* Admin & Sub-Employees Hierarchy Dropdown View */}
+      <AdminHierarchyDropdown admins={admins as any} allUsers={admins as any} />
 
-      {/* Main Admin Management Table & Actions */}
-      <AdminManagementTable initialAdmins={admins as any} />
+      {/* Department & Branch Management Section with Dropdowns */}
+      <DepartmentAndBranchManagement
+        initialDepartments={departments as any}
+        initialBranches={branches as any}
+        allUsers={admins as any}
+      />
+
+      {/* Main Admin Management Table & Actions with Department and Branch Filter Dropdowns */}
+      <AdminManagementTable
+        initialAdmins={admins as any}
+        departments={departments as any}
+        branches={branches as any}
+      />
     </div>
   );
 }

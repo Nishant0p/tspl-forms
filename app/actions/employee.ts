@@ -121,7 +121,20 @@ export async function createEmployee(data: {
 
   const generatedId = `emp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
 
-  const created = await prisma.employee.create({
+  const creatorDb = await prisma.employee.findFirst({
+    where: {
+      OR: [
+        { id: typeof caller.id === 'number' && caller.id < 1000000 ? caller.id : -1 },
+        { employeeId: caller.employeeId },
+        { email: caller.email?.toLowerCase() },
+      ],
+    },
+  });
+
+  const assignedBranchId = data.branchId || creatorDb?.branchId || caller.branchId || null;
+  const createdById = creatorDb?.id || null;
+
+  const created = await (prisma.employee as any).create({
     data: {
       clerkUserId: generatedId,
       employeeId: data.employeeId.trim(),
@@ -133,12 +146,14 @@ export async function createEmployee(data: {
       role: (data.role || 'EMPLOYEE') as any,
       status: 'ACTIVE',
       departmentId: data.departmentId || null,
-      branchId: data.branchId || null,
-    },
+      branchId: assignedBranchId,
+      createdById: createdById,
+    } as any,
   });
 
   revalidatePath('/', 'layout');
   revalidatePath('/employees');
+  revalidatePath('/admin');
   return created;
 }
 
@@ -196,11 +211,59 @@ export async function updateMyProfile(data: {
   if (data.departmentId !== undefined) updateData.departmentId = data.departmentId;
   if (data.branchId !== undefined) updateData.branchId = data.branchId;
 
-  const updated = await prisma.employee.update({
-    where: { id: employee.id },
-    data: updateData,
-    include: { department: true, branch: true },
-  });
+  // Search for existing employee in DB by ID, clerkUserId, employeeId, or email
+  const searchConditions: any[] = [];
+  if (typeof employee.id === 'number' && employee.id < 1000000) {
+    searchConditions.push({ id: employee.id });
+  }
+  if ((employee as any).clerkUserId) {
+    searchConditions.push({ clerkUserId: (employee as any).clerkUserId });
+  }
+  if (employee.employeeId) {
+    searchConditions.push({ employeeId: employee.employeeId });
+  }
+  if (employee.email) {
+    searchConditions.push({ email: employee.email.toLowerCase() });
+  }
+
+  let dbEmployee = null;
+  if (searchConditions.length > 0) {
+    dbEmployee = await prisma.employee.findFirst({
+      where: {
+        OR: searchConditions,
+      },
+    });
+  }
+
+  let updated: any;
+
+  if (dbEmployee) {
+    updated = await prisma.employee.update({
+      where: { id: dbEmployee.id },
+      data: updateData,
+      include: { department: true, branch: true },
+    });
+  } else {
+    // If no DB record exists yet (e.g. for hardcoded Super Admin session), create one
+    const clerkId = (employee as any).clerkUserId || employee.employeeId || `admin_${Date.now()}`;
+    const empId = employee.employeeId || (employee as any).clerkUserId || `ADMIN001`;
+
+    updated = await (prisma.employee as any).create({
+      data: {
+        clerkUserId: clerkId,
+        employeeId: empId,
+        firstName: data.firstName?.trim() || employee.firstName || 'Super',
+        lastName: data.lastName?.trim() || employee.lastName || 'Admin',
+        email: employee.email?.toLowerCase() || 'admin@tspl.in',
+        role: (employee.role || 'SUPER_ADMIN') as any,
+        status: 'ACTIVE',
+        imageUrl: data.imageUrl !== undefined ? data.imageUrl : employee.imageUrl,
+        departmentId: data.departmentId || null,
+        branchId: data.branchId || null,
+      } as any,
+      include: { department: true, branch: true },
+    });
+  }
 
   // Refresh session cookie
   const sessionData = JSON.stringify({
@@ -211,7 +274,9 @@ export async function updateMyProfile(data: {
     email: updated.email,
     role: updated.role,
     status: updated.status,
-    imageUrl: (updated as any).imageUrl || null,
+    imageUrl: updated.imageUrl || null,
+    departmentId: updated.departmentId || null,
+    branchId: updated.branchId || null,
   });
 
   cookies().set('session_user', sessionData, {

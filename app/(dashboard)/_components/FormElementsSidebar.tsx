@@ -82,7 +82,7 @@ export default function FormElementsSidebar() {
             </div>
           </AccordionTrigger>
           <AccordionContent className="pt-2 pb-3">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {layoutElements.map((element) => (
                 <SidebarBtnElement key={element.type} formElement={element} />
               ))}
@@ -101,7 +101,7 @@ export default function FormElementsSidebar() {
             </div>
           </AccordionTrigger>
           <AccordionContent className="pt-2 pb-3">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {formElements.map((element) => (
                 <SidebarBtnElement key={element.type} formElement={element} />
               ))}

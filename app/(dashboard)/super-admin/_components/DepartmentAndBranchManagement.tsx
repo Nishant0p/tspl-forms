@@ -35,6 +35,14 @@ import {
 import { toast } from '@/components/ui/use-toast';
 import { Building2, GitBranch, Plus, Trash2, Loader2, Users } from 'lucide-react';
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
 interface Department {
   id: number;
   name: string;
@@ -53,15 +61,34 @@ interface Branch {
   _count?: { employees: number };
 }
 
+interface UserItem {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  employeeId: string;
+  role: string;
+  status: string;
+  departmentId?: number | null;
+  branchId?: number | null;
+  department?: { id: number; name: string } | null;
+  branch?: { id: number; name: string } | null;
+}
+
 interface Props {
   initialDepartments: Department[];
   initialBranches: Branch[];
+  allUsers?: UserItem[];
 }
 
-export default function DepartmentAndBranchManagement({ initialDepartments, initialBranches }: Props) {
+export default function DepartmentAndBranchManagement({ initialDepartments, initialBranches, allUsers = [] }: Props) {
   const [departments, setDepartments] = useState<Department[]>(initialDepartments);
   const [branches, setBranches] = useState<Branch[]>(initialBranches);
   const [pending, startTransition] = useTransition();
+
+  // Dropdown selection states
+  const [selectedDeptId, setSelectedDeptId] = useState<string>('ALL');
+  const [selectedBranchId, setSelectedBranchId] = useState<string>('ALL');
 
   // Dialog open states
   const [isDeptOpen, setIsDeptOpen] = useState(false);
@@ -252,6 +279,54 @@ export default function DepartmentAndBranchManagement({ initialDepartments, init
         </CardHeader>
 
         <CardContent className="space-y-3">
+          {/* Department Filter Dropdown */}
+          <div className="space-y-1.5 pb-2">
+            <Label className="text-xs font-semibold flex items-center justify-between">
+              <span>View Department Employees Dropdown:</span>
+              {selectedDeptId !== 'ALL' && (
+                <span className="text-[11px] text-primary font-bold">
+                  {allUsers.filter(u => String(u.departmentId || u.department?.id) === selectedDeptId).length} Employees
+                </span>
+              )}
+            </Label>
+            <Select value={selectedDeptId} onValueChange={setSelectedDeptId}>
+              <SelectTrigger className="h-9 text-xs font-medium">
+                <SelectValue placeholder="Select a Department..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Show Department Overview List</SelectItem>
+                {departments.map((d) => (
+                  <SelectItem key={d.id} value={String(d.id)}>
+                    🏢 {d.name} ({d.code})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selectedDeptId !== 'ALL' && (
+            <div className="rounded-md border bg-muted/40 p-2.5 space-y-2 text-xs">
+              <p className="font-bold text-foreground flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5 text-primary" />
+                Members of {departments.find(d => String(d.id) === selectedDeptId)?.name}:
+              </p>
+              {allUsers.filter(u => String(u.departmentId || u.department?.id) === selectedDeptId).length === 0 ? (
+                <p className="text-muted-foreground italic text-[11px]">No users assigned to this department yet.</p>
+              ) : (
+                <div className="divide-y max-h-40 overflow-y-auto">
+                  {allUsers
+                    .filter(u => String(u.departmentId || u.department?.id) === selectedDeptId)
+                    .map((u) => (
+                      <div key={u.id} className="py-1 flex items-center justify-between">
+                        <span className="font-semibold text-foreground">{u.firstName} {u.lastName}</span>
+                        <span className="text-[11px] text-muted-foreground font-mono">{u.employeeId} • {u.role}</span>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {departments.length === 0 ? (
             <div className="text-center py-8 text-xs text-muted-foreground">
               No departments created yet. Click &quot;Add Dept&quot; to create one.
@@ -384,6 +459,53 @@ export default function DepartmentAndBranchManagement({ initialDepartments, init
         </CardHeader>
 
         <CardContent className="space-y-3">
+          {/* Branch Filter Dropdown */}
+          <div className="space-y-1.5 pb-2">
+            <Label className="text-xs font-semibold flex items-center justify-between">
+              <span>View Branch Sub-Employees Dropdown:</span>
+              {selectedBranchId !== 'ALL' && (
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
+                  {allUsers.filter(u => String(u.branchId || u.branch?.id) === selectedBranchId).length} Employees
+                </span>
+              )}
+            </Label>
+            <Select value={selectedBranchId} onValueChange={setSelectedBranchId}>
+              <SelectTrigger className="h-9 text-xs font-medium">
+                <SelectValue placeholder="Select a Branch..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Show Branch Overview List</SelectItem>
+                {branches.map((b) => (
+                  <SelectItem key={b.id} value={String(b.id)}>
+                    🌿 {b.name} ({b.code})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selectedBranchId !== 'ALL' && (
+            <div className="rounded-md border bg-emerald-500/10 border-emerald-500/20 p-2.5 space-y-2 text-xs">
+              <p className="font-bold text-foreground flex items-center gap-1.5">
+                <GitBranch className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                Members of {branches.find(b => String(b.id) === selectedBranchId)?.name}:
+              </p>
+              {allUsers.filter(u => String(u.branchId || u.branch?.id) === selectedBranchId).length === 0 ? (
+                <p className="text-muted-foreground italic text-[11px]">No users assigned to this branch yet.</p>
+              ) : (
+                <div className="divide-y max-h-40 overflow-y-auto">
+                  {allUsers
+                    .filter(u => String(u.branchId || u.branch?.id) === selectedBranchId)
+                    .map((u) => (
+                      <div key={u.id} className="py-1 flex items-center justify-between">
+                        <span className="font-semibold text-foreground">{u.firstName} {u.lastName}</span>
+                        <span className="text-[11px] text-muted-foreground font-mono">{u.employeeId} • {u.role}</span>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
           {branches.length === 0 ? (
             <div className="text-center py-8 text-xs text-muted-foreground">
               No branches created yet. Click &quot;Add Branch&quot; to create one.

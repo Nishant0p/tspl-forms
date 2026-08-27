@@ -3,24 +3,26 @@ import { cn } from '@/lib/utils';
 import { idGenerator } from '@/lib/utils';
 import { useDesginerStore } from '@/store/store';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { Copy, Trash } from 'lucide-react';
+import { Copy, Trash, Check, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { FormElementInstance, FormElements } from './FormElements';
 import { toast } from '@/components/ui/use-toast';
 import { deleteElementInstance } from '@/app/actions/form';
 import { useRouter } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
 
-export default
-  function DesginerElementWrapper({
-    element,
-    formId,
-  }: {
-    element: FormElementInstance;
-    formId: number;
-  }) {
-  const router = useRouter()
+export default function DesginerElementWrapper({
+  element,
+  formId,
+}: {
+  element: FormElementInstance;
+  formId: number;
+}) {
+  const router = useRouter();
   const [mouseOver, setMouseOver] = useState(false);
   const DesignerElement = FormElements[element.type].designerComponent;
+  const PropertiesElement = FormElements[element.type].propertiesComponent;
+
   const { removeElement, setSelectedElement, selectedElement, elements, addElement } =
     useDesginerStore();
 
@@ -55,20 +57,19 @@ export default
 
   async function removeElementFromDatabase() {
     try {
-      await deleteElementInstance(formId, element.id)
+      await deleteElementInstance(formId, element.id);
 
       toast({
-        title: "Success",
-        description: "Element deleted from database",
-      })
+        title: 'Success',
+        description: 'Element deleted from database',
+      });
 
-      router.refresh()
-
+      router.refresh();
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Something went wrong, please try again later",
-      })
+        title: 'Error',
+        description: 'Something went wrong, please try again later',
+      });
     }
   }
 
@@ -91,74 +92,134 @@ export default
         {...draggable.attributes}
         {...draggable.listeners}
         className={cn(
-          "relative flex min-h-[120px] h-auto w-full flex-col rounded-md text-foreground ring-1 ring-inset ring-accent hover:cursor-pointer transition-all duration-200",
-          isSelected && "ring-2 ring-violet-600 dark:ring-violet-400 border-violet-600 dark:border-violet-400 shadow-md ring-offset-2 ring-offset-background"
+          'relative flex min-h-[120px] h-auto w-full flex-col rounded-xl text-foreground ring-1 ring-inset ring-border/60 hover:cursor-pointer transition-all duration-200 bg-card shadow-xs',
+          isSelected &&
+            'ring-2 ring-violet-600 dark:ring-violet-400 border-l-4 border-l-violet-600 dark:border-l-violet-400 shadow-lg shadow-violet-500/10 ring-offset-1 ring-offset-background'
         )}
         onMouseOver={() => setMouseOver(true)}
         onMouseLeave={() => setMouseOver(false)}
         onClick={(e) => {
           e.stopPropagation();
-          setSelectedElement(element);
-        }}>
-        {isSelected && (
-          <div className="absolute -top-3 right-4 z-20 flex items-center gap-1.5 rounded-full bg-violet-600 text-white text-[11px] font-semibold px-3 py-0.5 shadow-sm border border-violet-400/30">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Editing
-          </div>
+          if (!isSelected) {
+            setSelectedElement(element);
+          }
+        }}
+      >
+        <div ref={topHalf.setNodeRef} className="absolute top-0 h-1/2 w-full rounded-t-md z-0" />
+        <div ref={bottomHalf.setNodeRef} className="absolute bottom-0 h-1/2 w-full rounded-b-md z-0" />
+
+        {/* Drag Over Indicators */}
+        {topHalf.isOver && (
+          <div className="absolute top-0 h-[6px] w-full rounded-md rounded-b-none bg-primary z-30" />
         )}
-        <div
-          ref={topHalf.setNodeRef}
-          className="absolute top-0 h-1/2 w-full rounded-t-md z-0"
-        />
-        <div
-          ref={bottomHalf.setNodeRef}
-          className="absolute bottom-0 h-1/2 w-full rounded-b-md z-0"
-        />
-        {mouseOver && (
+        {bottomHalf.isOver && (
+          <div className="absolute bottom-0 h-[6px] w-full rounded-md rounded-t-none bg-primary z-30" />
+        )}
+
+        {/* Selected / Editing State: In-place Google Forms Editor */}
+        {isSelected ? (
+          <div className="w-full p-4 sm:p-5 space-y-4 relative z-10 cursor-default bg-gradient-to-b from-violet-500/5 to-transparent rounded-xl">
+            {/* Header Toolbar inside Card */}
+            <div className="flex items-center justify-between border-b pb-3 text-xs">
+              <div className="flex items-center gap-2">
+                <Badge className="bg-violet-600 hover:bg-violet-700 text-white font-bold gap-1 text-[11px] px-2.5 py-0.5">
+                  <Sparkles className="h-3 w-3" /> Editing {element.type}
+                </Badge>
+                <span className="text-[11px] text-muted-foreground font-mono">ID: {element.id}</span>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs gap-1 font-semibold text-muted-foreground hover:text-foreground"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    duplicateElement();
+                  }}
+                  title="Duplicate field"
+                >
+                  <Copy className="h-3.5 w-3.5" /> Duplicate
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs gap-1 font-semibold text-destructive hover:bg-destructive/10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeElement(element.id);
+                    removeElementFromDatabase();
+                  }}
+                  title="Delete field"
+                >
+                  <Trash className="h-3.5 w-3.5" /> Delete
+                </Button>
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="h-7 text-xs gap-1 font-bold bg-violet-600 hover:bg-violet-700 text-white ml-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedElement(null);
+                  }}
+                >
+                  <Check className="h-3.5 w-3.5" /> Done
+                </Button>
+              </div>
+            </div>
+
+            {/* In-Place Editable Properties Form */}
+            <div className="pt-1">
+              <PropertiesElement elementInstance={element} />
+            </div>
+          </div>
+        ) : (
+          /* Normal Preview State when not selected */
           <>
-            <div className="absolute left-0 z-10 h-full">
-              <Button
-                className="flex h-full justify-center rounded-md rounded-r-none border bg-background"
-                size={'icon'}
-                variant={'outline'}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  duplicateElement();
-                }}>
-                <Copy className="h-5 w-5" />
-              </Button>
-            </div>
-            <div className="absolute right-0 z-10 h-full">
-              <Button
-                className="flex h-full justify-center rounded-md rounded-l-none border bg-red-500 text-white"
-                size={'icon'}
-                variant={'outline'}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeElement(element.id);
-                  removeElementFromDatabase();
-                }}>
-                <Trash className="h-5 w-5" />
-              </Button>
-            </div>
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10 bg-background/90 text-foreground px-3 py-1.5 rounded-full border border-border text-xs font-medium shadow-sm animate-pulse">
-              <p>Click for properties or drag to move</p>
+            {mouseOver && (
+              <>
+                <div className="absolute left-0 z-10 h-full">
+                  <Button
+                    className="flex h-full justify-center rounded-l-xl rounded-r-none border bg-background shadow-xs"
+                    size={'icon'}
+                    variant={'outline'}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      duplicateElement();
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="absolute right-0 z-10 h-full">
+                  <Button
+                    className="flex h-full justify-center rounded-r-xl rounded-l-none border bg-red-500 text-white shadow-xs"
+                    size={'icon'}
+                    variant={'outline'}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeElement(element.id);
+                      removeElementFromDatabase();
+                    }}
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10 bg-violet-600 text-white px-3.5 py-1.5 rounded-full text-xs font-bold shadow-md animate-bounce flex items-center gap-1.5">
+                  <SlidersHorizontal className="h-3.5 w-3.5" /> Click to Edit In-Place
+                </div>
+              </>
+            )}
+
+            <div
+              className={cn(
+                'pointer-events-none flex min-h-[110px] h-auto w-full items-center rounded-xl bg-accent/20 p-4 transition-colors',
+                mouseOver && 'opacity-30'
+              )}
+            >
+              <DesignerElement elementInstance={element} />
             </div>
           </>
-        )}
-        {topHalf.isOver && (
-          <div className="absolute top-0 h-[8px] w-full rounded-md rounded-b-none bg-primary z-20" />
-        )}
-        <div
-          className={cn(
-            'pointer-events-none flex min-h-[120px] h-auto w-full items-center rounded-md bg-accent/40 p-4 transition-colors',
-            isSelected && 'bg-violet-500/10 dark:bg-violet-500/15 border-violet-500/30',
-            mouseOver && 'opacity-30'
-          )}>
-          <DesignerElement elementInstance={element} />
-        </div>
-        {bottomHalf.isOver && (
-          <div className="absolute bottom-0 h-[8px] w-full rounded-md rounded-t-none bg-primary z-20" />
         )}
       </div>
     </>

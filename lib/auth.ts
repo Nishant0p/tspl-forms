@@ -76,6 +76,18 @@ export async function getCurrentEmployee() {
       session.employeeId === idpConfig.idp ||
       session.email?.toLowerCase() === idpConfig.email)
   ) {
+    const dbAdmin = await prisma.employee.findFirst({
+      where: {
+        OR: [
+          { clerkUserId: idpConfig.idp },
+          { employeeId: idpConfig.idp },
+          { email: idpConfig.email },
+        ],
+      },
+      include: { department: true, branch: true, manager: true },
+    });
+    if (dbAdmin) return dbAdmin;
+
     const adminSession = getHardcodedAdminSession();
     if (adminSession) return adminSession as any;
   }
@@ -87,7 +99,7 @@ export async function getCurrentEmployee() {
         { clerkUserId: session.id },
         { employeeId: session.employeeId || session.id },
         { email: session.email?.toLowerCase() },
-      ],
+      ].filter(Boolean) as any,
     },
     include: { department: true, branch: true, manager: true },
   });

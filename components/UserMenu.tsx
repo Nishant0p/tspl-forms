@@ -27,9 +27,10 @@ type UserMenuProps = {
     branchId?: number | null;
   };
   isSuperAdmin: boolean;
+  isAdmin?: boolean;
 };
 
-export default function UserMenu({ user, isSuperAdmin }: UserMenuProps) {
+export default function UserMenu({ user, isSuperAdmin, isAdmin = false }: UserMenuProps) {
   const email = user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress || '';
   const initials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}` || 'U';
 
@@ -90,6 +91,21 @@ export default function UserMenu({ user, isSuperAdmin }: UserMenuProps) {
         />
 
         <DropdownMenuSeparator />
+
+        {isAdmin && (
+          <>
+            <DropdownMenuItem asChild>
+              <Link
+                href="/admin"
+                className="flex w-full items-center gap-2 cursor-pointer text-blue-600 dark:text-blue-400 font-semibold"
+              >
+                <ShieldCheck className="h-4 w-4" />
+                Admin Portal
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
 
         {isSuperAdmin && (
           <>
