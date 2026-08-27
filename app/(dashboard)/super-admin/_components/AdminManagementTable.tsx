@@ -154,6 +154,15 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.branchId) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please select a Branch for the admin user.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     startTransition(async () => {
       try {
         const created = await createAdminUser(formData);
@@ -496,57 +505,29 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
                 </div>
               </div>
 
-              {/* Branch & Department Assignment */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold">Assign Branch</label>
-                  <Select
-                    value={formData.branchId ? String(formData.branchId) : 'NONE'}
-                    onValueChange={(val) =>
-                      setFormData({
-                        ...formData,
-                        branchId: val === 'NONE' ? undefined : Number(val),
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Branch" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="NONE">No Branch (Unassigned)</SelectItem>
-                      {branches.map((b) => (
-                        <SelectItem key={b.id} value={String(b.id)}>
-                          🌿 {b.name} ({b.code})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold">Assign Department</label>
-                  <Select
-                    value={formData.departmentId ? String(formData.departmentId) : 'NONE'}
-                    onValueChange={(val) =>
-                      setFormData({
-                        ...formData,
-                        departmentId: val === 'NONE' ? undefined : Number(val),
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Department" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="NONE">No Department (Unassigned)</SelectItem>
-                      {departments.map((d) => (
-                        <SelectItem key={d.id} value={String(d.id)}>
-                          🏢 {d.name} ({d.code})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              {/* Branch Assignment */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Assign Branch *</label>
+                <Select
+                  value={formData.branchId ? String(formData.branchId) : ''}
+                  onValueChange={(val) =>
+                    setFormData({
+                      ...formData,
+                      branchId: val ? Number(val) : undefined,
+                    })
+                  }
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Select Branch (Required)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {branches.map((b) => (
+                      <SelectItem key={b.id} value={String(b.id)}>
+                        🌿 {b.name} ({b.code})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <DialogFooter className="pt-4">

@@ -47,18 +47,19 @@ export async function getAdminDashboardData() {
 
   const branchId = adminProfile?.branchId || caller.branchId || null;
 
-  // Filter users: if ADMIN, strictly show ONLY users created by this admin (excluding other admins)
+  // Filter users: if ADMIN, strictly show ONLY sub-employees belonging to this admin's assigned branch
   let whereCondition: any = {};
   if (caller.role === 'ADMIN') {
-    const adminDbId = adminProfile?.id;
-    if (adminDbId) {
+    if (branchId) {
       whereCondition = {
-        createdById: adminDbId,
+        branchId: branchId,
         role: { notIn: ['SUPER_ADMIN', 'ADMIN'] },
       };
     } else {
+      const adminDbId = adminProfile?.id;
       whereCondition = {
-        id: -1, // No users if admin profile is not found
+        createdById: adminDbId || -1,
+        role: { notIn: ['SUPER_ADMIN', 'ADMIN'] },
       };
     }
   }

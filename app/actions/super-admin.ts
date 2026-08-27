@@ -46,6 +46,10 @@ export async function createAdminUser(data: CreateAdminInput) {
     throw new Error('First Name, Last Name, Email, and Employee ID are required');
   }
 
+  if (!data.branchId) {
+    throw new Error('Assigning a Branch is required when creating an admin user.');
+  }
+
   if (!data.password || data.password.trim().length < 6) {
     throw new Error('Password must be at least 6 characters long');
   }
@@ -77,8 +81,8 @@ export async function createAdminUser(data: CreateAdminInput) {
       phone: data.phone?.trim() || null,
       role: data.role,
       status: data.status,
-      departmentId: data.departmentId || null,
-      branchId: data.branchId || null,
+      departmentId: null,
+      branchId: data.branchId,
     },
     include: {
       department: true,
