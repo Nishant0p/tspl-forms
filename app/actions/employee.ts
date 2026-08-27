@@ -2,11 +2,15 @@
 
 import prisma from '@/lib/prisma';
 import { requireEmployee, ForbiddenError, getSuperAdminIdpConfig, getHardcodedAdminSession, EmployeeStatus } from '@/lib/auth';
+import { verifyCsrfToken } from '@/lib/csrf';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-export async function loginUser(emailOrEmpId: string, password: string) {
+export async function loginUser(emailOrEmpId: string, password: string, csrfToken?: string) {
+  // Validate CSRF token before performing authentication
+  await verifyCsrfToken(csrfToken);
+
   const idpConfig = getSuperAdminIdpConfig();
   const inputClean = emailOrEmpId.trim().toLowerCase();
 

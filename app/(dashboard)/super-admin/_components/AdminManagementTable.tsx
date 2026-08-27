@@ -125,6 +125,8 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
     employeeId: '',
     role: 'ADMIN',
     status: 'ACTIVE',
+    departmentId: undefined,
+    branchId: undefined,
   });
 
   const filteredAdmins = admins.filter((admin) => {
@@ -166,6 +168,8 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
           employeeId: '',
           role: 'ADMIN',
           status: 'ACTIVE',
+          departmentId: undefined,
+          branchId: undefined,
         });
         toast({
           title: 'Admin Created Successfully',
@@ -492,6 +496,59 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
                 </div>
               </div>
 
+              {/* Branch & Department Assignment */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold">Assign Branch</label>
+                  <Select
+                    value={formData.branchId ? String(formData.branchId) : 'NONE'}
+                    onValueChange={(val) =>
+                      setFormData({
+                        ...formData,
+                        branchId: val === 'NONE' ? undefined : Number(val),
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Branch" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NONE">No Branch (Unassigned)</SelectItem>
+                      {branches.map((b) => (
+                        <SelectItem key={b.id} value={String(b.id)}>
+                          🌿 {b.name} ({b.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold">Assign Department</label>
+                  <Select
+                    value={formData.departmentId ? String(formData.departmentId) : 'NONE'}
+                    onValueChange={(val) =>
+                      setFormData({
+                        ...formData,
+                        departmentId: val === 'NONE' ? undefined : Number(val),
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NONE">No Department (Unassigned)</SelectItem>
+                      {departments.map((d) => (
+                        <SelectItem key={d.id} value={String(d.id)}>
+                          🏢 {d.name} ({d.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <DialogFooter className="pt-4">
                 <Button
                   type="button"
@@ -518,6 +575,7 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
             <TableRow>
               <TableHead>User / Admin</TableHead>
               <TableHead>Employee ID</TableHead>
+              <TableHead>Branch & Dept</TableHead>
               <TableHead>Current Role</TableHead>
               <TableHead>Active Permission</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -527,7 +585,7 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
           <TableBody>
             {filteredAdmins.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
                   No admins or staff members found.
                 </TableCell>
               </TableRow>
@@ -561,6 +619,24 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
                       <code className="rounded bg-muted px-2 py-1 text-xs font-mono font-medium">
                         {admin.employeeId}
                       </code>
+                    </TableCell>
+
+                    {/* Branch & Dept */}
+                    <TableCell>
+                      <div className="flex flex-col gap-0.5 text-xs">
+                        {admin.branch ? (
+                          <span className="font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                            🌿 {admin.branch.name}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground italic">No Branch</span>
+                        )}
+                        {admin.department && (
+                          <span className="text-muted-foreground text-[11px]">
+                            🏢 {admin.department.name}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
 
                     {/* Role Dropdown */}

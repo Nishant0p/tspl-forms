@@ -35,14 +35,6 @@ import {
 import { toast } from '@/components/ui/use-toast';
 import { Building2, GitBranch, Plus, Trash2, Loader2, Users } from 'lucide-react';
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-
 interface Department {
   id: number;
   name: string;
@@ -288,6 +280,20 @@ export default function DepartmentAndBranchManagement({ initialDepartments, init
               <p className="text-xs text-muted-foreground italic">No departments created yet.</p>
             ) : (
               <div className="flex flex-wrap items-center gap-2">
+                <div
+                  onClick={() => setSelectedDeptId('ALL')}
+                  className={`cursor-pointer inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
+                    selectedDeptId === 'ALL'
+                      ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                      : 'bg-background hover:bg-muted text-foreground border-border'
+                  }`}
+                >
+                  <Building2 className="h-3.5 w-3.5" />
+                  <span>All Departments</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${selectedDeptId === 'ALL' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                    {allUsers.length} emp
+                  </span>
+                </div>
                 {departments.map((dept) => {
                   const count = allUsers.filter(u => String(u.departmentId || u.department?.id) === String(dept.id)).length;
                   const isSelected = selectedDeptId === String(dept.id);
@@ -340,33 +346,6 @@ export default function DepartmentAndBranchManagement({ initialDepartments, init
                 })}
               </div>
             )}
-          </div>
-
-          {/* Department Selection Dropdown */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-bold flex items-center justify-between">
-              <span>Select Department Dropdown:</span>
-              {selectedDeptId !== 'ALL' && (
-                <Badge variant="outline" className="text-xs font-bold border-primary/40 text-primary">
-                  {allUsers.filter(u => String(u.departmentId || u.department?.id) === selectedDeptId).length} Employees
-                </Badge>
-              )}
-            </Label>
-            <Select value={selectedDeptId} onValueChange={setSelectedDeptId}>
-              <SelectTrigger className="h-10 text-xs font-bold border-primary/30">
-                <SelectValue placeholder="Select a Department..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL" className="font-semibold">
-                  🌐 All Departments ({departments.length})
-                </SelectItem>
-                {departments.map((d) => (
-                  <SelectItem key={d.id} value={String(d.id)}>
-                    🏢 {d.name} ({d.code})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           {/* Selected Department Employees List */}
@@ -494,6 +473,20 @@ export default function DepartmentAndBranchManagement({ initialDepartments, init
               <p className="text-xs text-muted-foreground italic">No branches created yet.</p>
             ) : (
               <div className="flex flex-wrap items-center gap-2">
+                <div
+                  onClick={() => setSelectedBranchId('ALL')}
+                  className={`cursor-pointer inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
+                    selectedBranchId === 'ALL'
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                      : 'bg-background hover:bg-muted text-foreground border-border'
+                  }`}
+                >
+                  <GitBranch className="h-3.5 w-3.5" />
+                  <span>All Branches</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${selectedBranchId === 'ALL' ? 'bg-white/20 text-white' : 'bg-muted text-muted-foreground'}`}>
+                    {allUsers.length} emp
+                  </span>
+                </div>
                 {branches.map((branch) => {
                   const count = allUsers.filter(u => String(u.branchId || u.branch?.id) === String(branch.id)).length;
                   const isSelected = selectedBranchId === String(branch.id);
@@ -546,33 +539,6 @@ export default function DepartmentAndBranchManagement({ initialDepartments, init
                 })}
               </div>
             )}
-          </div>
-
-          {/* Branch Selection Dropdown */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-bold flex items-center justify-between">
-              <span>Select Branch Dropdown:</span>
-              {selectedBranchId !== 'ALL' && (
-                <Badge className="bg-emerald-600 text-white font-bold text-xs">
-                  {allUsers.filter(u => String(u.branchId || u.branch?.id) === selectedBranchId).length} Employees
-                </Badge>
-              )}
-            </Label>
-            <Select value={selectedBranchId} onValueChange={setSelectedBranchId}>
-              <SelectTrigger className="h-10 text-xs font-bold border-emerald-500/40">
-                <SelectValue placeholder="Select a Branch..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL" className="font-semibold">
-                  🌐 All Branches ({branches.length})
-                </SelectItem>
-                {branches.map((b) => (
-                  <SelectItem key={b.id} value={String(b.id)}>
-                    🌿 {b.name} ({b.code})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           {/* Selected Branch Employees List */}

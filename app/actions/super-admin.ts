@@ -80,6 +80,10 @@ export async function createAdminUser(data: CreateAdminInput) {
       departmentId: data.departmentId || null,
       branchId: data.branchId || null,
     },
+    include: {
+      department: true,
+      branch: true,
+    },
   });
 
   revalidatePath('/', 'layout');

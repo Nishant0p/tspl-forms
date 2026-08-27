@@ -2,7 +2,6 @@ import { requireSuperAdmin } from '@/lib/auth';
 import { getAdminsList, getAllDepartmentsAndBranches } from '@/app/actions/super-admin';
 import AdminManagementTable from './_components/AdminManagementTable';
 import DepartmentAndBranchManagement from './_components/DepartmentAndBranchManagement';
-import AdminHierarchyDropdown from './_components/AdminHierarchyDropdown';
 import { ShieldCheck } from 'lucide-react';
 
 export const metadata = {
@@ -35,10 +34,7 @@ export default async function SuperAdminPage() {
         </div>
       </div>
 
-      {/* Admin & Sub-Employees Hierarchy Dropdown View */}
-      <AdminHierarchyDropdown admins={admins as any} allUsers={admins as any} />
-
-      {/* Department & Branch Management Section with Dropdowns */}
+      {/* Department & Branch Management Section */}
       <DepartmentAndBranchManagement
         initialDepartments={departments as any}
         initialBranches={branches as any}
