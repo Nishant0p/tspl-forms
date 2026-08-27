@@ -89,7 +89,14 @@ export async function getCurrentEmployee() {
     if (dbAdmin) return dbAdmin;
 
     const adminSession = getHardcodedAdminSession();
-    if (adminSession) return adminSession as any;
+    if (adminSession) {
+      return {
+        ...adminSession,
+        firstName: session.firstName || adminSession.firstName,
+        lastName: session.lastName || adminSession.lastName,
+        imageUrl: session.imageUrl || adminSession.imageUrl,
+      } as any;
+    }
   }
 
   // Real-time lookup in DB by clerkUserId, employeeId, or email
@@ -118,23 +125,39 @@ export async function getCurrentUser() {
       session.employeeId === idpConfig.idp ||
       session.email?.toLowerCase() === idpConfig.email)
   ) {
+    const dbAdmin: any = await prisma.employee.findFirst({
+      where: {
+        OR: [
+          { clerkUserId: idpConfig.idp },
+          { employeeId: idpConfig.idp },
+          { email: idpConfig.email },
+        ],
+      },
+    });
+
     const admin = getHardcodedAdminSession();
     if (admin) {
+      const firstName = dbAdmin?.firstName || session.firstName || admin.firstName;
+      const lastName = dbAdmin?.lastName || session.lastName || admin.lastName;
+      const imageUrl = dbAdmin?.imageUrl || session.imageUrl || admin.imageUrl;
+
       return {
         id: admin.clerkUserId,
-        firstName: admin.firstName,
-        lastName: admin.lastName,
-        fullName: `${admin.firstName} ${admin.lastName}`,
+        firstName,
+        lastName,
+        fullName: `${firstName} ${lastName}`,
         emailAddresses: [{ emailAddress: admin.email }],
         primaryEmailAddress: { emailAddress: admin.email },
         role: admin.role as EmployeeRole,
         status: admin.status as EmployeeStatus,
-        imageUrl: admin.imageUrl,
+        imageUrl,
+        departmentId: dbAdmin?.departmentId || session.departmentId || null,
+        branchId: dbAdmin?.branchId || session.branchId || null,
       };
     }
   }
 
-  const employee = await getCurrentEmployee();
+  const employee: any = await getCurrentEmployee();
   if (employee) {
     return {
       id: employee.clerkUserId,

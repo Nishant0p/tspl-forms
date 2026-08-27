@@ -212,9 +212,6 @@ function PropertiesComponent({
                   }}
                 />
               </FormControl>
-              <FormDescription>
-                Main heading displayed after submission.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -233,9 +230,6 @@ function PropertiesComponent({
                   placeholder="Your response has been recorded successfully..."
                 />
               </FormControl>
-              <FormDescription>
-                Custom message or instructions for the respondent.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -325,9 +319,6 @@ function PropertiesComponent({
                   }}
                 />
               </FormControl>
-              <FormDescription>
-                Label for the post-submission action button.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -355,9 +346,6 @@ function PropertiesComponent({
                   }}
                 />
               </FormControl>
-              <FormDescription>
-                Enter a website URL if you want the button to redirect respondents.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -367,7 +355,8 @@ function PropertiesComponent({
           control={form.control}
           name="showRedirectButton"
           render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3">
+            <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-xs">
+              <FormLabel className="cursor-pointer">Show Action Button</FormLabel>
               <FormControl>
                 <Checkbox
                   checked={field.value}
@@ -377,12 +366,6 @@ function PropertiesComponent({
                   }}
                 />
               </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>Show Action Button</FormLabel>
-                <FormDescription>
-                  Display the action button on the Thank You screen.
-                </FormDescription>
-              </div>
             </FormItem>
           )}
         />

@@ -35,7 +35,14 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
   const form = useForm<propertiesType>({ resolver: zodResolver(propertiesSchema), defaultValues: element.extraAttributes });
   useEffect(() => { form.reset(element.extraAttributes); }, [element, form]);
   function applyChanges(data: propertiesType) { updateElement(element.id, { ...element, extraAttributes: data }); }
-  return <Form {...form}><form onBlur={form.handleSubmit(applyChanges)} onSubmit={(e) => e.preventDefault()} className="space-y-4"><FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} /></FormControl><FormDescription>Header text shown to users.</FormDescription><FormMessage /></FormItem>)} /><FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} rows={3} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} /></FormControl><FormDescription>Supporting description text.</FormDescription><FormMessage /></FormItem>)} /></form></Form>;
+  return (
+    <Form {...form}>
+      <form onBlur={form.handleSubmit(applyChanges)} onSubmit={(e) => e.preventDefault()} className="space-y-4">
+        <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} /></FormControl><FormMessage /></FormItem>)} />
+        <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} rows={2} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} /></FormControl><FormMessage /></FormItem>)} />
+      </form>
+    </Form>
+  );
 }
 
 function DesignerComponent({ elementInstance }: { elementInstance: FormElementInstance }) {

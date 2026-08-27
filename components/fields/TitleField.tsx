@@ -30,7 +30,7 @@ const extraAttributes = {
 };
 
 const propertiesSchema = z.object({
-  title: z.string().min(2).max(50),
+  title: z.string().min(2).max(300),
 });
 
 export const TitleFieldFormElement: FormElement = {
@@ -61,14 +61,16 @@ function FormComponent({
   const { title } = element.extraAttributes;
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full pb-1">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/image.png"
         alt="TSPL Logo"
-        className="h-8 sm:h-10 w-auto object-contain shrink-0"
+        className="h-8 sm:h-10 w-auto object-contain shrink-0 self-start sm:self-auto"
       />
-      <p className="text-xl sm:text-2xl font-bold text-foreground">{title}</p>
+      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground break-words w-full leading-tight">
+        {title}
+      </h1>
     </div>
   );
 }
@@ -89,14 +91,16 @@ function DesignerComponent({
   return (
     <div className="flex w-full flex-col gap-2">
       <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Title Field</Label>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/image.png"
           alt="TSPL Logo"
-          className="h-8 sm:h-10 w-auto object-contain shrink-0"
+          className="h-8 sm:h-10 w-auto object-contain shrink-0 self-start sm:self-auto"
         />
-        <p className="text-xl sm:text-2xl font-bold text-foreground">{title}</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground break-words w-full leading-tight">
+          {title}
+        </h1>
       </div>
     </div>
   );
@@ -157,9 +161,6 @@ function PropertiesComponent({
                   }}
                 />
               </FormControl>
-              <FormDescription>
-                Add a title to your form field to help you identify it.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

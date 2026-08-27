@@ -42,7 +42,22 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
   const form = useForm<propertiesType>({ resolver: zodResolver(propertiesSchema), defaultValues: element.extraAttributes });
   useEffect(() => { form.reset(element.extraAttributes); }, [element, form]);
   function applyChanges(data: propertiesType) { updateElement(element.id, { ...element, extraAttributes: data }); }
-  return <Form {...form}><form onBlur={form.handleSubmit(applyChanges)} onSubmit={(e) => e.preventDefault()} className="space-y-4"><FormField control={form.control} name="label" render={({ field }) => (<FormItem><FormLabel>Label</FormLabel><FormControl><Input {...field} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} /></FormControl><FormDescription>Phone field label.</FormDescription><FormMessage /></FormItem>)} /><FormField control={form.control} name="placeholder" render={({ field }) => (<FormItem><FormLabel>Placeholder</FormLabel><FormControl><Input {...field} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} /></FormControl><FormDescription>Hint text shown inside the input.</FormDescription><FormMessage /></FormItem>)} /><FormField control={form.control} name="helperText" render={({ field }) => (<FormItem><FormLabel>Helper Text</FormLabel><FormControl><Textarea {...field} rows={3} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} /></FormControl><FormDescription>Supporting text shown below the field.</FormDescription><FormMessage /></FormItem>)} /><FormField control={form.control} name="required" render={({ field }) => (<FormItem><div className="space-y-0.5"><FormLabel>Required</FormLabel><FormDescription>Whether the field must be filled.</FormDescription></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormMessage /></FormItem>)} /></form></Form>;
+  return (
+    <Form {...form}>
+      <form onBlur={form.handleSubmit(applyChanges)} onSubmit={(e) => e.preventDefault()} className="space-y-4">
+        <FormField control={form.control} name="label" render={({ field }) => (<FormItem><FormLabel>Label</FormLabel><FormControl><Input {...field} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} /></FormControl><FormMessage /></FormItem>)} />
+        <FormField control={form.control} name="placeholder" render={({ field }) => (<FormItem><FormLabel>Placeholder</FormLabel><FormControl><Input {...field} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} /></FormControl><FormMessage /></FormItem>)} />
+        <FormField control={form.control} name="helperText" render={({ field }) => (<FormItem><FormLabel>Helper Text</FormLabel><FormControl><Textarea {...field} rows={2} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} /></FormControl><FormMessage /></FormItem>)} />
+        <FormField control={form.control} name="required" render={({ field }) => (
+          <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-xs">
+            <FormLabel className="cursor-pointer">Required Question</FormLabel>
+            <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+      </form>
+    </Form>
+  );
 }
 
 function DesignerComponent({ elementInstance }: { elementInstance: FormElementInstance }) {

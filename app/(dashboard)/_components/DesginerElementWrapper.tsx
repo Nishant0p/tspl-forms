@@ -120,13 +120,10 @@ export default function DesginerElementWrapper({
         {isSelected ? (
           <div className="w-full p-4 sm:p-5 space-y-4 relative z-10 cursor-default bg-gradient-to-b from-violet-500/5 to-transparent rounded-xl">
             {/* Header Toolbar inside Card */}
-            <div className="flex items-center justify-between border-b pb-3 text-xs">
-              <div className="flex items-center gap-2">
-                <Badge className="bg-violet-600 hover:bg-violet-700 text-white font-bold gap-1 text-[11px] px-2.5 py-0.5">
-                  <Sparkles className="h-3 w-3" /> Editing {element.type}
-                </Badge>
-                <span className="text-[11px] text-muted-foreground font-mono">ID: {element.id}</span>
-              </div>
+            <div className="flex items-center justify-between border-b pb-2.5 text-xs">
+              <Badge className="bg-violet-600 hover:bg-violet-700 text-white font-bold gap-1 text-[11px] px-2.5 py-0.5">
+                <Sparkles className="h-3 w-3" /> {element.type}
+              </Badge>
 
               <div className="flex items-center gap-1">
                 <Button

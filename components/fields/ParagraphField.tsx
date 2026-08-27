@@ -140,9 +140,6 @@ function PropertiesComponent({
                   }}
                 />
               </FormControl>
-              <FormDescription>
-                Add a paragraph of text to your form.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

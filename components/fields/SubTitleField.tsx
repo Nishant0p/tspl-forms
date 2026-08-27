@@ -139,9 +139,6 @@ function PropertiesComponent({
                   }}
                 />
               </FormControl>
-              <FormDescription>
-                Add a subtitle to your form to give more information to your users.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

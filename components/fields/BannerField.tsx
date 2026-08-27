@@ -457,12 +457,7 @@ function PropertiesComponent({
                 name="overlay"
                 render={({ field }) => (
                   <FormItem className="flex items-center justify-between rounded-lg border p-2.5">
-                    <div>
-                      <FormLabel className="text-xs font-medium">Dark Gradient Overlay</FormLabel>
-                      <FormDescription className="text-[10px]">
-                        Improves text readability over bright images
-                      </FormDescription>
-                    </div>
+                    <FormLabel className="text-xs font-medium cursor-pointer">Dark Gradient Overlay</FormLabel>
                     <FormControl>
                       <Switch
                         checked={field.value}

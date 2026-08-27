@@ -105,22 +105,25 @@ export default function AdminHierarchyDropdown({ admins, allUsers }: AdminHierar
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <CardTitle className="text-xl font-bold flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-primary" /> Admin & Sub-Employees Hierarchy Dropdown
+              <ShieldCheck className="h-5 w-5 text-primary" /> Admin List & Sub-Employee Dropdown
             </CardTitle>
-            <CardDescription className="text-xs">
-              Select an Admin from the dropdown to view their created team members and branch sub-employees.
+            <CardDescription className="text-xs mt-0.5">
+              Select an Admin from the dropdown to view all sub-admins, sub-employees, and team members under them.
             </CardDescription>
           </div>
 
           {/* Admin Selection Dropdown */}
-          <div className="w-full sm:w-[320px]">
+          <div className="w-full sm:w-[340px] space-y-1">
+            <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
+              Select Admin:
+            </label>
             <Select value={selectedAdminId} onValueChange={setSelectedAdminId}>
               <SelectTrigger className="h-10 text-sm font-bold bg-background border-primary/40 shadow-xs">
                 <SelectValue placeholder="Select Admin Dropdown..." />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL" className="font-semibold">
-                  🌐 All System Users ({allUsers.length})
+                  🌐 All System Admins & Staff ({allUsers.length})
                 </SelectItem>
                 {adminOptions.map((admin) => {
                   const subCount = admin.createdEmployees?.length || 0;
@@ -129,10 +132,10 @@ export default function AdminHierarchyDropdown({ admins, allUsers }: AdminHierar
                     <SelectItem key={admin.id} value={String(admin.id)}>
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-bold">
-                          {admin.firstName} {admin.lastName} ({admin.role})
+                          {admin.firstName} {admin.lastName}
                         </span>
                         <span className="text-[11px] text-muted-foreground">
-                          [{branchName} • {subCount} sub]
+                          [{admin.role} • {branchName}]
                         </span>
                       </div>
                     </SelectItem>
@@ -141,6 +144,29 @@ export default function AdminHierarchyDropdown({ admins, allUsers }: AdminHierar
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        {/* Quick Admin Names List Pills */}
+        <div className="pt-3 flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs font-bold text-muted-foreground mr-1">Admin List:</span>
+          {adminOptions.map((admin) => {
+            const isSelected = selectedAdminId === String(admin.id);
+            return (
+              <button
+                key={admin.id}
+                onClick={() => setSelectedAdminId(String(admin.id))}
+                className={`text-xs px-2.5 py-1 rounded-full border font-semibold transition-all flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                    : 'bg-background hover:bg-muted text-foreground border-border'
+                }`}
+              >
+                <UserCheck className="h-3 w-3" />
+                {admin.firstName} {admin.lastName}
+                <span className="text-[10px] opacity-80 font-normal">({admin.role})</span>
+              </button>
+            );
+          })}
         </div>
       </CardHeader>
 

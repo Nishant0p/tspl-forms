@@ -132,10 +132,6 @@ function PropertiesComponent({
                   }}
                 />
               </FormControl>
-              <FormDescription>
-                The label of the Text Field. <br /> It will be displayed above
-                the input.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -149,16 +145,12 @@ function PropertiesComponent({
               <FormControl>
                 <Textarea
                   {...field}
-                  rows={3}
+                  rows={2}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') e.currentTarget.blur();
                   }}
                 />
               </FormControl>
-              <FormDescription>
-                The helper text of the Text Field. <br /> It will be displayed
-                below the input.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -167,13 +159,8 @@ function PropertiesComponent({
           control={form.control}
           name="required"
           render={({ field }) => (
-            <FormItem>
-              <div className="space-y-0.5">
-                <FormLabel>Required</FormLabel>
-                <FormDescription>
-                  Whether the Text Field is required or not.
-                </FormDescription>
-              </div>
+            <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-xs">
+              <FormLabel className="cursor-pointer">Required Question</FormLabel>
               <FormControl>
                 <Switch
                   checked={field.value}

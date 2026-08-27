@@ -142,9 +142,6 @@ function PropertiesComponent({
                   }}
                 />
               </FormControl>
-              <FormDescription>
-                Adding a height to the spacer field will make it visible in the designer
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

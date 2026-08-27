@@ -35,8 +35,8 @@ export default function PreviewDialogBtn({
       </DialogTrigger>
       <DialogContent className="flex h-screen max-h-screen w-screen max-w-full grow flex-col gap-0 p-0 border-none">
         {/* Header Bar with Back Button */}
-        <div className="border-b px-4 sm:px-6 py-3 bg-background flex items-center justify-between gap-3 pr-14 shrink-0 shadow-sm">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className="border-b px-4 sm:px-6 py-3 bg-background flex items-center justify-between gap-3 pr-16 shrink-0 shadow-sm">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <DialogClose asChild>
               <Button variant="outline" size="sm" className="gap-2 shrink-0 h-9 px-3">
                 <ArrowLeft className="h-4 w-4" />
@@ -45,7 +45,7 @@ export default function PreviewDialogBtn({
               </Button>
             </DialogClose>
             <div className="min-w-0 flex-1 border-l pl-3 border-border/60">
-              <p className="text-base sm:text-lg font-bold text-foreground truncate leading-tight">
+              <p className="text-sm sm:text-base font-bold text-foreground break-words line-clamp-1 leading-tight" title={formName}>
                 {formName ? `Preview: ${formName}` : 'Form Preview'}
               </p>
               <p className="text-xs text-muted-foreground truncate hidden sm:block">
@@ -61,14 +61,14 @@ export default function PreviewDialogBtn({
             
             {/* Header Card Preview */}
             <div className="w-full bg-card text-card-foreground rounded-lg border border-border shadow-sm overflow-hidden google-form-header-card p-6 flex flex-col gap-3">
-              <div className="flex items-center gap-3 pb-1 min-w-0">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-1 min-w-0 w-full">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/image.png"
                   alt="TSPL Logo"
-                  className="h-9 sm:h-11 w-auto object-contain shrink-0"
+                  className="h-9 sm:h-11 w-auto object-contain shrink-0 self-start sm:self-auto"
                 />
-                <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words min-w-0 flex-1">
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words w-full leading-tight">
                   {formName || 'Form Title Preview'}
                 </h1>
               </div>

@@ -85,7 +85,6 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
           <FormItem>
             <FormLabel>Label</FormLabel>
             <FormControl><Input {...field} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} /></FormControl>
-            <FormDescription>Email field label.</FormDescription>
             <FormMessage />
           </FormItem>
         )} />
@@ -93,21 +92,19 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
           <FormItem>
             <FormLabel>Placeholder</FormLabel>
             <FormControl><Input {...field} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} /></FormControl>
-            <FormDescription>Hint text shown inside the input.</FormDescription>
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control} name="helperText" render={({ field }) => (
           <FormItem>
             <FormLabel>Helper Text</FormLabel>
-            <FormControl><Textarea {...field} rows={3} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} /></FormControl>
-            <FormDescription>Supporting text shown below the field.</FormDescription>
+            <FormControl><Textarea {...field} rows={2} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control} name="required" render={({ field }) => (
-          <FormItem>
-            <div className="space-y-0.5"><FormLabel>Required</FormLabel><FormDescription>Whether the field must be filled.</FormDescription></div>
+          <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-xs">
+            <FormLabel className="cursor-pointer">Required Question</FormLabel>
             <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
             <FormMessage />
           </FormItem>

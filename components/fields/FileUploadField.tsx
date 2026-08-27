@@ -40,7 +40,22 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
   const form = useForm<propertiesType>({ resolver: zodResolver(propertiesSchema), defaultValues: element.extraAttributes });
   useEffect(() => { form.reset(element.extraAttributes); }, [element, form]);
   function applyChanges(data: propertiesType) { updateElement(element.id, { ...element, extraAttributes: data }); }
-  return <Form {...form}><form onBlur={form.handleSubmit(applyChanges)} onSubmit={(e) => e.preventDefault()} className="space-y-4"><FormField control={form.control} name="label" render={({ field }) => (<FormItem><FormLabel>Label</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={form.control} name="accept" render={({ field }) => (<FormItem><FormLabel>Accepted File Types</FormLabel><FormControl><Input {...field} placeholder="*" /></FormControl><FormDescription>Example: image/*, application/pdf, *</FormDescription><FormMessage /></FormItem>)} /><FormField control={form.control} name="helperText" render={({ field }) => (<FormItem><FormLabel>Helper Text</FormLabel><FormControl><Textarea {...field} rows={3} /></FormControl><FormMessage /></FormItem>)} /><FormField control={form.control} name="required" render={({ field }) => (<FormItem><FormLabel>Required</FormLabel><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormMessage /></FormItem>)} /></form></Form>;
+  return (
+    <Form {...form}>
+      <form onBlur={form.handleSubmit(applyChanges)} onSubmit={(e) => e.preventDefault()} className="space-y-4">
+        <FormField control={form.control} name="label" render={({ field }) => (<FormItem><FormLabel>Label</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+        <FormField control={form.control} name="accept" render={({ field }) => (<FormItem><FormLabel>Accepted File Types</FormLabel><FormControl><Input {...field} placeholder="image/*, application/pdf, *" /></FormControl><FormMessage /></FormItem>)} />
+        <FormField control={form.control} name="helperText" render={({ field }) => (<FormItem><FormLabel>Helper Text</FormLabel><FormControl><Textarea {...field} rows={2} /></FormControl><FormMessage /></FormItem>)} />
+        <FormField control={form.control} name="required" render={({ field }) => (
+          <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-xs">
+            <FormLabel className="cursor-pointer">Required Question</FormLabel>
+            <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+      </form>
+    </Form>
+  );
 }
 
 function DesignerComponent({ elementInstance }: { elementInstance: FormElementInstance }) {

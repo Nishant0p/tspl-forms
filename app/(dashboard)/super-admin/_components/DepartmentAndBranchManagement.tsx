@@ -278,23 +278,88 @@ export default function DepartmentAndBranchManagement({ initialDepartments, init
           </Dialog>
         </CardHeader>
 
-        <CardContent className="space-y-3">
-          {/* Department Filter Dropdown */}
-          <div className="space-y-1.5 pb-2">
-            <Label className="text-xs font-semibold flex items-center justify-between">
-              <span>View Department Employees Dropdown:</span>
+        <CardContent className="space-y-4">
+          {/* Concise Department Name List Badges */}
+          <div className="space-y-1.5 border-b pb-3">
+            <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
+              Department List ({departments.length})
+            </Label>
+            {departments.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic">No departments created yet.</p>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2">
+                {departments.map((dept) => {
+                  const count = allUsers.filter(u => String(u.departmentId || u.department?.id) === String(dept.id)).length;
+                  const isSelected = selectedDeptId === String(dept.id);
+                  return (
+                    <div
+                      key={dept.id}
+                      onClick={() => setSelectedDeptId(String(dept.id))}
+                      className={`cursor-pointer group relative inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
+                        isSelected
+                          ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                          : 'bg-background hover:bg-muted text-foreground border-border'
+                      }`}
+                    >
+                      <Building2 className="h-3.5 w-3.5" />
+                      <span>{dept.name}</span>
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${isSelected ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                        {dept.code} • {count} emp
+                      </span>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            onClick={(e) => e.stopPropagation()}
+                            className="ml-1 text-destructive hover:opacity-80 p-0.5"
+                            title="Delete Department"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Department?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete department <strong>{dept.name} ({dept.code})</strong>?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteDept(dept.id, dept.name)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Department Selection Dropdown */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold flex items-center justify-between">
+              <span>Select Department Dropdown:</span>
               {selectedDeptId !== 'ALL' && (
-                <span className="text-[11px] text-primary font-bold">
+                <Badge variant="outline" className="text-xs font-bold border-primary/40 text-primary">
                   {allUsers.filter(u => String(u.departmentId || u.department?.id) === selectedDeptId).length} Employees
-                </span>
+                </Badge>
               )}
             </Label>
             <Select value={selectedDeptId} onValueChange={setSelectedDeptId}>
-              <SelectTrigger className="h-9 text-xs font-medium">
+              <SelectTrigger className="h-10 text-xs font-bold border-primary/30">
                 <SelectValue placeholder="Select a Department..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">Show Department Overview List</SelectItem>
+                <SelectItem value="ALL" className="font-semibold">
+                  🌐 All Departments ({departments.length})
+                </SelectItem>
                 {departments.map((d) => (
                   <SelectItem key={d.id} value={String(d.id)}>
                     🏢 {d.name} ({d.code})
@@ -304,82 +369,43 @@ export default function DepartmentAndBranchManagement({ initialDepartments, init
             </Select>
           </div>
 
-          {selectedDeptId !== 'ALL' && (
-            <div className="rounded-md border bg-muted/40 p-2.5 space-y-2 text-xs">
-              <p className="font-bold text-foreground flex items-center gap-1.5">
+          {/* Selected Department Employees List */}
+          <div className="rounded-lg border bg-card p-3 space-y-2 text-xs">
+            <p className="font-bold text-foreground flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
                 <Users className="h-3.5 w-3.5 text-primary" />
-                Members of {departments.find(d => String(d.id) === selectedDeptId)?.name}:
-              </p>
-              {allUsers.filter(u => String(u.departmentId || u.department?.id) === selectedDeptId).length === 0 ? (
-                <p className="text-muted-foreground italic text-[11px]">No users assigned to this department yet.</p>
-              ) : (
-                <div className="divide-y max-h-40 overflow-y-auto">
-                  {allUsers
-                    .filter(u => String(u.departmentId || u.department?.id) === selectedDeptId)
-                    .map((u) => (
-                      <div key={u.id} className="py-1 flex items-center justify-between">
-                        <span className="font-semibold text-foreground">{u.firstName} {u.lastName}</span>
-                        <span className="text-[11px] text-muted-foreground font-mono">{u.employeeId} • {u.role}</span>
-                      </div>
-                    ))}
-                </div>
+                Department Members ({selectedDeptId === 'ALL' ? allUsers.length : allUsers.filter(u => String(u.departmentId || u.department?.id) === selectedDeptId).length})
+              </span>
+              {selectedDeptId !== 'ALL' && (
+                <span className="text-[11px] text-muted-foreground font-semibold">
+                  {departments.find(d => String(d.id) === selectedDeptId)?.name}
+                </span>
               )}
-            </div>
-          )}
+            </p>
 
-          {departments.length === 0 ? (
-            <div className="text-center py-8 text-xs text-muted-foreground">
-              No departments created yet. Click &quot;Add Dept&quot; to create one.
-            </div>
-          ) : (
-            <div className="divide-y rounded-lg border bg-card">
-              {departments.map((dept) => (
-                <div key={dept.id} className="flex items-center justify-between p-3 hover:bg-muted/30 transition-colors">
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm">{dept.name}</span>
-                      <Badge variant="outline" className="text-[10px] font-mono bg-primary/5 text-primary border-primary/20">
-                        {dept.code}
-                      </Badge>
+            {allUsers.filter(u => selectedDeptId === 'ALL' || String(u.departmentId || u.department?.id) === selectedDeptId).length === 0 ? (
+              <p className="text-muted-foreground italic text-xs py-3 text-center">No employees assigned to this department yet.</p>
+            ) : (
+              <div className="divide-y max-h-48 overflow-y-auto pr-1">
+                {allUsers
+                  .filter(u => selectedDeptId === 'ALL' || String(u.departmentId || u.department?.id) === selectedDeptId)
+                  .map((u) => (
+                    <div key={u.id} className="py-2 flex items-center justify-between hover:bg-muted/40 px-1 rounded transition-colors">
+                      <div>
+                        <span className="font-bold text-foreground block">{u.firstName} {u.lastName}</span>
+                        <span className="text-[11px] text-muted-foreground">{u.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[10px] font-semibold border-primary/30 text-primary">
+                          {u.role}
+                        </Badge>
+                        <span className="text-[11px] text-muted-foreground font-mono">{u.employeeId}</span>
+                      </div>
                     </div>
-                    {dept.description && (
-                      <p className="text-xs text-muted-foreground">{dept.description}</p>
-                    )}
-                    {dept._count !== undefined && (
-                      <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                        <Users className="h-3 w-3" /> {dept._count.employees} Employee{dept._count.employees === 1 ? '' : 's'}
-                      </p>
-                    )}
-                  </div>
-
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Department?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete department <strong>{dept.name} ({dept.code})</strong>?
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDeleteDept(dept.id, dept.name)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              ))}
-            </div>
-          )}
+                  ))}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -391,7 +417,7 @@ export default function DepartmentAndBranchManagement({ initialDepartments, init
               <GitBranch className="h-5 w-5 text-primary" /> Branches
             </CardTitle>
             <CardDescription className="text-xs">
-              Manage office branches. Newly created branches appear immediately in user profiles.
+              View branch names and select a branch from the dropdown to list all branch sub-employees.
             </CardDescription>
           </div>
 
@@ -458,23 +484,88 @@ export default function DepartmentAndBranchManagement({ initialDepartments, init
           </Dialog>
         </CardHeader>
 
-        <CardContent className="space-y-3">
-          {/* Branch Filter Dropdown */}
-          <div className="space-y-1.5 pb-2">
-            <Label className="text-xs font-semibold flex items-center justify-between">
-              <span>View Branch Sub-Employees Dropdown:</span>
+        <CardContent className="space-y-4">
+          {/* Concise Branch Name List Badges */}
+          <div className="space-y-1.5 border-b pb-3">
+            <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
+              Branch List ({branches.length})
+            </Label>
+            {branches.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic">No branches created yet.</p>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2">
+                {branches.map((branch) => {
+                  const count = allUsers.filter(u => String(u.branchId || u.branch?.id) === String(branch.id)).length;
+                  const isSelected = selectedBranchId === String(branch.id);
+                  return (
+                    <div
+                      key={branch.id}
+                      onClick={() => setSelectedBranchId(String(branch.id))}
+                      className={`cursor-pointer group relative inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
+                        isSelected
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                          : 'bg-background hover:bg-muted text-foreground border-border'
+                      }`}
+                    >
+                      <GitBranch className="h-3.5 w-3.5" />
+                      <span>{branch.name}</span>
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${isSelected ? 'bg-white/20 text-white' : 'bg-muted text-muted-foreground'}`}>
+                        {branch.code} • {count} emp
+                      </span>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            onClick={(e) => e.stopPropagation()}
+                            className="ml-1 text-destructive hover:opacity-80 p-0.5"
+                            title="Delete Branch"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Branch?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete branch <strong>{branch.name} ({branch.code})</strong>?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteBranch(branch.id, branch.name)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Branch Selection Dropdown */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold flex items-center justify-between">
+              <span>Select Branch Dropdown:</span>
               {selectedBranchId !== 'ALL' && (
-                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
+                <Badge className="bg-emerald-600 text-white font-bold text-xs">
                   {allUsers.filter(u => String(u.branchId || u.branch?.id) === selectedBranchId).length} Employees
-                </span>
+                </Badge>
               )}
             </Label>
             <Select value={selectedBranchId} onValueChange={setSelectedBranchId}>
-              <SelectTrigger className="h-9 text-xs font-medium">
+              <SelectTrigger className="h-10 text-xs font-bold border-emerald-500/40">
                 <SelectValue placeholder="Select a Branch..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">Show Branch Overview List</SelectItem>
+                <SelectItem value="ALL" className="font-semibold">
+                  🌐 All Branches ({branches.length})
+                </SelectItem>
                 {branches.map((b) => (
                   <SelectItem key={b.id} value={String(b.id)}>
                     🌿 {b.name} ({b.code})
@@ -484,81 +575,43 @@ export default function DepartmentAndBranchManagement({ initialDepartments, init
             </Select>
           </div>
 
-          {selectedBranchId !== 'ALL' && (
-            <div className="rounded-md border bg-emerald-500/10 border-emerald-500/20 p-2.5 space-y-2 text-xs">
-              <p className="font-bold text-foreground flex items-center gap-1.5">
+          {/* Selected Branch Employees List */}
+          <div className="rounded-lg border bg-card p-3 space-y-2 text-xs">
+            <p className="font-bold text-foreground flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
                 <GitBranch className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                Members of {branches.find(b => String(b.id) === selectedBranchId)?.name}:
-              </p>
-              {allUsers.filter(u => String(u.branchId || u.branch?.id) === selectedBranchId).length === 0 ? (
-                <p className="text-muted-foreground italic text-[11px]">No users assigned to this branch yet.</p>
-              ) : (
-                <div className="divide-y max-h-40 overflow-y-auto">
-                  {allUsers
-                    .filter(u => String(u.branchId || u.branch?.id) === selectedBranchId)
-                    .map((u) => (
-                      <div key={u.id} className="py-1 flex items-center justify-between">
-                        <span className="font-semibold text-foreground">{u.firstName} {u.lastName}</span>
-                        <span className="text-[11px] text-muted-foreground font-mono">{u.employeeId} • {u.role}</span>
-                      </div>
-                    ))}
-                </div>
+                Branch Members ({selectedBranchId === 'ALL' ? allUsers.length : allUsers.filter(u => String(u.branchId || u.branch?.id) === selectedBranchId).length})
+              </span>
+              {selectedBranchId !== 'ALL' && (
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                  {branches.find(b => String(b.id) === selectedBranchId)?.name}
+                </span>
               )}
-            </div>
-          )}
-          {branches.length === 0 ? (
-            <div className="text-center py-8 text-xs text-muted-foreground">
-              No branches created yet. Click &quot;Add Branch&quot; to create one.
-            </div>
-          ) : (
-            <div className="divide-y rounded-lg border bg-card">
-              {branches.map((branch) => (
-                <div key={branch.id} className="flex items-center justify-between p-3 hover:bg-muted/30 transition-colors">
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm">{branch.name}</span>
-                      <Badge variant="outline" className="text-[10px] font-mono bg-primary/5 text-primary border-primary/20">
-                        {branch.code}
-                      </Badge>
-                    </div>
-                    {branch.location && (
-                      <p className="text-xs text-muted-foreground">{branch.location}</p>
-                    )}
-                    {branch._count !== undefined && (
-                      <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                        <Users className="h-3 w-3" /> {branch._count.employees} Employee{branch._count.employees === 1 ? '' : 's'}
-                      </p>
-                    )}
-                  </div>
+            </p>
 
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Branch?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete branch <strong>{branch.name} ({branch.code})</strong>?
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDeleteBranch(branch.id, branch.name)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              ))}
-            </div>
-          )}
+            {allUsers.filter(u => selectedBranchId === 'ALL' || String(u.branchId || u.branch?.id) === selectedBranchId).length === 0 ? (
+              <p className="text-muted-foreground italic text-xs py-3 text-center">No employees assigned to this branch yet.</p>
+            ) : (
+              <div className="divide-y max-h-48 overflow-y-auto pr-1">
+                {allUsers
+                  .filter(u => selectedBranchId === 'ALL' || String(u.branchId || u.branch?.id) === selectedBranchId)
+                  .map((u) => (
+                    <div key={u.id} className="py-2 flex items-center justify-between hover:bg-muted/40 px-1 rounded transition-colors">
+                      <div>
+                        <span className="font-bold text-foreground block">{u.firstName} {u.lastName}</span>
+                        <span className="text-[11px] text-muted-foreground">{u.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[10px] font-semibold border-emerald-500/30 text-emerald-700 dark:text-emerald-400">
+                          {u.role}
+                        </Badge>
+                        <span className="text-[11px] text-muted-foreground font-mono">{u.employeeId}</span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
