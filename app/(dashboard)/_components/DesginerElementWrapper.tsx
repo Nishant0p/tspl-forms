@@ -94,9 +94,9 @@ export default function DesginerElementWrapper({
         {...draggable.attributes}
         {...draggable.listeners}
         className={cn(
-          'relative flex min-h-[120px] h-auto w-full flex-col rounded-xl text-foreground ring-1 ring-inset ring-border/60 hover:cursor-pointer transition-all duration-200 bg-card shadow-xs',
+          'relative flex min-h-[120px] h-auto w-full flex-col rounded-xl text-foreground border border-border/60 hover:cursor-pointer transition-all duration-200 bg-card shadow-xs',
           isSelected &&
-            'ring-2 ring-violet-600 dark:ring-violet-400 border-l-4 border-l-violet-600 dark:border-l-violet-400 shadow-lg shadow-violet-500/10 ring-offset-1 ring-offset-background'
+            'border-2 border-violet-600 dark:border-violet-400 border-l-[6px] border-l-violet-600 dark:border-l-violet-400 shadow-xl shadow-violet-500/10'
         )}
         onMouseOver={() => setMouseOver(true)}
         onMouseLeave={() => setMouseOver(false)}
