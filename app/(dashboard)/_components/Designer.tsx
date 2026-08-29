@@ -233,8 +233,8 @@ export default function Designer({ formId, initialContent }: { formId: number; i
             transition: 'transform 0.15s ease-out',
           }}
           className={cn(
-            'bg-background w-full max-w-[760px] min-h-[500px] rounded-xl flex flex-col items-center justify-start overflow-visible transition-all shadow-xs border border-border/50',
-            droppable.isOver && 'ring-2 ring-violet-500 ring-inset bg-violet-500/5'
+            'w-full max-w-[760px] flex flex-col items-center justify-start overflow-visible transition-all',
+            droppable.isOver && 'ring-2 ring-violet-500 ring-inset bg-violet-500/5 rounded-xl'
           )}>
           {!droppable.isOver && elements.length === 0 && (
             <p className="flex grow items-center text-3xl font-bold text-muted-foreground py-20">
