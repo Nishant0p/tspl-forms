@@ -97,15 +97,15 @@ function PropertiesComponent({
   }, [element, form]);
 
   function applyChanges(data: propertiesType) {
-    const { label, helperText, placeholder, required } = data;
+    const { label, helperText, placeholder } = data;
 
     updateElement(element.id, {
       ...element,
       extraAttributes: {
+        ...element.extraAttributes,
         label,
         helperText,
         placeholder,
-        required,
       },
     });
   }
@@ -167,22 +167,6 @@ function PropertiesComponent({
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') e.currentTarget.blur();
                   }}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="required"
-          render={({ field }) => (
-            <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-xs">
-              <FormLabel className="cursor-pointer">Required Question</FormLabel>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
                 />
               </FormControl>
               <FormMessage />

@@ -57,7 +57,7 @@ export default function PreviewDialogBtn({
 
         {/* Scrollable Form Content */}
         <div className="flex grow flex-col items-center overflow-y-auto bg-[#f0ebf8] dark:bg-[#121016] google-form-container p-4 sm:p-8">
-          <div className="flex h-full w-full max-w-[640px] grow flex-col gap-4 pb-12">
+          <div className="flex min-h-full w-full max-w-[640px] flex-col gap-4 pb-12">
             
             {/* Header Card Preview */}
             <div className="w-full bg-card text-card-foreground rounded-lg border border-border shadow-sm overflow-hidden google-form-header-card p-6 flex flex-col gap-3">

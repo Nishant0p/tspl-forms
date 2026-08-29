@@ -105,15 +105,15 @@ function PropertiesComponent({
   }, [element, form]);
 
   function applyChanges(data: propertiesType) {
-    const { label, helperText, placeholder, required, options } = data;
+    const { label, helperText, placeholder, options } = data;
 
     updateElement(element.id, {
       ...element,
       extraAttributes: {
+        ...element.extraAttributes,
         label,
         helperText,
         placeholder,
-        required,
         options,
       },
     });
@@ -239,23 +239,6 @@ function PropertiesComponent({
               <FormDescription>
                 By clicking on the button you can add new options to the select field.
               </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="required"
-          render={({ field }) => (
-            <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-xs">
-              <FormLabel className="cursor-pointer">Required Question</FormLabel>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
               <FormMessage />
             </FormItem>
           )}

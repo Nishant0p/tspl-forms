@@ -30,9 +30,9 @@ function FormMiniPreview({ contentJson }: { contentJson: string }) {
   const previewElements = elements.slice(0, 2); // Show first 2 fields in mini preview
 
   return (
-    <div className="relative h-28 w-full bg-gradient-to-br from-primary/10 via-muted/40 to-orange-500/10 border-b p-3 flex flex-col justify-between overflow-hidden group-hover:border-primary/30 transition-colors">
+    <div className="relative h-[132px] w-full bg-gradient-to-br from-primary/10 via-muted/40 to-orange-500/10 border-b p-3 flex flex-col justify-start gap-1 overflow-hidden group-hover:border-primary/30 transition-colors">
       {/* Top watermark badge */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between shrink-0">
         <span className="inline-flex items-center gap-1 rounded-full bg-background/90 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground backdrop-blur-xs border border-border/50">
           <FileText className="h-3 w-3 text-primary" />
           Mini Preview
@@ -44,17 +44,17 @@ function FormMiniPreview({ contentJson }: { contentJson: string }) {
 
       {/* Mini Form Fields Render */}
       {previewElements.length > 0 ? (
-        <div className="space-y-1.5 opacity-90 pointer-events-none scale-95 origin-top-left mt-1">
+        <div className="space-y-1 opacity-90 pointer-events-none mt-0.5">
           {previewElements.map((el, idx) => {
             const label = el.extraAttributes?.label || el.extraAttributes?.title || el.type;
             const placeholder = el.extraAttributes?.placeholder || 'Input value...';
             return (
               <div key={idx} className="space-y-0.5">
-                <div className="text-[10px] font-semibold text-foreground/80 truncate max-w-[200px]">
+                <div className="text-[10px] font-semibold text-foreground/80 truncate max-w-[220px]">
                   {label}
                 </div>
-                {['TitleField', 'SubTitleField'].includes(el.type) ? (
-                  <div className="text-[11px] font-bold text-primary truncate max-w-[200px]">
+                {['TitleField', 'SubTitleField', 'SectionHeaderField'].includes(el.type) ? (
+                  <div className="text-[10px] font-bold text-primary truncate max-w-[220px]">
                     {el.extraAttributes?.title || label}
                   </div>
                 ) : el.type === 'CheckboxField' ? (
@@ -63,7 +63,7 @@ function FormMiniPreview({ contentJson }: { contentJson: string }) {
                     <span className="text-[9px] text-muted-foreground truncate">{label}</span>
                   </div>
                 ) : (
-                  <div className="h-4 w-full rounded border border-border/60 bg-background/80 px-1.5 text-[9px] text-muted-foreground flex items-center truncate">
+                  <div className="h-3.5 w-full rounded border border-border/60 bg-background/80 px-1.5 text-[9px] text-muted-foreground flex items-center truncate">
                     {placeholder}
                   </div>
                 )}
@@ -72,7 +72,7 @@ function FormMiniPreview({ contentJson }: { contentJson: string }) {
           })}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center h-full text-muted-foreground/50 gap-1 text-xs">
+        <div className="flex flex-col items-center justify-center h-full text-muted-foreground/50 gap-1 text-xs py-4">
           <Layout className="h-5 w-5 stroke-1" />
           <span className="text-[10px]">No elements in form</span>
         </div>

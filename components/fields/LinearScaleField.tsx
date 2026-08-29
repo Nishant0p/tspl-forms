@@ -93,7 +93,13 @@ function PropertiesComponent({
   function applyChanges(data: propertiesType) {
     updateElement(element.id, {
       ...element,
-      extraAttributes: data,
+      extraAttributes: {
+        ...element.extraAttributes,
+        label: data.label,
+        helperText: data.helperText,
+        min: data.min,
+        max: data.max,
+      },
     });
   }
 
@@ -162,19 +168,6 @@ function PropertiesComponent({
                   step={1}
                   onValueChange={(values) => field.onChange(values[0])}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="required"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Required</FormLabel>
-              <FormControl>
-                <Switch checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>

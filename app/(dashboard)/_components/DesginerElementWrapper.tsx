@@ -10,6 +10,8 @@ import { toast } from '@/components/ui/use-toast';
 import { deleteElementInstance } from '@/app/actions/form';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 export default function DesginerElementWrapper({
   element,
@@ -23,7 +25,7 @@ export default function DesginerElementWrapper({
   const DesignerElement = FormElements[element.type].designerComponent;
   const PropertiesElement = FormElements[element.type].propertiesComponent;
 
-  const { removeElement, setSelectedElement, selectedElement, elements, addElement } =
+  const { removeElement, setSelectedElement, selectedElement, elements, addElement, updateElement } =
     useDesginerStore();
 
   const isSelected = selectedElement?.id === element.id;
@@ -119,17 +121,54 @@ export default function DesginerElementWrapper({
         {/* Selected / Editing State: In-place Google Forms Editor */}
         {isSelected ? (
           <div className="w-full p-4 sm:p-5 space-y-4 relative z-10 cursor-default bg-gradient-to-b from-violet-500/5 to-transparent rounded-xl">
-            {/* Header Toolbar inside Card */}
+            {/* Top Header Badge */}
             <div className="flex items-center justify-between border-b pb-2.5 text-xs">
               <Badge className="bg-violet-600 hover:bg-violet-700 text-white font-bold gap-1 text-[11px] px-2.5 py-0.5">
                 <Sparkles className="h-3 w-3" /> {element.type}
               </Badge>
+              <span className="text-[11px] text-muted-foreground font-medium">Editing Field</span>
+            </div>
 
-              <div className="flex items-center gap-1">
+            {/* In-Place Editable Properties Form */}
+            <div className="pt-1">
+              <PropertiesElement elementInstance={element} />
+            </div>
+
+            {/* Footer Toolbar: Requirement Switch + Duplicate + Delete + Done in SAME line */}
+            <div className="flex items-center justify-between border-t pt-3.5 mt-2 text-xs gap-3 flex-wrap sm:flex-nowrap">
+              {typeof element.extraAttributes?.required === 'boolean' ? (
+                <div className="flex items-center gap-2 font-medium text-foreground">
+                  <Switch
+                    id={`req-toggle-${element.id}`}
+                    checked={!!element.extraAttributes?.required}
+                    onCheckedChange={(checked) => {
+                      const updated = {
+                        ...element,
+                        extraAttributes: {
+                          ...element.extraAttributes,
+                          required: checked,
+                        },
+                      };
+                      updateElement(element.id, updated);
+                      setSelectedElement(updated);
+                    }}
+                  />
+                  <Label
+                    htmlFor={`req-toggle-${element.id}`}
+                    className="cursor-pointer text-xs font-semibold text-muted-foreground hover:text-foreground select-none"
+                  >
+                    Required
+                  </Label>
+                </div>
+              ) : (
+                <div />
+              )}
+
+              <div className="flex items-center gap-1.5 ml-auto">
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-7 text-xs gap-1 font-semibold text-muted-foreground hover:text-foreground"
+                  className="h-8 text-xs gap-1.5 font-semibold text-muted-foreground hover:text-foreground"
                   onClick={(e) => {
                     e.stopPropagation();
                     duplicateElement();
@@ -141,7 +180,7 @@ export default function DesginerElementWrapper({
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-7 text-xs gap-1 font-semibold text-destructive hover:bg-destructive/10"
+                  className="h-8 text-xs gap-1.5 font-semibold text-destructive hover:bg-destructive/10"
                   onClick={(e) => {
                     e.stopPropagation();
                     removeElement(element.id);
@@ -154,7 +193,7 @@ export default function DesginerElementWrapper({
                 <Button
                   size="sm"
                   variant="default"
-                  className="h-7 text-xs gap-1 font-bold bg-violet-600 hover:bg-violet-700 text-white ml-1"
+                  className="h-8 text-xs gap-1.5 font-bold bg-violet-600 hover:bg-violet-700 text-white ml-1 shadow-xs"
                   onClick={(e) => {
                     e.stopPropagation();
                     setSelectedElement(null);
@@ -163,11 +202,6 @@ export default function DesginerElementWrapper({
                   <Check className="h-3.5 w-3.5" /> Done
                 </Button>
               </div>
-            </div>
-
-            {/* In-Place Editable Properties Form */}
-            <div className="pt-1">
-              <PropertiesElement elementInstance={element} />
             </div>
           </div>
         ) : (
@@ -210,7 +244,7 @@ export default function DesginerElementWrapper({
 
             <div
               className={cn(
-                'pointer-events-none flex min-h-[110px] h-auto w-full items-center rounded-xl bg-accent/20 p-4 transition-colors',
+                'pointer-events-none flex min-h-[110px] h-auto w-full items-start justify-center rounded-xl bg-accent/20 p-4 transition-colors',
                 mouseOver && 'opacity-30'
               )}
             >
