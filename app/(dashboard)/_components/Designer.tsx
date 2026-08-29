@@ -221,21 +221,22 @@ export default function Designer({ formId, initialContent }: { formId: number; i
 
       {/* Designer Canvas Container */}
       <div
-        className="w-full h-full p-4 overflow-auto flex flex-col items-center justify-start"
+        ref={droppable.setNodeRef}
+        className={cn(
+          'w-full h-full p-4 sm:p-8 overflow-auto flex flex-col items-center justify-start transition-colors',
+          droppable.isOver && 'bg-violet-500/5 ring-2 ring-violet-500 ring-inset'
+        )}
         onClick={() => {
           if (selectedElement) setSelectedElement(null);
         }}>
         <div
-          ref={droppable.setNodeRef}
           style={{
             transform: `scale(${zoom / 100})`,
             transformOrigin: 'top center',
             transition: 'transform 0.15s ease-out',
           }}
-          className={cn(
-            'w-full max-w-[760px] flex flex-col items-center justify-start overflow-visible transition-all',
-            droppable.isOver && 'ring-2 ring-violet-500 ring-inset bg-violet-500/5 rounded-xl'
-          )}>
+          className="w-full max-w-[760px] flex flex-col items-center justify-start overflow-visible transition-all"
+        >
           {!droppable.isOver && elements.length === 0 && (
             <p className="flex grow items-center text-3xl font-bold text-muted-foreground py-20">
               Drop here
