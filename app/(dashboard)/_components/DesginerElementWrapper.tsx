@@ -244,7 +244,7 @@ export default function DesginerElementWrapper({
 
             <div
               className={cn(
-                'pointer-events-none flex min-h-[110px] h-auto w-full items-start justify-center rounded-xl bg-accent/20 p-4 transition-colors',
+                'pointer-events-none flex h-auto w-full flex-col rounded-xl bg-accent/20 p-4 transition-colors',
                 mouseOver && 'opacity-30'
               )}
             >

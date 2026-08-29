@@ -233,8 +233,8 @@ export default function Designer({ formId, initialContent }: { formId: number; i
             transition: 'transform 0.15s ease-out',
           }}
           className={cn(
-            'bg-background w-full max-w-[920px] min-h-[500px] rounded-xl flex flex-col items-center justify-start overflow-visible transition-all',
-            droppable.isOver && 'ring-2 ring-primary ring-inset'
+            'bg-background w-full max-w-[760px] min-h-[500px] rounded-xl flex flex-col items-center justify-start overflow-visible transition-all shadow-xs border border-border/50',
+            droppable.isOver && 'ring-2 ring-violet-500 ring-inset bg-violet-500/5'
           )}>
           {!droppable.isOver && elements.length === 0 && (
             <p className="flex grow items-center text-3xl font-bold text-muted-foreground py-20">
@@ -242,12 +242,12 @@ export default function Designer({ formId, initialContent }: { formId: number; i
             </p>
           )}
           {droppable.isOver && elements.length === 0 && (
-            <div className="w-full p-4">
+            <div className="w-full p-4 sm:p-6">
               <div className="h-[120px] rounded-md bg-primary/20"></div>
             </div>
           )}
           {elements.length > 0 && (
-            <div className="flex w-full flex-col gap-2 p-4">
+            <div className="flex w-full flex-col gap-3 p-4 sm:p-6">
               {elements.map((element) => (
                 <DesginerElementWrapper
                   key={element.id}
