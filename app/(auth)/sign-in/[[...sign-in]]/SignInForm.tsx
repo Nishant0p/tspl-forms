@@ -194,7 +194,7 @@ export default function SignInForm({ csrfToken }: SignInFormProps) {
           <div className="rounded-xl border border-border/60 bg-muted/40 p-3 flex items-center gap-3 text-xs text-muted-foreground">
             <ShieldCheck className="h-5 w-5 text-emerald-500 shrink-0" />
             <div>
-              <strong className="block text-foreground font-semibold flex items-center gap-1">
+              <strong className="flex items-center gap-1 text-foreground font-semibold">
                 <Shield className="h-3.5 w-3.5 text-blue-500 inline" /> CSRF Protected Sign-In
               </strong>
               <span>Anti-CSRF token verified. Internal Employee Access Only.</span>

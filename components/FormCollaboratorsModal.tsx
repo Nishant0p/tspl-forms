@@ -232,7 +232,7 @@ export default function FormCollaboratorsModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold">
             <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            Manage Form Access: "{formName}"
+            Manage Form Access: &ldquo;{formName}&rdquo;
           </DialogTitle>
           <DialogDescription>
             Grant any team member access as an <strong>Editor</strong> (edit questions and view submissions) or a <strong>Viewer</strong> (unlimited viewers, view submissions only).
