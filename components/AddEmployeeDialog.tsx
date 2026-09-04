@@ -94,13 +94,13 @@ export default function AddEmployeeDialog() {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
           <div className="grid gap-2">
-            <Label htmlFor="employeeId">Employee ID</Label>
+            <Label htmlFor="employeeId">Employee ID (Must start with TSPL)</Label>
             <Input
               id="employeeId"
               name="employeeId"
               value={formData.employeeId}
               onChange={handleChange}
-              placeholder="e.g. EMP004"
+              placeholder="e.g. TSPL004"
               required
               disabled={isPending}
             />

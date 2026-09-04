@@ -105,7 +105,7 @@ function BannerDisplay({ extraAttrs }: { extraAttrs: typeof extraAttributes }) {
 
   return (
     <div
-      className="relative flex w-full flex-col justify-end overflow-hidden rounded-xl shadow-md transition-all border border-border/50"
+      className="relative flex w-full flex-col justify-end overflow-hidden rounded-none sm:rounded-xl shadow-md transition-all border-y sm:border border-border/50 min-h-[160px] sm:min-h-[180px]"
       style={{
         ...bgStyle,
         height: height || '200px',
@@ -116,7 +116,7 @@ function BannerDisplay({ extraAttrs }: { extraAttrs: typeof extraAttributes }) {
         <img
           src={imageUrl}
           alt={title || 'Form banner'}
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover object-center"
         />
       )}
 
@@ -133,12 +133,12 @@ function BannerDisplay({ extraAttrs }: { extraAttrs: typeof extraAttributes }) {
 
       {(title || subtitle) && (
         <div
-          className="relative z-20 p-6 text-white"
+          className="relative z-20 p-4 sm:p-6 text-white"
           style={{ textAlign: (textAlign as any) || 'center' }}
         >
-          {title && <h2 className="text-2xl font-bold tracking-tight md:text-3xl drop-shadow-sm">{title}</h2>}
+          {title && <h2 className="text-xl sm:text-2xl font-bold tracking-tight md:text-3xl drop-shadow-sm">{title}</h2>}
           {subtitle && (
-            <p className="mt-1 text-sm text-white/90 md:text-base drop-shadow-sm">{subtitle}</p>
+            <p className="mt-1 text-xs sm:text-sm text-white/90 md:text-base drop-shadow-sm">{subtitle}</p>
           )}
         </div>
       )}
@@ -374,6 +374,8 @@ function PropertiesComponent({
                   <SelectItem value="200px">Medium (200px)</SelectItem>
                   <SelectItem value="260px">Large (260px)</SelectItem>
                   <SelectItem value="320px">Hero (320px)</SelectItem>
+                  <SelectItem value="50vh">Half Screen (50vh)</SelectItem>
+                  <SelectItem value="80vh">Full Screen (80vh)</SelectItem>
                 </SelectContent>
               </Select>
             </FormItem>

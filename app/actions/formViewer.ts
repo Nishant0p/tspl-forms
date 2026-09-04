@@ -1,25 +1,189 @@
 'use server';
 
 import prisma from '@/lib/prisma';
-import { getCurrentEmployee, requireEmployee } from '@/lib/auth';
+import { requireEmployee, getCurrentEmployee, getCurrentUser } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 
-export async function createFormViewerUser(data: {
-  formId: number;
+function formatTsplEmployeeId(id: string): string {
+  let clean = (id || '').trim().toUpperCase();
+  if (!clean.startsWith('TSPL')) {
+    clean = `TSPL${clean}`;
+  }
+  return clean;
+}
+
+export type FormCollaboratorUser = {
+  id: number;
   employeeId: string;
   firstName: string;
   lastName: string;
   email: string;
+  role: string;
+  status: string;
+  department?: { name: string } | null;
+  branch?: { name: string } | null;
+};
+
+export async function getFormCollaborators(formId: number) {
+  const current = await requireEmployee();
+
+  const form = await prisma.form.findUnique({
+    where: { id: formId },
+    select: {
+      id: true,
+      name: true,
+      userId: true,
+    },
+  });
+
+  if (!form) {
+    throw new Error('Form not found');
+  }
+
+  // Get editors
+  const editorAccesses = await (prisma as any).formAllowedEmployee.findMany({
+    where: { formId },
+    include: {
+      employee: {
+        include: {
+          department: true,
+          branch: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  // Get viewers
+  const viewerAccesses = await (prisma as any).formViewerAccess.findMany({
+    where: { formId },
+    include: {
+      employee: {
+        include: {
+          department: true,
+          branch: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  // Get all active employees in organization for collaborator assignment
+  const allEmployees = await prisma.employee.findMany({
+    where: { status: 'ACTIVE' },
+    select: {
+      id: true,
+      employeeId: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      role: true,
+      status: true,
+      department: { select: { name: true } },
+      branch: { select: { name: true } },
+    },
+    orderBy: { firstName: 'asc' },
+  });
+
+  return {
+    form,
+    editors: editorAccesses.map((a: any) => a.employee).filter(Boolean),
+    viewers: viewerAccesses.map((a: any) => a.employee).filter(Boolean),
+    allEmployees,
+  };
+}
+
+export async function assignFormCollaborator(
+  formId: number,
+  employeeId: number,
+  accessType: 'EDITOR' | 'VIEWER'
+) {
+  await requireEmployee();
+
+  const form = await prisma.form.findUnique({
+    where: { id: formId },
+  });
+
+  if (!form) {
+    throw new Error('Form not found');
+  }
+
+  const employee = await prisma.employee.findUnique({
+    where: { id: employeeId },
+  });
+
+  if (!employee) {
+    throw new Error('Employee not found');
+  }
+
+  await prisma.$transaction(async (tx: any) => {
+    if (accessType === 'EDITOR') {
+      // Remove from viewers if exists
+      await tx.formViewerAccess.deleteMany({
+        where: { formId, employeeId },
+      });
+      // Add to editors (FormAllowedEmployee)
+      await tx.formAllowedEmployee.upsert({
+        where: {
+          formId_employeeId: { formId, employeeId },
+        },
+        create: { formId, employeeId },
+        update: {},
+      });
+    } else {
+      // Remove from editors if exists
+      await tx.formAllowedEmployee.deleteMany({
+        where: { formId, employeeId },
+      });
+      // Add to viewers (FormViewerAccess)
+      await tx.formViewerAccess.upsert({
+        where: {
+          formId_employeeId: { formId, employeeId },
+        },
+        create: { formId, employeeId },
+        update: {},
+      });
+    }
+  });
+
+  revalidatePath('/', 'layout');
+  revalidatePath('/dashboard');
+  revalidatePath(`/forms/${formId}`);
+  revalidatePath(`/builder/${formId}`);
+  return { success: true };
+}
+
+export async function removeFormCollaborator(formId: number, employeeId: number) {
+  await requireEmployee();
+
+  await prisma.$transaction(async (tx: any) => {
+    await tx.formAllowedEmployee.deleteMany({
+      where: { formId, employeeId },
+    });
+    await tx.formViewerAccess.deleteMany({
+      where: { formId, employeeId },
+    });
+  });
+
+  revalidatePath('/', 'layout');
+  revalidatePath('/dashboard');
+  revalidatePath(`/forms/${formId}`);
+  revalidatePath(`/builder/${formId}`);
+  return { success: true };
+}
+
+export async function createAndAssignNewCollaborator(data: {
+  formId: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  employeeId: string;
   password?: string;
+  accessType: 'EDITOR' | 'VIEWER';
 }) {
   const current = await requireEmployee();
 
-  // Only Admin, Super Admin, HR, or Editor can assign form viewers
-  if (!['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'HR'].includes(current.role)) {
-    throw new Error('Unauthorized to manage form viewers');
-  }
-
-  const { formId, employeeId, firstName, lastName, email, password } = data;
+  const { formId, firstName, lastName, email, employeeId, password, accessType } = data;
 
   const form = await prisma.form.findUnique({
     where: { id: formId },
@@ -30,7 +194,7 @@ export async function createFormViewerUser(data: {
   }
 
   const cleanEmail = email.trim().toLowerCase();
-  const cleanEmpId = employeeId.trim();
+  const cleanEmpId = formatTsplEmployeeId(employeeId);
 
   // Find or create employee
   let employee = await prisma.employee.findFirst({
@@ -43,87 +207,31 @@ export async function createFormViewerUser(data: {
   });
 
   if (!employee) {
+    const generatedClerkId = `user_${cleanEmpId}_${Date.now()}`;
     employee = await prisma.employee.create({
       data: {
-        clerkUserId: `viewer_${cleanEmpId}_${Date.now()}`,
+        clerkUserId: generatedClerkId,
         employeeId: cleanEmpId,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: cleanEmail,
-        password: password || 'Viewer123!',
-        role: 'FORM_VIEWER' as any,
+        password: password?.trim() || 'Tspl123456',
+        role: accessType === 'EDITOR' ? 'EDITOR' : 'FORM_VIEWER',
         status: 'ACTIVE',
       },
     });
-  } else if (employee.role === 'EMPLOYEE') {
-    // Elevate or update role to FORM_VIEWER if needed
-    employee = await prisma.employee.update({
-      where: { id: employee.id },
-      data: { role: 'FORM_VIEWER' as any },
-    });
   }
 
-  // Assign access to formViewerAccess
-  await (prisma as any).formViewerAccess.upsert({
-    where: {
-      formId_employeeId: {
-        formId,
-        employeeId: employee.id,
-      },
-    },
-    create: {
-      formId,
-      employeeId: employee.id,
-    },
-    update: {},
-  });
+  await assignFormCollaborator(formId, employee.id, accessType);
 
-  revalidatePath(`/forms/${formId}`);
   return { success: true, employee };
 }
 
-export async function getFormViewers(formId: number) {
-  const current = await requireEmployee();
+// Backwards compatibility aliases
+export const createFormViewerUser = createAndAssignNewCollaborator;
+export const getFormViewers = async (formId: number) => {
+  const res = await getFormCollaborators(formId);
+  return res.viewers;
+};
+export const removeFormViewerAccess = removeFormCollaborator;
 
-  if (!current) {
-    throw new Error('Unauthorized');
-  }
-
-  const viewers = await (prisma as any).formViewerAccess.findMany({
-    where: { formId },
-    include: {
-      employee: {
-        select: {
-          id: true,
-          employeeId: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          role: true,
-          status: true,
-        },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  return viewers.map((v: { employee: any }) => v.employee);
-}
-
-export async function removeFormViewerAccess(formId: number, employeeId: number) {
-  const current = await requireEmployee();
-
-  if (!['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'HR'].includes(current.role)) {
-    throw new Error('Unauthorized');
-  }
-
-  await (prisma as any).formViewerAccess.deleteMany({
-    where: {
-      formId,
-      employeeId,
-    },
-  });
-
-  revalidatePath(`/forms/${formId}`);
-  return { success: true };
-}

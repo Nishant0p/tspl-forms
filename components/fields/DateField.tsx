@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Label } from '../ui/label';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { Calendar as CalendarComponent } from '../ui/calendar';
 
 const type: ElementsType = 'DateField';
@@ -64,7 +64,7 @@ export const DateFieldFormElement: FormElement = {
     const element = formElement as CustomInstance;
 
     if (element.extraAttributes.required) {
-      return currentValue.length > 0;
+      return !!currentValue && currentValue.trim().length > 0;
     }
 
     return true;
@@ -184,7 +184,7 @@ function DesignerComponent({
         className='w-full justify-start text-left font-normal'
       >
         <Calendar className='mr-2 h-4 w-4' />
-        <span>Pick a date</span>
+        <span>Select date (DD/MM/YYYY)</span>
       </Button>
       {helperText && (
         <p className="text-[.8rem] text-muted-foreground">{helperText}</p>
@@ -206,13 +206,18 @@ function FormComponent({
 }) {
   const element = elementInstance as CustomInstance;
 
-  const [date, setDate] = useState<Date | undefined>(defaultValues ? new Date(defaultValues) : undefined)
+  const parseInitialDate = (val?: string) => {
+    if (!val) return undefined;
+    const d = new Date(val);
+    return isValid(d) ? d : undefined;
+  };
 
+  const [date, setDate] = useState<Date | undefined>(parseInitialDate(defaultValues));
   const [error, setError] = useState(false);
 
   useEffect(() => {
     setError(isInvalid === true);
-  }, [isInvalid])
+  }, [isInvalid]);
 
   const { label, required, helperText } = element.extraAttributes;
 
@@ -230,18 +235,18 @@ function FormComponent({
               error && 'border-rose-500', !date && 'text-muted-foreground')}
           >
             <Calendar className='mr-2 h-4 w-4' />
-            {date ? format(date, 'PPP') : <span>Pick a date</span>}
+            {date && isValid(date) ? format(date, 'dd/MM/yyyy') : <span>Select date (DD/MM/YYYY)</span>}
           </Button>
         </PopoverTrigger>
         <PopoverContent className='w-auto p-0' align='start'>
           <CalendarComponent
             mode="single"
             selected={date}
-            onSelect={(date) => {
-              setDate(date);
+            onSelect={(selectedDate) => {
+              setDate(selectedDate);
 
               if (!submitFunction) return;
-              const value = date?.toUTCString() || '';
+              const value = selectedDate && isValid(selectedDate) ? selectedDate.toISOString() : '';
               const valid = DateFieldFormElement.validate(element, value);
               setError(!valid);
               submitFunction(element.id, value);

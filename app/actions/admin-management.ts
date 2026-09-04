@@ -116,7 +116,10 @@ export async function createAdminManagedUser(data: CreateManagedUserInput) {
 
   // Check unique email and employeeId
   const cleanEmail = data.email.trim().toLowerCase();
-  const cleanEmpId = data.employeeId.trim();
+  let cleanEmpId = (data.employeeId || '').trim().toUpperCase();
+  if (!cleanEmpId.startsWith('TSPL')) {
+    cleanEmpId = `TSPL${cleanEmpId}`;
+  }
 
   const existingEmail = await prisma.employee.findFirst({
     where: { email: cleanEmail },
@@ -129,7 +132,7 @@ export async function createAdminManagedUser(data: CreateManagedUserInput) {
     where: { employeeId: cleanEmpId },
   });
   if (existingEmpId) {
-    throw new Error('An employee with this Employee ID already exists.');
+    throw new Error(`An employee with Employee ID "${cleanEmpId}" already exists.`);
   }
 
   // Get creator DB employee record

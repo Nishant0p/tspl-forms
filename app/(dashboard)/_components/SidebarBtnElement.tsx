@@ -1,8 +1,10 @@
 import React from 'react';
-import { FormElement } from './FormElements';
+import { FormElement, FormElements } from './FormElements';
 import { Button } from '@/components/ui/button';
 import { useDraggable } from '@dnd-kit/core';
-import { cn } from '@/lib/utils';
+import { cn, idGenerator } from '@/lib/utils';
+import { useDesginerStore } from '@/store/store';
+import { toast } from '@/components/ui/use-toast';
 
 export default function SidebarBtnElement({
   formElement,
@@ -10,6 +12,7 @@ export default function SidebarBtnElement({
   formElement: FormElement;
 }) {
   const { label, icon } = formElement.designerBtnElement;
+  const { elements, addElement, setSelectedElement } = useDesginerStore();
 
   const draggable = useDraggable({
     id: `designer-btn-${formElement.type}`,
@@ -19,12 +22,23 @@ export default function SidebarBtnElement({
     },
   });
 
+  const handleClick = () => {
+    const newElement = FormElements[formElement.type].construct(idGenerator());
+    addElement(elements.length, newElement);
+    setSelectedElement(newElement);
+    toast({
+      title: `${label} added`,
+      description: 'Field added to form. Scroll down or edit in place.',
+    });
+  };
+
   return (
     <Button
       ref={draggable.setNodeRef}
       variant={'outline'}
+      onClick={handleClick}
       className={cn(
-        'flex flex-col items-center justify-center gap-1.5 cursor-grab h-[72px] w-full p-1.5 text-center hover:bg-accent hover:border-primary/50 transition-all shadow-xs [&_svg]:h-5 [&_svg]:w-5 [&_svg]:shrink-0',
+        'flex flex-col items-center justify-center gap-1.5 cursor-pointer h-[72px] w-full p-1.5 text-center hover:bg-accent hover:border-primary/50 transition-all shadow-xs [&_svg]:h-5 [&_svg]:w-5 [&_svg]:shrink-0',
         draggable.isDragging && 'ring-2 ring-primary opacity-50'
       )}
       {...draggable.attributes}

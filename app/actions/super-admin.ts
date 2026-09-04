@@ -17,13 +17,18 @@ export type CreateAdminInput = {
   branchId?: number | null;
 };
 
+function formatTsplEmployeeId(id: string): string {
+  let clean = (id || '').trim().toUpperCase();
+  if (!clean.startsWith('TSPL')) {
+    clean = `TSPL${clean}`;
+  }
+  return clean;
+}
+
 export async function getAdminsList() {
   await requireSuperAdmin();
 
   const admins = await prisma.employee.findMany({
-    where: {
-      role: { in: ['SUPER_ADMIN', 'ADMIN'] },
-    },
     orderBy: { createdAt: 'desc' },
     include: {
       department: true,
@@ -141,8 +146,34 @@ export async function createAdminUser(data: CreateAdminInput) {
     throw new Error('First Name, Last Name, Email, and Employee ID are required');
   }
 
-  if (!data.branchId) {
-    throw new Error('Assigning a Branch is required when creating an admin user.');
+  // Format TSPL employee ID
+  const formattedEmpId = formatTsplEmployeeId(data.employeeId);
+
+  // Enforce Super Admin limit of 3
+  if (data.role === 'SUPER_ADMIN') {
+    const superAdminCount = await prisma.employee.count({
+      where: { role: 'SUPER_ADMIN', status: 'ACTIVE' },
+    });
+    if (superAdminCount >= 3) {
+      throw new Error('Maximum limit of 3 Super Admins reached. You cannot create more Super Admins.');
+    }
+  }
+
+  // Enforce 1 Admin per branch (Admin = Branch Head)
+  if (data.role === 'ADMIN') {
+    if (!data.branchId) {
+      throw new Error('Assigning a Branch is required for Branch Admin.');
+    }
+    const existingBranchAdmin = await prisma.employee.findFirst({
+      where: {
+        role: 'ADMIN',
+        branchId: data.branchId,
+        status: 'ACTIVE',
+      },
+    });
+    if (existingBranchAdmin) {
+      throw new Error(`This branch already has an assigned Branch Head (${existingBranchAdmin.firstName} ${existingBranchAdmin.lastName}). Only 1 Admin per branch is allowed.`);
+    }
   }
 
   if (!data.password || data.password.trim().length < 6) {
@@ -157,10 +188,10 @@ export async function createAdminUser(data: CreateAdminInput) {
   }
 
   const existingEmpId = await prisma.employee.findUnique({
-    where: { employeeId: data.employeeId.trim() },
+    where: { employeeId: formattedEmpId },
   });
   if (existingEmpId) {
-    throw new Error('An admin or employee with this Employee ID already exists');
+    throw new Error(`An employee with Employee ID "${formattedEmpId}" already exists`);
   }
 
   const generatedClerkId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
@@ -168,7 +199,7 @@ export async function createAdminUser(data: CreateAdminInput) {
   const created = await prisma.employee.create({
     data: {
       clerkUserId: generatedClerkId,
-      employeeId: data.employeeId.trim(),
+      employeeId: formattedEmpId,
       firstName: data.firstName.trim(),
       lastName: data.lastName.trim(),
       email: data.email.trim().toLowerCase(),
@@ -176,8 +207,8 @@ export async function createAdminUser(data: CreateAdminInput) {
       phone: data.phone?.trim() || null,
       role: data.role,
       status: data.status,
-      departmentId: null,
-      branchId: data.branchId,
+      departmentId: data.departmentId || null,
+      branchId: data.branchId || null,
     },
     include: {
       department: true,
@@ -198,6 +229,37 @@ export async function updateAdminRoleAndStatus(
   status: EmployeeStatus
 ) {
   await requireSuperAdmin();
+
+  // Enforce max 3 super admins if promoting to SUPER_ADMIN
+  if (role === 'SUPER_ADMIN' && status === 'ACTIVE') {
+    const targetUser = await prisma.employee.findUnique({ where: { id } });
+    if (targetUser && targetUser.role !== 'SUPER_ADMIN') {
+      const superAdminCount = await prisma.employee.count({
+        where: { role: 'SUPER_ADMIN', status: 'ACTIVE' },
+      });
+      if (superAdminCount >= 3) {
+        throw new Error('Maximum limit of 3 Super Admins reached.');
+      }
+    }
+  }
+
+  // Enforce 1 Admin per branch if promoting to ADMIN
+  if (role === 'ADMIN' && status === 'ACTIVE') {
+    const targetUser = await prisma.employee.findUnique({ where: { id } });
+    if (targetUser?.branchId) {
+      const existingBranchAdmin = await prisma.employee.findFirst({
+        where: {
+          role: 'ADMIN',
+          branchId: targetUser.branchId,
+          id: { not: id },
+          status: 'ACTIVE',
+        },
+      });
+      if (existingBranchAdmin) {
+        throw new Error(`This branch already has an assigned Branch Head (${existingBranchAdmin.firstName} ${existingBranchAdmin.lastName}). Only 1 Admin per branch is allowed.`);
+      }
+    }
+  }
 
   const updated = await prisma.employee.update({
     where: { id },

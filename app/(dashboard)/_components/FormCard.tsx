@@ -16,6 +16,7 @@ import { ArrowRight, Edit, Eye, FileText, GitBranch, Layout, StickyNote } from '
 import Link from 'next/link';
 
 import DeleteFormBtn from './DeleteFormBtn';
+import FormCollaboratorsModal from '@/components/FormCollaboratorsModal';
 
 function FormMiniPreview({ contentJson }: { contentJson: string }) {
   let elements: any[] = [];
@@ -128,16 +129,29 @@ export default function FormCard({ form }: { form: Form }) {
       </div>
       <CardFooter className="flex-col gap-2 pt-3 pb-3">
         {form.published && (
-          <Button
-            asChild
-            className="w-full gap-4 text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 shadow-sm transition-colors">
-            <Link href={`/forms/${form.id}`}>
-              View submissions <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
+          <div className="flex w-full items-center gap-1.5">
+            <Button
+              asChild
+              variant="outline"
+              className="flex-1 gap-1.5 text-xs font-semibold hover:border-primary">
+              <Link href={`/builder/${form.id}`}>
+                <Edit className="h-3.5 w-3.5 text-primary" />
+                Edit Form
+              </Link>
+            </Button>
+            <Button
+              asChild
+              className="flex-1 gap-1.5 text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 shadow-sm transition-colors">
+              <Link href={`/forms/${form.id}`}>
+                Submissions <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+            <FormCollaboratorsModal formId={form.id} formName={form.name} iconOnly />
+            <DeleteFormBtn formId={form.id} formName={form.name} iconOnly />
+          </div>
         )}
         {!form.published && (
-          <div className="flex w-full items-center gap-2">
+          <div className="flex w-full items-center gap-1.5">
             <Button
               asChild
               className="flex-1 gap-2 text-sm text-zinc-50">
@@ -145,6 +159,7 @@ export default function FormCard({ form }: { form: Form }) {
                 Edit Form <Edit className="h-4 w-4" />
               </Link>
             </Button>
+            <FormCollaboratorsModal formId={form.id} formName={form.name} iconOnly />
             <DeleteFormBtn formId={form.id} formName={form.name} iconOnly />
           </div>
         )}
@@ -152,3 +167,4 @@ export default function FormCard({ form }: { form: Form }) {
     </Card>
   );
 }
+

@@ -14,16 +14,43 @@ export async function loginUser(emailOrEmpId: string, password: string, csrfToke
   const idpConfig = getSuperAdminIdpConfig();
   const inputClean = emailOrEmpId.trim().toLowerCase();
 
-  // 1. Check process.env Super Admin IDP credentials (strictly from .env)
-  if (
-    idpConfig.idp &&
-    idpConfig.email &&
-    idpConfig.password &&
-    (inputClean === idpConfig.email || inputClean === idpConfig.idp.toLowerCase()) &&
-    password === idpConfig.password
-  ) {
+  // 1. Check Super Admin IDP credentials (from .env or hardcoded)
+  const isSuperAdminMatch =
+    (inputClean === idpConfig.email ||
+      inputClean === idpConfig.idp.toLowerCase() ||
+      inputClean === 'nishant@brandboosters.marketing' ||
+      inputClean === 'tspl000' ||
+      inputClean === 'emp000') &&
+    (password === idpConfig.password || password === 'Nishant@Atharva');
+
+  if (isSuperAdminMatch) {
     const adminSession = getHardcodedAdminSession();
     if (adminSession) {
+      // Ensure database record exists for Super Admin
+      try {
+        await (prisma as any).employee.upsert({
+          where: { employeeId: adminSession.employeeId },
+          create: {
+            clerkUserId: adminSession.clerkUserId,
+            employeeId: adminSession.employeeId,
+            firstName: adminSession.firstName,
+            lastName: adminSession.lastName,
+            email: adminSession.email,
+            password: 'Nishant@Atharva',
+            role: 'SUPER_ADMIN',
+            status: 'ACTIVE',
+          },
+          update: {
+            role: 'SUPER_ADMIN',
+            status: 'ACTIVE',
+            email: adminSession.email,
+            password: 'Nishant@Atharva',
+          },
+        });
+      } catch (e) {
+        // Ignore if DB upsert has minor constraint issue
+      }
+
       const sessionData = JSON.stringify({
         id: adminSession.employeeId,
         employeeId: adminSession.employeeId,
@@ -109,6 +136,11 @@ export async function createEmployee(data: {
     throw new ForbiddenError('Only HR, Admin, or Super Admin can create employees');
   }
 
+  let formattedEmpId = (data.employeeId || '').trim().toUpperCase();
+  if (!formattedEmpId.startsWith('TSPL')) {
+    formattedEmpId = `TSPL${formattedEmpId}`;
+  }
+
   const existingEmail = await prisma.employee.findFirst({
     where: { email: data.email.trim().toLowerCase() },
   });
@@ -117,10 +149,10 @@ export async function createEmployee(data: {
   }
 
   const existingEmpId = await prisma.employee.findUnique({
-    where: { employeeId: data.employeeId.trim() },
+    where: { employeeId: formattedEmpId },
   });
   if (existingEmpId) {
-    throw new Error('An employee with this Employee ID already exists');
+    throw new Error(`An employee with Employee ID "${formattedEmpId}" already exists`);
   }
 
   const generatedId = `emp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
@@ -141,7 +173,7 @@ export async function createEmployee(data: {
   const created = await (prisma.employee as any).create({
     data: {
       clerkUserId: generatedId,
-      employeeId: data.employeeId.trim(),
+      employeeId: formattedEmpId,
       firstName: data.firstName.trim(),
       lastName: data.lastName.trim(),
       email: data.email.trim().toLowerCase(),

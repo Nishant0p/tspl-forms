@@ -9,6 +9,7 @@ import {
   StickyNoteIcon,
   Star,
   ArrowLeft,
+  Edit,
 } from 'lucide-react';
 import { ReactNode } from 'react';
 import CardStat from '../../_components/CardStat';
@@ -95,6 +96,20 @@ export default async function FormDetailsPage({
         </div>
           <div className="flex items-center gap-2">
             <TooltipProvider>
+              {/* Edit Form */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button asChild variant="outline" size="icon" className="h-9 w-9">
+                    <Link href={`/builder/${form.id}`}>
+                      <Edit className="h-4 w-4 text-primary" />
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>Edit Form</p>
+                </TooltipContent>
+              </Tooltip>
+
               {/* Visit Form */}
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -330,8 +345,16 @@ function RowCell({ type, value }: { type: ElementsType, value: string }) {
   switch (type) {
     case "DateField":
       if (!value) break;
-      const date = new Date(value)
-      node = <span className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-foreground">{format(date, 'dd/MM/yyyy')}</span>
+      try {
+        const d = new Date(value);
+        if (!isNaN(d.getTime())) {
+          node = <span className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-foreground">{format(d, 'dd/MM/yyyy')}</span>;
+        } else {
+          node = <span className="text-xs text-muted-foreground">{value}</span>;
+        }
+      } catch {
+        node = <span className="text-xs text-muted-foreground">{value}</span>;
+      }
       break;
     case "TimeField":
       node = <span className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-foreground">{value}</span>

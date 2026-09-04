@@ -51,15 +51,13 @@ export default function PublishFormBtn({ id, trigger }: { id: number; trigger?: 
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogTitle>Publish Form</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will make your form public.
+            This will make your form active and ready to collect responses from your audience.
             <br />
             <br />
-            <span className="font-medium">
-              After publishing, you can share your form by sending the link to
-              your respondents and you will be able to collect responses from
-              your audience.
+            <span className="font-medium text-foreground">
+              You will be able to share the live link and you can continue editing or updating fields and settings whenever needed.
             </span>
           </AlertDialogDescription>
         </AlertDialogHeader>

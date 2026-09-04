@@ -8,8 +8,8 @@ import { SubmitForm } from '@/app/actions/form';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
-import { Loader, AlertCircle, CheckCircle2, PartyPopper, ExternalLink } from 'lucide-react';
-import { useRef, useState, useTransition } from 'react';
+import { Loader, AlertCircle, CheckCircle2, PartyPopper, ExternalLink, Sparkles, ShieldAlert } from 'lucide-react';
+import { useRef, useState, useTransition, useEffect } from 'react';
 
 interface Props {
   formUrl: string;
@@ -25,9 +25,54 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
 
   const [submitted, setSubmitted] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [answeredCount, setAnsweredCount] = useState<number>(0);
 
-  // Filter out layout elements during validation
-  const questionsContent = content.filter((el) => el.type !== 'ThankYouField');
+  // Extract BannerField to display at the very top above the form header card
+  const bannerElement = content.find((el) => el.type === 'BannerField');
+  // Filter out layout/special elements during validation and question rendering
+  const questionsContent = content.filter(
+    (el) => el.type !== 'ThankYouField' && el.type !== 'BannerField'
+  );
+
+  // Input questions only (exclude layout text / dividers)
+  const inputQuestions = questionsContent.filter(
+    (el) =>
+      ![
+        'TitleField',
+        'SubTitleField',
+        'ParagraphField',
+        'SeperatorField',
+        'SpacerField',
+        'SectionHeaderField',
+        'BannerField',
+      ].includes(el.type)
+  );
+
+  const totalQuestions = inputQuestions.length;
+  const progressPercentage =
+    totalQuestions > 0 ? Math.min(Math.round((answeredCount / totalQuestions) * 100), 100) : 100;
+
+  // Restore draft from LocalStorage on mount
+  useEffect(() => {
+    try {
+      const draft = localStorage.getItem('tspl_draft_' + formUrl);
+      if (draft) {
+        const parsed = JSON.parse(draft);
+        formValues.current = parsed;
+        let count = 0;
+        for (const q of inputQuestions) {
+          const val = parsed[q.id];
+          if (val && String(val).trim() !== '' && val !== '[]') {
+            count++;
+          }
+        }
+        setAnsweredCount(count);
+        setRenderKey(Date.now());
+      }
+    } catch {
+      // LocalStorage unavailable
+    }
+  }, [formUrl]);
 
   const validateForm: () => boolean = () => {
     for (const field of questionsContent) {
@@ -48,6 +93,23 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
 
   const submitValues = (key: string, value: string) => {
     formValues.current[key] = value;
+
+    // Recalculate answered fields
+    let count = 0;
+    for (const q of inputQuestions) {
+      const val = formValues.current[q.id];
+      if (val && String(val).trim() !== '' && val !== '[]') {
+        count++;
+      }
+    }
+    setAnsweredCount(count);
+
+    // Auto-save progress
+    try {
+      localStorage.setItem('tspl_draft_' + formUrl, JSON.stringify(formValues.current));
+    } catch {
+      // LocalStorage unavailable
+    }
   };
 
   const submitForm = async () => {
@@ -59,9 +121,9 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
       setRenderKey(new Date().getTime());
 
       toast({
-        title: "Form is invalid",
-        description: "Please fill all required fields",
-        variant: 'destructive'
+        title: 'Form is invalid',
+        description: 'Please fill all required fields',
+        variant: 'destructive',
       });
       return;
     }
@@ -69,12 +131,16 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
     try {
       const jsonContent = JSON.stringify(formValues.current);
       await SubmitForm(formUrl, jsonContent);
+      try {
+        localStorage.removeItem('tspl_draft_' + formUrl);
+      } catch {}
       setSubmitted(true);
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Something went wrong, please try again later",
-        variant: 'destructive'
+        title: 'Error',
+        description:
+          error instanceof Error ? error.message : 'Something went wrong, please try again later',
+        variant: 'destructive',
       });
     }
   };
@@ -95,8 +161,8 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
       <div className="flex min-h-screen w-full items-start justify-center p-4 sm:p-8 google-form-container bg-[#f0ebf8] dark:bg-[#121016]">
         <div
           key={renderKey}
-          className="flex w-full max-w-[640px] flex-col gap-6 google-form-header-card bg-card text-card-foreground p-8 rounded-lg shadow-md border border-border mt-10 overflow-hidden">
-          
+          className="flex w-full max-w-[640px] flex-col gap-6 google-form-header-card bg-card text-card-foreground p-8 rounded-lg shadow-md border border-border mt-10 overflow-hidden"
+        >
           {/* Custom Banner / Image if configured */}
           {customImageUrl && (
             <div className="w-full overflow-hidden rounded-md border border-border/50 bg-muted/20">
@@ -138,14 +204,15 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
                 </a>
               ) : (
                 <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setSubmitted(false);
+                  type="button"
+                  onClick={() => {
                     formValues.current = {};
                     formErrors.current = {};
+                    setSubmitted(false);
+                    setAnsweredCount(0);
                     setRenderKey(new Date().getTime());
                   }}
-                  className="text-sm font-medium text-violet-600 hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-300 underline"
+                  className="text-sm font-medium text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300 underline"
                 >
                   {customBtnText}
                 </button>
@@ -159,10 +226,17 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
 
   return (
     <div className="flex min-h-screen w-full items-start justify-center p-4 sm:p-8 google-form-container bg-[#f0ebf8] dark:bg-[#121016]">
-      <div
-        key={renderKey}
-        className="flex w-full max-w-[640px] flex-col gap-4 py-4">
-        
+      <div key={renderKey} className="flex w-full max-w-[640px] flex-col gap-4 py-4">
+        {/* Top Banner Card (Above Form Header) */}
+        {bannerElement && (
+          <div className="w-full overflow-hidden shadow-sm -mx-4 sm:mx-0 w-[calc(100%+2rem)] sm:w-full">
+            {(() => {
+              const BannerComponent = FormElements.BannerField.formComponent;
+              return <BannerComponent elementInstance={bannerElement} />;
+            })()}
+          </div>
+        )}
+
         {/* Google Form Header Card */}
         <div className="w-full bg-card text-card-foreground rounded-lg border border-border shadow-sm overflow-hidden google-form-header-card p-6 flex flex-col gap-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-1 min-w-0 w-full">
@@ -189,15 +263,24 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
         {questionsContent.map((element) => {
           const FormElement = FormElements[element.type].formComponent;
           const isInvalid = formErrors.current[element.id];
-          const isLayout = ['TitleField', 'SubTitleField', 'ParagraphField', 'SeperatorField', 'SpacerField', 'SectionHeaderField', 'BannerField'].includes(element.type);
+          const isLayout = [
+            'TitleField',
+            'SubTitleField',
+            'ParagraphField',
+            'SeperatorField',
+            'SpacerField',
+            'SectionHeaderField',
+            'BannerField',
+          ].includes(element.type);
 
           return (
             <div
               key={element.id}
               className={cn(
-                "w-full bg-card text-card-foreground p-6 rounded-lg border border-border shadow-sm transition-all duration-200",
-                isInvalid && "border-red-500 border-l-[6px] border-l-red-500",
-                element.type === 'BannerField' && "p-0 border-none shadow-none bg-transparent"
+                'w-full bg-card text-card-foreground p-6 rounded-lg border border-border shadow-sm transition-all duration-200',
+                isInvalid && 'border-red-500 border-l-[6px] border-l-red-500',
+                element.type === 'BannerField' &&
+                  'p-0 border-none shadow-none bg-transparent -mx-4 sm:mx-0 w-[calc(100%+2rem)] sm:w-full overflow-hidden'
               )}
             >
               <FormElement
@@ -228,14 +311,19 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
             {pending && <Loader className="h-4 w-4 animate-spin" />}
             Submit
           </Button>
-          
+
           <button
+            type="button"
             onClick={() => {
               formValues.current = {};
               formErrors.current = {};
+              setAnsweredCount(0);
+              try {
+                localStorage.removeItem('tspl_draft_' + formUrl);
+              } catch {}
               setRenderKey(new Date().getTime());
               toast({
-                description: "Form cleared successfully."
+                description: 'Form cleared successfully.',
               });
             }}
             className="text-sm font-medium text-muted-foreground hover:text-foreground hover:underline transition-colors"

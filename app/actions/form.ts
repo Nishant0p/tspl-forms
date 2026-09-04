@@ -166,7 +166,7 @@ export async function CreateForm(data: FormSchema & { branchId?: number | null }
   return form.id;
 }
 
-/** Get forms - filtered strictly by user's branch if form has branch restriction */
+/** Get forms - scoped strictly to Creator, Super Admin, and explicit Editors / Viewers */
 export async function GetForm() {
   const user = await getCurrentUser();
 
@@ -176,52 +176,46 @@ export async function GetForm() {
 
   const employee = await getCurrentEmployee();
 
+  // Super Admin can view all forms
   if (employee?.role === 'SUPER_ADMIN') {
     return await (prisma as any).form.findMany({
-      include: { branch: true },
+      include: {
+        branch: true,
+        allowedEmployees: { include: { employee: true } },
+        formViewerAccesses: { include: { employee: true } },
+      },
       orderBy: {
         createdAt: 'desc',
       },
     });
   }
 
-  if (employee?.role === 'FORM_VIEWER') {
-    return await (prisma as any).form.findMany({
-      where: {
-        formViewerAccesses: {
-          some: {
-            employeeId: employee.id,
-          },
-        },
-      },
-      include: { branch: true },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-  }
+  // Collect all possible caller identifiers for matching creator
+  const userIds: string[] = [user.id];
+  if (employee?.clerkUserId) userIds.push(employee.clerkUserId);
+  if (employee?.employeeId) userIds.push(employee.employeeId);
+  if (employee?.email) userIds.push(employee.email.toLowerCase());
+  if (typeof employee?.id === 'number' && employee.id < 1000000) userIds.push(String(employee.id));
 
-  const userBranchId = employee?.branchId || null;
+  const empDbId = typeof employee?.id === 'number' && employee.id < 1000000 ? employee.id : null;
 
   const forms = await (prisma as any).form.findMany({
     where: {
       OR: [
-        { userId: user.id },
-        {
-          AND: [
-            { branchId: null },
-            { allowedBranches: { none: {} } },
-          ],
-        },
-        ...(userBranchId
+        { userId: { in: userIds } },
+        ...(empDbId
           ? [
-              { branchId: userBranchId },
-              { allowedBranches: { some: { branchId: userBranchId } } },
+              { allowedEmployees: { some: { employeeId: empDbId } } },
+              { formViewerAccesses: { some: { employeeId: empDbId } } },
             ]
           : []),
       ],
     },
-    include: { branch: true },
+    include: {
+      branch: true,
+      allowedEmployees: { include: { employee: true } },
+      formViewerAccesses: { include: { employee: true } },
+    },
     orderBy: {
       createdAt: 'desc',
     },
@@ -239,21 +233,6 @@ export async function GetFormById(id: number) {
 
   const employee = await getCurrentEmployee();
 
-  if (employee?.role === 'FORM_VIEWER') {
-    const hasAccess = await (prisma as any).formViewerAccess.findUnique({
-      where: {
-        formId_employeeId: {
-          formId: id,
-          employeeId: employee.id,
-        },
-      },
-    });
-
-    if (!hasAccess) {
-      throw new ForbiddenError('You are not authorized to view this form.');
-    }
-  }
-
   const form = await prisma.form.findFirst({
     where: {
       id,
@@ -262,9 +241,42 @@ export async function GetFormById(id: number) {
       allowedRoles: true,
       allowedDepartments: true,
       allowedBranches: true,
-      allowedEmployees: true,
-    },
+      allowedEmployees: {
+        include: {
+          employee: true,
+        },
+      },
+      formViewerAccesses: {
+        include: {
+          employee: true,
+        },
+      },
+    } as any,
   });
+
+  if (!form) {
+    return null;
+  }
+
+  if (employee?.role === 'SUPER_ADMIN') {
+    return form;
+  }
+
+  // Check creator
+  const userIds: string[] = [user.id];
+  if (employee?.clerkUserId) userIds.push(employee.clerkUserId);
+  if (employee?.employeeId) userIds.push(employee.employeeId);
+  if (employee?.email) userIds.push(employee.email.toLowerCase());
+  if (typeof employee?.id === 'number' && employee.id < 1000000) userIds.push(String(employee.id));
+
+  const isCreator = userIds.includes(form.userId);
+  const empDbId = typeof employee?.id === 'number' && employee.id < 1000000 ? employee.id : null;
+  const isAllowedEditor = empDbId && (form as any).allowedEmployees?.some((ae: any) => ae.employeeId === empDbId);
+  const isAllowedViewer = empDbId && (form as any).formViewerAccesses?.some((va: any) => va.employeeId === empDbId);
+
+  if (!isCreator && !isAllowedEditor && !isAllowedViewer) {
+    throw new ForbiddenError('You are not authorized to view or edit this form.');
+  }
 
   return form;
 }
@@ -575,27 +587,14 @@ export async function GetFormSubmissions(id: number) {
 
   const employee = await getCurrentEmployee();
 
-  if (employee?.role === 'FORM_VIEWER') {
-    const hasAccess = await (prisma as any).formViewerAccess.findUnique({
-      where: {
-        formId_employeeId: {
-          formId: id,
-          employeeId: employee.id,
-        },
-      },
-    });
-
-    if (!hasAccess) {
-      throw new ForbiddenError('You are not authorized to view submissions for this form.');
-    }
-  }
-
   const form = await prisma.form.findFirst({
     where: {
       id,
     },
     include: {
       allowedBranches: true,
+      allowedEmployees: true,
+      formViewerAccesses: true,
       FormSubmissions: {
         include: {
           employee: {
@@ -605,26 +604,35 @@ export async function GetFormSubmissions(id: number) {
             },
           },
         },
+        orderBy: {
+          createdAt: 'desc',
+        },
       },
-    },
+    } as any,
   });
 
   if (!form) {
     throw new Error('Form not found');
   }
 
-  // Branch access enforcement for submissions
-  if (employee && employee.role !== 'SUPER_ADMIN' && form.userId !== user.id) {
-    const isRestrictedBranch = (form as any).branchId !== null || (form.allowedBranches && form.allowedBranches.length > 0);
-    if (isRestrictedBranch) {
-      const isAllowedBranch =
-        (form as any).branchId === employee.branchId ||
-        form.allowedBranches.some((b) => b.branchId === employee.branchId);
+  if (employee?.role === 'SUPER_ADMIN') {
+    return form;
+  }
 
-      if (!isAllowedBranch) {
-        throw new ForbiddenError('You are not authorized to view responses for this branch-restricted form.');
-      }
-    }
+  // Check creator or explicit permissions
+  const userIds: string[] = [user.id];
+  if (employee?.clerkUserId) userIds.push(employee.clerkUserId);
+  if (employee?.employeeId) userIds.push(employee.employeeId);
+  if (employee?.email) userIds.push(employee.email.toLowerCase());
+  if (typeof employee?.id === 'number' && employee.id < 1000000) userIds.push(String(employee.id));
+
+  const isCreator = userIds.includes(form.userId);
+  const empDbId = typeof employee?.id === 'number' && employee.id < 1000000 ? employee.id : null;
+  const isAllowedEditor = empDbId && (form as any).allowedEmployees?.some((ae: any) => ae.employeeId === empDbId);
+  const isAllowedViewer = empDbId && (form as any).formViewerAccesses?.some((va: any) => va.employeeId === empDbId);
+
+  if (!isCreator && !isAllowedEditor && !isAllowedViewer) {
+    throw new ForbiddenError('You are not authorized to view submissions for this form.');
   }
 
   return form;

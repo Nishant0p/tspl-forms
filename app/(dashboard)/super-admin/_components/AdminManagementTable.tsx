@@ -103,6 +103,7 @@ import { FileText } from 'lucide-react';
 export default function AdminManagementTable({ initialAdmins, departments = [], branches = [] }: Props) {
   const [admins, setAdmins] = useState<AdminUser[]>(initialAdmins);
   const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('ALL');
   const [deptFilter, setDeptFilter] = useState<string>('ALL');
   const [branchFilter, setBranchFilter] = useState<string>('ALL');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -155,9 +156,6 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
   });
 
   const filteredAdmins = admins.filter((admin) => {
-    const isOnlyAdminRole = admin.role === 'ADMIN' || admin.role === 'SUPER_ADMIN';
-    if (!isOnlyAdminRole) return false;
-
     const q = search.toLowerCase();
     const matchesSearch =
       admin.firstName.toLowerCase().includes(q) ||
@@ -172,20 +170,22 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
     const adminBranchId = (admin as any).branchId || admin.branch?.id;
     const matchesBranch = branchFilter === 'ALL' || String(adminBranchId) === branchFilter;
 
-    return matchesSearch && matchesDept && matchesBranch;
+    const matchesRole = roleFilter === 'ALL' || admin.role === roleFilter;
+
+    return matchesSearch && matchesDept && matchesBranch && matchesRole;
   });
 
   const totalUsers = admins.length;
   const superAdminsCount = admins.filter((a) => a.role === 'SUPER_ADMIN').length;
+  const branchAdminsCount = admins.filter((a) => a.role === 'ADMIN').length;
   const activeCount = admins.filter((a) => a.status === 'ACTIVE').length;
-  const inactiveCount = admins.filter((a) => a.status !== 'ACTIVE').length;
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.branchId) {
+    if (formData.role === 'ADMIN' && !formData.branchId) {
       toast({
         title: 'Validation Error',
-        description: 'Please select a Branch for the admin user.',
+        description: 'Please select a Branch for the Branch Head (Admin).',
         variant: 'destructive',
       });
       return;
@@ -209,13 +209,13 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
           branchId: undefined,
         });
         toast({
-          title: 'Admin Created Successfully',
-          description: `Created admin ${created.firstName} ${created.lastName} (${created.role})`,
+          title: 'User Created Successfully',
+          description: `Created ${created.firstName} ${created.lastName} (${created.role} - ${created.employeeId})`,
         });
       } catch (err: any) {
         toast({
           title: 'Creation Failed',
-          description: err.message || 'Failed to create admin user',
+          description: err.message || 'Failed to create user',
           variant: 'destructive',
         });
       }
@@ -302,13 +302,13 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
         await deleteAdminUser(adminId);
         setAdmins((prev) => prev.filter((a) => a.id !== adminId));
         toast({
-          title: 'Admin Deleted',
-          description: `Deleted ${currentAdmin?.firstName || 'admin'} from system`,
+          title: 'User Deleted',
+          description: `Deleted ${currentAdmin?.firstName || 'user'} from system`,
         });
       } catch (err: any) {
         toast({
           title: 'Deletion Failed',
-          description: err.message || 'Failed to delete admin',
+          description: err.message || 'Failed to delete user',
           variant: 'destructive',
         });
       }
@@ -324,7 +324,7 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
             <Users className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Total System Users</p>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Total Organization Users</p>
             <h3 className="text-2xl font-bold">{totalUsers}</h3>
           </div>
         </div>
@@ -334,8 +334,18 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
             <ShieldCheck className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Super Admins</p>
-            <h3 className="text-2xl font-bold">{superAdminsCount}</h3>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Super Admins (Max 3)</p>
+            <h3 className="text-2xl font-bold">{superAdminsCount} / 3</h3>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+            <ShieldAlert className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Branch Admins (Heads)</p>
+            <h3 className="text-2xl font-bold">{branchAdminsCount}</h3>
           </div>
         </div>
 
@@ -344,38 +354,45 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
             <CheckCircle2 className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Active Admins</p>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Active Accounts</p>
             <h3 className="text-2xl font-bold">{activeCount}</h3>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
-            <XCircle className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Inactive / Suspended</p>
-            <h3 className="text-2xl font-bold">{inactiveCount}</h3>
           </div>
         </div>
       </div>
 
-      {/* Control Bar: Search, Department Dropdown, Branch Dropdown & Create */}
+      {/* Control Bar: Search, Role Dropdown, Department Dropdown, Branch Dropdown & Create */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-col sm:flex-row items-center gap-2.5 flex-1">
-          <div className="relative flex-1 w-full max-w-xs">
+        <div className="flex flex-wrap items-center gap-2.5 flex-1">
+          <div className="relative flex-1 min-w-[200px] max-w-xs">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search by name, email, role..."
+              placeholder="Search by name, TSPL ID, email, role..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-9 text-xs"
             />
           </div>
 
+          {/* Role Filter Dropdown */}
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <SelectTrigger className="h-9 w-full sm:w-[150px] text-xs font-semibold">
+              <SelectValue placeholder="All Roles" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Roles ({admins.length})</SelectItem>
+              <SelectItem value="SUPER_ADMIN">SUPER_ADMIN</SelectItem>
+              <SelectItem value="ADMIN">ADMIN</SelectItem>
+              <SelectItem value="HR">HR</SelectItem>
+              <SelectItem value="MANAGER">MANAGER</SelectItem>
+              <SelectItem value="EDITOR">EDITOR</SelectItem>
+              <SelectItem value="EMPLOYEE">EMPLOYEE</SelectItem>
+              <SelectItem value="FORM_VIEWER">FORM_VIEWER</SelectItem>
+            </SelectContent>
+          </Select>
+
           {/* Department Filter Dropdown */}
           <Select value={deptFilter} onValueChange={setDeptFilter}>
-            <SelectTrigger className="h-9 w-full sm:w-[160px] text-xs font-semibold">
+            <SelectTrigger className="h-9 w-full sm:w-[150px] text-xs font-semibold">
               <SelectValue placeholder="All Departments" />
             </SelectTrigger>
             <SelectContent>
@@ -390,7 +407,7 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
 
           {/* Branch Filter Dropdown */}
           <Select value={branchFilter} onValueChange={setBranchFilter}>
-            <SelectTrigger className="h-9 w-full sm:w-[160px] text-xs font-semibold">
+            <SelectTrigger className="h-9 w-full sm:w-[150px] text-xs font-semibold">
               <SelectValue placeholder="All Branches" />
             </SelectTrigger>
             <SelectContent>
@@ -406,17 +423,17 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
 
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2 font-bold">
-              <UserPlus className="h-4 w-4" /> Create New Admin
+            <Button className="flex items-center gap-2 font-bold bg-blue-600 hover:bg-blue-700 text-white">
+              <UserPlus className="h-4 w-4" /> Create User / Admin
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl font-bold">
-                <UserPlus className="h-5 w-5 text-primary" /> Create New Admin / User
+                <UserPlus className="h-5 w-5 text-primary" /> Create User / Admin
               </DialogTitle>
               <DialogDescription>
-                Add a new administrative or staff member to the platform directly.
+                Add a new team member, branch admin, or administrator to the organization.
               </DialogDescription>
             </DialogHeader>
 
@@ -426,7 +443,7 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
                   <label className="text-xs font-semibold">First Name *</label>
                   <Input
                     required
-                    placeholder="e.g. John"
+                    placeholder="e.g. Yash"
                     value={formData.firstName}
                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                   />
@@ -435,7 +452,7 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
                   <label className="text-xs font-semibold">Last Name *</label>
                   <Input
                     required
-                    placeholder="e.g. Doe"
+                    placeholder="e.g. Borse"
                     value={formData.lastName}
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                   />
@@ -447,7 +464,7 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
                 <Input
                   required
                   type="email"
-                  placeholder="admin@tsplgroup.in"
+                  placeholder="name@tspl.in"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
@@ -459,7 +476,7 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
                   <Input
                     required
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Set account password (min 6 chars)"
+                    placeholder="Set password (min 6 characters)"
                     value={formData.password || ''}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="pr-10"
@@ -476,13 +493,17 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold">Employee ID *</label>
+                  <label className="text-xs font-semibold">Employee ID * (Prefix: TSPL)</label>
                   <Input
                     required
-                    placeholder="e.g. EMP101"
+                    placeholder="e.g. TSPL001"
                     value={formData.employeeId}
-                    onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData({ ...formData, employeeId: val });
+                    }}
                   />
+                  <p className="text-[10px] text-muted-foreground">Auto-prefixed with TSPL if omitted</p>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold">Phone Number (Optional)</label>
@@ -505,12 +526,13 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
                       <SelectValue placeholder="Select Role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="SUPER_ADMIN">SUPER_ADMIN</SelectItem>
-                      <SelectItem value="ADMIN">ADMIN</SelectItem>
+                      <SelectItem value="SUPER_ADMIN">SUPER_ADMIN (Max 3)</SelectItem>
+                      <SelectItem value="ADMIN">ADMIN (Branch Head - 1/Branch)</SelectItem>
                       <SelectItem value="HR">HR</SelectItem>
                       <SelectItem value="MANAGER">MANAGER</SelectItem>
                       <SelectItem value="EDITOR">EDITOR</SelectItem>
                       <SelectItem value="EMPLOYEE">EMPLOYEE</SelectItem>
+                      <SelectItem value="FORM_VIEWER">FORM_VIEWER</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -534,28 +556,58 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
               </div>
 
               {/* Branch Assignment */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">Assign Branch *</label>
-                <Select
-                  value={formData.branchId ? String(formData.branchId) : ''}
-                  onValueChange={(val) =>
-                    setFormData({
-                      ...formData,
-                      branchId: val ? Number(val) : undefined,
-                    })
-                  }
-                >
-                  <SelectTrigger className="h-9 text-sm">
-                    <SelectValue placeholder="Select Branch (Required)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {branches.map((b) => (
-                      <SelectItem key={b.id} value={String(b.id)}>
-                        🌿 {b.name} ({b.code})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">
+                    Assign Branch {formData.role === 'ADMIN' ? '*' : '(Optional)'}
+                  </label>
+                  <Select
+                    value={formData.branchId ? String(formData.branchId) : ''}
+                    onValueChange={(val) =>
+                      setFormData({
+                        ...formData,
+                        branchId: val ? Number(val) : undefined,
+                      })
+                    }
+                  >
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue placeholder="Select Branch" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {branches.map((b) => (
+                        <SelectItem key={b.id} value={String(b.id)}>
+                          🌿 {b.name} ({b.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">
+                    Assign Department (Optional)
+                  </label>
+                  <Select
+                    value={formData.departmentId ? String(formData.departmentId) : ''}
+                    onValueChange={(val) =>
+                      setFormData({
+                        ...formData,
+                        departmentId: val ? Number(val) : undefined,
+                      })
+                    }
+                  >
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue placeholder="Select Dept" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map((d) => (
+                        <SelectItem key={d.id} value={String(d.id)}>
+                          🏢 {d.name} ({d.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <DialogFooter className="pt-4">
@@ -567,9 +619,9 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={pending} className="gap-2 font-bold">
+                <Button type="submit" disabled={pending} className="gap-2 font-bold bg-blue-600 hover:bg-blue-700 text-white">
                   {pending && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Create Admin
+                  Create User
                 </Button>
               </DialogFooter>
             </form>

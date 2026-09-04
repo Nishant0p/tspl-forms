@@ -19,27 +19,24 @@ export class ForbiddenError extends Error {
   }
 }
 
-/** Get Super Admin IDP settings strictly from process.env (no hardcoded fallback credentials) */
+/** Get Super Admin IDP settings from process.env or hardcoded defaults */
 export function getSuperAdminIdpConfig() {
   return {
-    idp: (process.env.SUPER_ADMIN_IDP || '').trim(),
-    email: (process.env.SUPER_ADMIN_EMAIL || '').trim().toLowerCase(),
-    password: process.env.SUPER_ADMIN_PASSWORD || '',
+    idp: (process.env.SUPER_ADMIN_IDP || 'TSPL000').trim(),
+    email: (process.env.SUPER_ADMIN_EMAIL || 'nishant@brandboosters.marketing').trim().toLowerCase(),
+    password: process.env.SUPER_ADMIN_PASSWORD || 'Nishant@Atharva',
     route: (process.env.SUPER_ADMIN_ROUTE || '/super-admin').trim(),
   };
 }
 
-/** Super admin session generated strictly from .env variables */
+/** Super admin session generated from hardcoded / env variables */
 export function getHardcodedAdminSession() {
   const config = getSuperAdminIdpConfig();
-  if (!config.idp || !config.email || !config.password) {
-    return null;
-  }
   return {
     clerkUserId: config.idp,
     id: 1000000,
     employeeId: config.idp,
-    firstName: 'Super',
+    firstName: 'Nishant',
     lastName: 'Admin',
     email: config.email,
     role: 'SUPER_ADMIN' as EmployeeRole,

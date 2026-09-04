@@ -7,9 +7,10 @@ import { useDndMonitor, useDroppable } from '@dnd-kit/core';
 import { DragEndEvent } from '@dnd-kit/core/dist/types';
 import DesginerElementWrapper from './DesginerElementWrapper';
 import DesignerSidebar from './DesignerSidebar';
+import FloatingRightCapsuleToolbar from './FloatingRightCapsuleToolbar';
 import { ElementsType, FormElements } from './FormElements';
 import { useEffect, useRef, useState } from 'react';
-import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -23,6 +24,7 @@ export default function Designer({ formId, initialContent }: { formId: number; i
     useDesginerStore();
   const lastSavedRef = useRef(initialContent);
   const [zoom, setZoom] = useState<number>(100);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
 
   const handleZoomIn = () => setZoom((prev) => Math.min(prev + 10, 150));
   const handleZoomOut = () => setZoom((prev) => Math.max(prev - 10, 50));
@@ -146,8 +148,14 @@ export default function Designer({ formId, initialContent }: { formId: number; i
     return () => window.clearTimeout(timeoutId);
   }, [elements, formId]);
 
+  useEffect(() => {
+    if (!selectedElement && elements.length > 0) {
+      setSelectedElement(elements[0]);
+    }
+  }, [elements, selectedElement, setSelectedElement]);
+
   return (
-    <div className="relative flex h-full w-full overflow-y-auto md:overflow-hidden flex-col md:flex-row">
+    <div className="relative flex h-full w-full overflow-hidden flex-col md:flex-row">
       {/* Floating Zoom Controls Widget */}
       <div className="absolute bottom-6 left-6 z-20 flex items-center gap-1 rounded-full border border-border/80 bg-card/95 p-1 shadow-lg backdrop-blur-md transition-all">
         <TooltipProvider>
@@ -223,32 +231,38 @@ export default function Designer({ formId, initialContent }: { formId: number; i
       <div
         ref={droppable.setNodeRef}
         className={cn(
-          'w-full h-full p-4 sm:p-8 overflow-auto flex flex-col items-center justify-start transition-colors',
-          droppable.isOver && 'bg-violet-500/5 ring-2 ring-violet-500 ring-inset'
+          'w-full h-full p-4 sm:py-8 sm:pl-8 sm:pr-24 overflow-auto flex flex-col items-center justify-start transition-all relative flex-1',
+          droppable.isOver && 'bg-blue-500/5 ring-2 ring-blue-500 ring-inset'
         )}
-        onClick={() => {
-          if (selectedElement) setSelectedElement(null);
-        }}>
+      >
         <div
           style={{
             transform: `scale(${zoom / 100})`,
             transformOrigin: 'top center',
             transition: 'transform 0.15s ease-out',
           }}
-          className="w-full max-w-[760px] flex flex-col items-center justify-start overflow-visible transition-all"
+          className="w-full max-w-[760px] flex flex-col items-center justify-start overflow-visible transition-all relative"
         >
           {!droppable.isOver && elements.length === 0 && (
-            <p className="flex grow items-center text-3xl font-bold text-muted-foreground py-20">
-              Drop here
-            </p>
+            <div className="relative w-full my-8">
+              <div className="flex flex-col items-center justify-center text-center p-12 border-2 border-dashed border-border/80 rounded-2xl bg-card/60 backdrop-blur-xs w-full">
+                <p className="text-xl font-bold text-foreground">Untitled Form</p>
+                <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+                  Click the <strong>+</strong> button on the right bar or drag elements from the sidebar to add questions.
+                </p>
+              </div>
+              <div className="hidden sm:flex absolute left-[calc(100%+12px)] top-2 z-30 pointer-events-auto">
+                <FloatingRightCapsuleToolbar />
+              </div>
+            </div>
           )}
           {droppable.isOver && elements.length === 0 && (
             <div className="w-full p-4 sm:p-6">
-              <div className="h-[120px] rounded-md bg-primary/20"></div>
+              <div className="h-[120px] rounded-md bg-primary/20 animate-pulse"></div>
             </div>
           )}
           {elements.length > 0 && (
-            <div className="flex w-full flex-col gap-3 p-4 sm:p-6">
+            <div className="flex w-full flex-col gap-3 py-2">
               {elements.map((element) => (
                 <DesginerElementWrapper
                   key={element.id}
@@ -259,8 +273,46 @@ export default function Designer({ formId, initialContent }: { formId: number; i
             </div>
           )}
         </div>
+
+        {/* Mobile Floating Bottom Bar */}
+        <div className="sm:hidden fixed bottom-5 right-5 z-40">
+          <FloatingRightCapsuleToolbar />
+        </div>
       </div>
-      <DesignerSidebar />
+
+      {/* Arrow Bar Toggle Tab for Drag & Drop Menu */}
+      <TooltipProvider>
+        <Tooltip delayDuration={200}>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={() => setSidebarOpen((prev) => !prev)}
+              className={cn(
+                'absolute top-1/2 -translate-y-1/2 z-30 hidden md:flex items-center justify-center h-16 w-6 rounded-l-md border border-r-0 border-border/90 bg-card/95 text-muted-foreground shadow-lg backdrop-blur-sm hover:bg-accent hover:text-foreground transition-all duration-300 cursor-pointer group',
+                sidebarOpen ? 'right-[380px] lg:right-[420px]' : 'right-0'
+              )}
+              aria-label={sidebarOpen ? 'Close Drag & Drop Menu' : 'Open Drag & Drop Menu'}
+            >
+              {sidebarOpen ? (
+                <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              ) : (
+                <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5 text-primary" />
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="left">
+            <p className="text-xs font-semibold">
+              {sidebarOpen ? 'Close Drag & Drop Menu' : 'Open Drag & Drop Menu'}
+            </p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      {/* Collapsible Designer Sidebar */}
+      <DesignerSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
     </div>
   );
 }
+
+
+

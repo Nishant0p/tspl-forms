@@ -54,16 +54,7 @@ export default function FormElementsSidebar() {
   ];
 
   return (
-    <div className="w-full space-y-3">
-      <div className="flex flex-col gap-1">
-        <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-          <Layers className="h-4 w-4 text-primary" />
-          Drag & Drop Elements
-        </p>
-      </div>
-
-      <Separator className="my-1" />
-
+    <div className="w-full space-y-3 pt-1">
       {/* Accordion Drop Boxes for Layout & Form Elements */}
       <Accordion
         type="multiple"

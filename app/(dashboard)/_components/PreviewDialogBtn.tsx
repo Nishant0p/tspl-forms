@@ -20,6 +20,10 @@ export default function PreviewDialogBtn({
   const { elements } = useDesginerStore();
 
   const thankYouElement = elements.find((el) => el.type === 'ThankYouField');
+  const bannerElement = elements.find((el) => el.type === 'BannerField');
+  const questionsContent = elements.filter(
+    (el) => el.type !== 'ThankYouField' && el.type !== 'BannerField'
+  );
 
   return (
     <Dialog>
@@ -59,6 +63,16 @@ export default function PreviewDialogBtn({
         <div className="w-full grow overflow-y-auto bg-[#f0ebf8] dark:bg-[#121016] google-form-container p-4 sm:p-8">
           <div className="mx-auto flex w-full max-w-[640px] flex-col gap-4 pb-12">
             
+            {/* Top Banner Card (Above Form Header) */}
+            {bannerElement && (
+              <div className="w-full overflow-hidden shadow-sm -mx-4 sm:mx-0 w-[calc(100%+2rem)] sm:w-full">
+                {(() => {
+                  const BannerComponent = FormElements.BannerField.formComponent;
+                  return <BannerComponent elementInstance={bannerElement} />;
+                })()}
+              </div>
+            )}
+
             {/* Header Card Preview */}
             <div className="w-full bg-card text-card-foreground rounded-lg border border-border shadow-sm overflow-hidden google-form-header-card p-6 flex flex-col gap-3">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-1 min-w-0 w-full">
@@ -80,15 +94,12 @@ export default function PreviewDialogBtn({
             </div>
 
             {/* Questions Preview */}
-            {elements.filter((el) => el.type !== 'ThankYouField').map((element) => {
+            {questionsContent.map((element) => {
               const FormComponent = FormElements[element.type].formComponent;
               return (
                 <div
                   key={element.id}
-                  className={cn(
-                    "w-full bg-card text-card-foreground p-6 rounded-lg border border-border shadow-sm",
-                    element.type === 'BannerField' && "p-0 border-none shadow-none bg-transparent"
-                  )}
+                  className="w-full bg-card text-card-foreground p-6 rounded-lg border border-border shadow-sm"
                 >
                   <FormComponent
                     elementInstance={element}
