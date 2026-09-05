@@ -23,8 +23,6 @@ type UserMenuProps = {
     primaryEmailAddress?: { emailAddress: string };
     role?: string;
     imageUrl?: string | null;
-    departmentId?: number | null;
-    branchId?: number | null;
   };
   isSuperAdmin: boolean;
   isAdmin?: boolean;
@@ -79,8 +77,6 @@ export default function UserMenu({ user, isSuperAdmin, isAdmin = false }: UserMe
             email: email,
             role: user.role,
             imageUrl: user.imageUrl,
-            departmentId: user.departmentId,
-            branchId: user.branchId,
           }}
           trigger={
             <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer gap-2">

@@ -37,10 +37,8 @@ interface AddAdminManagedUserDialogProps {
 }
 
 const ALLOWED_ROLES = [
-  { value: 'HR', label: 'HR (Human Resources)', desc: 'Manage employees and forms' },
-  { value: 'MANAGER', label: 'MANAGER (Team Lead)', desc: 'Create forms and view submissions' },
   { value: 'EDITOR', label: 'EDITOR (Form Editor)', desc: 'Build and edit forms' },
-  { value: 'EMPLOYEE', label: 'EMPLOYEE (Standard Staff)', desc: 'Fill out published forms' },
+  { value: 'EMPLOYEE', label: 'USER (Standard Staff)', desc: 'Fill out published forms' },
   { value: 'FORM_VIEWER', label: 'FORM_VIEWER (Submissions Viewer)', desc: 'Read-only access to assigned form responses' },
 ];
 
@@ -137,7 +135,7 @@ export default function AddAdminManagedUserDialog({
             <UserPlus className="h-5 w-5 text-primary" /> Create New Team User
           </DialogTitle>
           <DialogDescription>
-            Add a new HR, Manager, Editor, Employee, or Form Viewer user under your branch control.
+            Add a new Editor, User, or Form Viewer under your branch control.
           </DialogDescription>
         </DialogHeader>
 
@@ -180,10 +178,10 @@ export default function AddAdminManagedUserDialog({
             </div>
           </div>
 
-          {/* Employee ID & Email */}
+          {/* User ID & Email */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="admin-create-empid" className="text-xs">Employee ID *</Label>
+              <Label htmlFor="admin-create-empid" className="text-xs">User ID *</Label>
               <Input
                 id="admin-create-empid"
                 placeholder="e.g. EMP102"

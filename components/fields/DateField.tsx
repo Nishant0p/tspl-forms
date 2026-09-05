@@ -26,10 +26,8 @@ import { Switch } from '../ui/switch';
 import { Textarea } from '../ui/textarea';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Label } from '../ui/label';
-import { format, isValid } from 'date-fns';
-import { Calendar as CalendarComponent } from '../ui/calendar';
+import { format, isValid, parse } from 'date-fns';
 
 const type: ElementsType = 'DateField';
 
@@ -212,7 +210,10 @@ function FormComponent({
     return isValid(d) ? d : undefined;
   };
 
-  const [date, setDate] = useState<Date | undefined>(parseInitialDate(defaultValues));
+  const [dateInput, setDateInput] = useState(() => {
+    const initialDate = parseInitialDate(defaultValues);
+    return initialDate ? format(initialDate, 'dd/MM/yyyy') : '';
+  });
   const [error, setError] = useState(false);
 
   useEffect(() => {
@@ -221,40 +222,42 @@ function FormComponent({
 
   const { label, required, helperText } = element.extraAttributes;
 
+  const submitDate = (value: string) => {
+    const trimmedValue = value.trim();
+    const parsedDate = parse(trimmedValue, 'dd/MM/yyyy', new Date());
+    const isCompleteDate = /^\d{2}\/\d{2}\/\d{4}$/.test(trimmedValue);
+    const validDate = isCompleteDate && isValid(parsedDate) && format(parsedDate, 'dd/MM/yyyy') === trimmedValue;
+
+    if (!validDate && trimmedValue) {
+      setError(true);
+      return;
+    }
+
+    const submittedValue = validDate ? parsedDate.toISOString() : '';
+    const valid = DateFieldFormElement.validate(element, submittedValue);
+    setError(!valid);
+    submitFunction?.(element.id, submittedValue);
+  };
+
   return (
     <div className="flex w-full flex-col gap-2">
       <Label className={cn("mr-2 text-foreground", error && 'text-red-500')}>
         {label}
         {required && <span className="ml-2 text-red-500">*</span>}
       </Label>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant={'outline'}
-            className={cn('w-full justify-start text-left font-normal',
-              error && 'border-rose-500', !date && 'text-muted-foreground')}
-          >
-            <Calendar className='mr-2 h-4 w-4' />
-            {date && isValid(date) ? format(date, 'dd/MM/yyyy') : <span>Select date (DD/MM/YYYY)</span>}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className='w-auto p-0' align='start'>
-          <CalendarComponent
-            mode="single"
-            selected={date}
-            onSelect={(selectedDate) => {
-              setDate(selectedDate);
-
-              if (!submitFunction) return;
-              const value = selectedDate && isValid(selectedDate) ? selectedDate.toISOString() : '';
-              const valid = DateFieldFormElement.validate(element, value);
-              setError(!valid);
-              submitFunction(element.id, value);
-            }}
-            initialFocus
-          />
-        </PopoverContent>
-      </Popover>
+      <Input
+        type="text"
+        inputMode="numeric"
+        placeholder="DD/MM/YYYY"
+        value={dateInput}
+        onChange={(event) => {
+          setDateInput(event.target.value);
+          if (error) setError(false);
+        }}
+        onBlur={(event) => submitDate(event.target.value)}
+        className={cn(error && 'border-rose-500')}
+        aria-invalid={error}
+      />
       {helperText && (
         <p className={cn("text-[.8rem] text-muted-foreground", error && ("text-rose-500"))}>{helperText}</p>
       )}

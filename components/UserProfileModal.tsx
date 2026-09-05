@@ -12,22 +12,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/components/ui/use-toast';
-import { User, Camera, Building2, GitBranch, Shield, Save, Loader2 } from 'lucide-react';
-import { updateMyProfile, getDepartmentsAndBranches } from '@/app/actions/employee';
-
-type DepartmentItem = {
-  id: number;
-  name: string;
-  code: string;
-};
-
-type BranchItem = {
-  id: number;
-  name: string;
-  code: string;
-};
+import { User, Camera, Shield, Save, Loader2 } from 'lucide-react';
+import { updateMyProfile } from '@/app/actions/employee';
 
 type UserProfileModalProps = {
   user: {
@@ -36,8 +23,6 @@ type UserProfileModalProps = {
     email?: string;
     role?: string;
     imageUrl?: string | null;
-    departmentId?: number | null;
-    branchId?: number | null;
   };
   trigger?: React.ReactNode;
 };
@@ -49,34 +34,12 @@ export default function UserProfileModal({ user, trigger }: UserProfileModalProp
   const [firstName, setFirstName] = useState(user.firstName || '');
   const [lastName, setLastName] = useState(user.lastName || '');
   const [imageUrl, setImageUrl] = useState(user.imageUrl || '');
-  const [departmentId, setDepartmentId] = useState<string>(user.departmentId ? String(user.departmentId) : 'none');
-  const [branchId, setBranchId] = useState<string>(user.branchId ? String(user.branchId) : 'none');
-
-  const [departments, setDepartments] = useState<DepartmentItem[]>([]);
-  const [branches, setBranches] = useState<BranchItem[]>([]);
-  const [loadingData, setLoadingData] = useState(false);
 
   useEffect(() => {
     if (open) {
       setFirstName(user.firstName || '');
       setLastName(user.lastName || '');
       setImageUrl(user.imageUrl || '');
-      setDepartmentId(user.departmentId ? String(user.departmentId) : 'none');
-      setBranchId(user.branchId ? String(user.branchId) : 'none');
-
-      const fetchData = async () => {
-        try {
-          setLoadingData(true);
-          const data = await getDepartmentsAndBranches();
-          setDepartments(data.departments);
-          setBranches(data.branches);
-        } catch (err) {
-          console.error('Failed to load departments/branches', err);
-        } finally {
-          setLoadingData(false);
-        }
-      };
-      fetchData();
     }
   }, [open, user]);
 
@@ -107,13 +70,11 @@ export default function UserProfileModal({ user, trigger }: UserProfileModalProp
         firstName,
         lastName,
         imageUrl,
-        departmentId: departmentId === 'none' ? null : Number(departmentId),
-        branchId: branchId === 'none' ? null : Number(branchId),
       });
 
       toast({
         title: 'Profile Updated',
-        description: 'Your profile, department, and branch have been updated successfully.',
+        description: 'Your profile has been updated successfully.',
       });
       setOpen(false);
       window.location.reload();
@@ -145,7 +106,7 @@ export default function UserProfileModal({ user, trigger }: UserProfileModalProp
             <User className="h-5 w-5 text-primary" /> Edit My Profile
           </DialogTitle>
           <DialogDescription>
-            Update your DP (Display Picture), department, and branch information.
+            Update your DP (Display Picture) and personal information.
           </DialogDescription>
         </DialogHeader>
 
@@ -237,52 +198,6 @@ export default function UserProfileModal({ user, trigger }: UserProfileModalProp
                 className="h-9 text-sm mt-1"
                 required
               />
-            </div>
-          </div>
-
-          {/* Department & Branch (Single line) */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="department" className="text-xs flex items-center gap-1">
-                <Building2 className="h-3.5 w-3.5 text-primary" /> Department
-              </Label>
-              <Select value={departmentId} onValueChange={setDepartmentId} disabled={loadingData}>
-                <SelectTrigger className="h-9 text-sm mt-1">
-                  <SelectValue placeholder={loadingData ? 'Loading...' : 'Select Department'} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">-- No Department --</SelectItem>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept.id} value={String(dept.id)}>
-                      {dept.name} ({dept.code})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="branch" className="text-xs flex items-center justify-between">
-                <span className="flex items-center gap-1">
-                  <GitBranch className="h-3.5 w-3.5 text-primary" /> Branch
-                </span>
-                {user.role !== 'SUPER_ADMIN' && (
-                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Locked (Super Admin Only)</span>
-                )}
-              </Label>
-              <Select value={branchId} onValueChange={setBranchId} disabled={loadingData || user.role !== 'SUPER_ADMIN'}>
-                <SelectTrigger className="h-9 text-sm mt-1">
-                  <SelectValue placeholder={loadingData ? 'Loading...' : 'Select Branch'} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">-- No Branch --</SelectItem>
-                  {branches.map((br) => (
-                    <SelectItem key={br.id} value={String(br.id)}>
-                      {br.name} ({br.code})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </div>
 

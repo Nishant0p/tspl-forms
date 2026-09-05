@@ -76,7 +76,7 @@ interface AdminManagedUsersTableProps {
   users: ManagedUser[];
 }
 
-const ALLOWED_ROLES = ['HR', 'MANAGER', 'EDITOR', 'EMPLOYEE', 'FORM_VIEWER'];
+const ALLOWED_ROLES = ['EDITOR', 'EMPLOYEE', 'FORM_VIEWER'];
 
 import AssignFormAccessDialog from '@/components/AssignFormAccessDialog';
 import { FileText } from 'lucide-react';

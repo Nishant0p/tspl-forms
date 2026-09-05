@@ -91,8 +91,6 @@ interface Props {
 const ROLE_COLORS: Record<string, string> = {
   SUPER_ADMIN: 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-800',
   ADMIN: 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800',
-  HR: 'bg-pink-500/15 text-pink-700 dark:text-pink-300 border-pink-300 dark:border-pink-800',
-  MANAGER: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800',
   EDITOR: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-800',
   EMPLOYEE: 'bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-800',
 };
@@ -382,8 +380,6 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
               <SelectItem value="ALL">All Roles ({admins.length})</SelectItem>
               <SelectItem value="SUPER_ADMIN">SUPER_ADMIN</SelectItem>
               <SelectItem value="ADMIN">ADMIN</SelectItem>
-              <SelectItem value="HR">HR</SelectItem>
-              <SelectItem value="MANAGER">MANAGER</SelectItem>
               <SelectItem value="EDITOR">EDITOR</SelectItem>
               <SelectItem value="EMPLOYEE">EMPLOYEE</SelectItem>
               <SelectItem value="FORM_VIEWER">FORM_VIEWER</SelectItem>
@@ -528,8 +524,6 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
                     <SelectContent>
                       <SelectItem value="SUPER_ADMIN">SUPER_ADMIN (Max 3)</SelectItem>
                       <SelectItem value="ADMIN">ADMIN (Branch Head - 1/Branch)</SelectItem>
-                      <SelectItem value="HR">HR</SelectItem>
-                      <SelectItem value="MANAGER">MANAGER</SelectItem>
                       <SelectItem value="EDITOR">EDITOR</SelectItem>
                       <SelectItem value="EMPLOYEE">EMPLOYEE</SelectItem>
                       <SelectItem value="FORM_VIEWER">FORM_VIEWER</SelectItem>
@@ -635,7 +629,7 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
           <TableHeader className="bg-muted/40">
             <TableRow>
               <TableHead>User / Admin</TableHead>
-              <TableHead>Employee ID</TableHead>
+              <TableHead>User ID</TableHead>
               <TableHead>Branch & Dept</TableHead>
               <TableHead>Current Role</TableHead>
               <TableHead>Active Permission</TableHead>
@@ -675,7 +669,7 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
                       </div>
                     </TableCell>
 
-                    {/* Employee ID */}
+                    {/* User ID */}
                     <TableCell>
                       <code className="rounded bg-muted px-2 py-1 text-xs font-mono font-medium">
                         {admin.employeeId}
@@ -716,8 +710,6 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
                         <SelectContent>
                           <SelectItem value="SUPER_ADMIN">SUPER_ADMIN</SelectItem>
                           <SelectItem value="ADMIN">ADMIN</SelectItem>
-                          <SelectItem value="HR">HR</SelectItem>
-                          <SelectItem value="MANAGER">MANAGER</SelectItem>
                           <SelectItem value="EDITOR">EDITOR</SelectItem>
                           <SelectItem value="EMPLOYEE">EMPLOYEE</SelectItem>
                         </SelectContent>
@@ -977,7 +969,7 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
                       <TableHeader className="bg-muted/40">
                         <TableRow className="text-xs">
                           <TableHead className="font-bold">Team Member</TableHead>
-                          <TableHead className="font-bold">Employee ID</TableHead>
+                          <TableHead className="font-bold">User ID</TableHead>
                           <TableHead className="font-bold">Role</TableHead>
                           <TableHead className="font-bold">Branch</TableHead>
                           <TableHead className="font-bold text-right">Status</TableHead>

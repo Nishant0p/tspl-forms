@@ -22,7 +22,7 @@ import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
 type AccessMode = 'PUBLIC' | 'AUTHENTICATED' | 'RESTRICTED';
-type RoleValue = 'ADMIN' | 'HR' | 'MANAGER' | 'EMPLOYEE';
+type RoleValue = 'ADMIN' | 'EMPLOYEE';
 
 type DepartmentOption = {
   id: number;
@@ -122,7 +122,7 @@ export default function FormAccessSettings({ form, departments, branches, employ
     if (selectedRoles.length > 0) parts.push(`${selectedRoles.length} role(s)`);
     if (selectedDepartments.length > 0) parts.push(`${selectedDepartments.length} department(s)`);
     if (selectedBranches.length > 0) parts.push(`${selectedBranches.length} branch(es)`);
-    if (selectedEmployees.length > 0) parts.push(`${selectedEmployees.length} employee(s)`);
+    if (selectedEmployees.length > 0) parts.push(`${selectedEmployees.length} user(s)`);
 
     return parts.length > 0 ? parts.join(' • ') : 'No restrictions configured yet.';
   }, [accessMode, selectedBranches.length, selectedDepartments.length, selectedEmployees.length, selectedRoles.length]);
@@ -174,7 +174,7 @@ export default function FormAccessSettings({ form, departments, branches, employ
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="PUBLIC">Anyone</SelectItem>
-                  <SelectItem value="AUTHENTICATED">Logged-in employees</SelectItem>
+                  <SelectItem value="AUTHENTICATED">Logged-in users</SelectItem>
                   <SelectItem value="RESTRICTED">Restricted users</SelectItem>
                 </SelectContent>
               </Select>
@@ -196,8 +196,8 @@ export default function FormAccessSettings({ form, departments, branches, employ
               <div className="space-y-2 rounded-xl border p-4">
                 <div className="flex items-center justify-between gap-2">
                   <div>
-                    <p className="font-medium">One response per employee</p>
-                    <p className="text-xs text-muted-foreground">Prevents duplicate submissions for the same employee.</p>
+                    <p className="font-medium">One response per user</p>
+                    <p className="text-xs text-muted-foreground">Prevents duplicate submissions for the same user.</p>
                   </div>
                   <Checkbox checked={oneResponsePerUser} onCheckedChange={(checked) => setOneResponsePerUser(Boolean(checked))} />
                 </div>
@@ -234,7 +234,7 @@ export default function FormAccessSettings({ form, departments, branches, employ
                 <div className="space-y-2 rounded-xl border p-4">
                   <p className="font-medium">Roles</p>
                   <div className="grid grid-cols-2 gap-3">
-                    {(['ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'] as RoleValue[]).map((role) => (
+                    {(['ADMIN', 'EMPLOYEE'] as RoleValue[]).map((role) => (
                       <label key={role} className="flex items-center gap-2 text-sm">
                         <Checkbox checked={selectedRoles.includes(role)} onCheckedChange={() => setSelectedRoles((current) => toggleValue(current, role))} />
                         {role}
@@ -284,7 +284,7 @@ export default function FormAccessSettings({ form, departments, branches, employ
                 </div>
 
                 <div className="space-y-2 rounded-xl border p-4">
-                  <p className="font-medium">Specific employees</p>
+                  <p className="font-medium">Specific users</p>
                   <ScrollArea className="h-52 pr-3">
                     <div className="space-y-3">
                       {employees.map((employee) => (

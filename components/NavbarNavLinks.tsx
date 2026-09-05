@@ -3,8 +3,10 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, LayoutDashboard, Users, FileText } from 'lucide-react';
+import { useState } from 'react';
+import { Menu, ShieldCheck, LayoutDashboard, Users, FileText, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from './ui/button';
 
 interface NavbarNavLinksProps {
   isFormViewer?: boolean;
@@ -18,6 +20,7 @@ export default function NavbarNavLinks({
   isAdmin = false,
 }: NavbarNavLinksProps) {
   const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isDashboardActive =
     pathname === '/dashboard' ||
@@ -30,8 +33,17 @@ export default function NavbarNavLinks({
   const isAdminActive = pathname === '/admin' || pathname.startsWith('/admin');
   const isSuperAdminActive = pathname.startsWith('/super-admin');
 
+  const mobileLinkClass = (isActive: boolean) =>
+    cn(
+      'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
+      isActive
+        ? 'bg-primary/10 font-semibold text-primary dark:bg-primary/20'
+        : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+    );
+
   return (
-    <div className="flex items-center gap-1 sm:gap-2">
+    <div className="relative flex items-center gap-1 sm:gap-2">
+      <div className="hidden items-center gap-1 sm:flex sm:gap-2">
       {/* Dashboard / My Form */}
       <Link
         href="/dashboard"
@@ -65,7 +77,7 @@ export default function NavbarNavLinks({
           )}
         >
           <Users className="h-4 w-4 shrink-0" />
-          <span className="hidden sm:inline">Employees</span>
+          <span className="hidden sm:inline">User Form</span>
           <span
             className={cn(
               'absolute bottom-0 left-2 right-2 h-[2.5px] rounded-full transition-all duration-300',
@@ -145,6 +157,74 @@ export default function NavbarNavLinks({
             )}
           />
         </Link>
+      )}
+      </div>
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="sm:hidden"
+        aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+        aria-expanded={isMobileMenuOpen}
+        onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
+      >
+        {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      </Button>
+
+      {isMobileMenuOpen && (
+        <div className="absolute right-0 top-full z-50 mt-2 min-w-52 rounded-md border border-border bg-background p-2 shadow-lg sm:hidden">
+          <Link
+            href="/dashboard"
+            className={mobileLinkClass(isDashboardActive)}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <LayoutDashboard className="h-4 w-4 shrink-0" />
+            {isFormViewer ? 'My Form' : 'Dashboard'}
+          </Link>
+
+          {!isFormViewer && (
+            <Link
+              href="/employees"
+              className={mobileLinkClass(isEmployeesActive)}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <Users className="h-4 w-4 shrink-0" />
+              User Form
+            </Link>
+          )}
+
+          <Link
+            href="/form-requests"
+            className={mobileLinkClass(isRequestsActive)}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <FileText className="h-4 w-4 shrink-0" />
+            Requests
+          </Link>
+
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className={mobileLinkClass(isAdminActive)}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <ShieldCheck className="h-4 w-4 shrink-0" />
+              Admin Portal
+            </Link>
+          )}
+
+          {isSuperAdmin && (
+            <Link
+              href="/super-admin"
+              className={mobileLinkClass(isSuperAdminActive)}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <ShieldCheck className="h-4 w-4 shrink-0" />
+              Super Admin
+            </Link>
+          )}
+        </div>
       )}
     </div>
   );

@@ -64,7 +64,7 @@ export default function AddEmployeeDialog() {
           password: formData.password,
           role: formData.role as any,
         });
-        toast.success('Employee created successfully');
+        toast.success('User created successfully');
         setOpen(false);
         setFormData({
           employeeId: '',
@@ -76,7 +76,7 @@ export default function AddEmployeeDialog() {
         });
         router.refresh();
       } catch (error: any) {
-        toast.error(error.message || 'Failed to create employee');
+        toast.error(error.message || 'Failed to create user');
       }
     });
   };
@@ -85,12 +85,12 @@ export default function AddEmployeeDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" /> Add Employee
+          <Plus className="h-4 w-4" /> Add User
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Employee</DialogTitle>
+            <DialogTitle>Add New User</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
           <div className="grid gap-2">
@@ -171,9 +171,7 @@ export default function AddEmployeeDialog() {
                 <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
                 <SelectItem value="ADMIN">Admin</SelectItem>
                 <SelectItem value="EDITOR">Editor</SelectItem>
-                <SelectItem value="HR">HR</SelectItem>
-                <SelectItem value="MANAGER">Manager</SelectItem>
-                <SelectItem value="EMPLOYEE">Employee</SelectItem>
+                <SelectItem value="EMPLOYEE">User</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -188,7 +186,7 @@ export default function AddEmployeeDialog() {
             </Button>
             <Button type="submit" disabled={isPending}>
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Employee
+              Create User
             </Button>
           </div>
         </form>
