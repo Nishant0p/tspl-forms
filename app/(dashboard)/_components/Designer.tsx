@@ -238,7 +238,7 @@ export default function Designer({ formId, initialContent }: { formId: number; i
       <div
         ref={droppable.setNodeRef}
         className={cn(
-          'w-full h-full p-4 sm:py-8 sm:pl-8 sm:pr-24 overflow-auto flex flex-col items-center justify-start transition-all relative flex-1',
+          'w-full h-full p-4 sm:py-8 sm:pl-8 sm:pr-24 overflow-auto flex flex-col items-center justify-start transition-all relative flex-1 google-form-container',
           droppable.isOver && 'bg-blue-500/5 ring-2 ring-blue-500 ring-inset'
         )}
       >

@@ -134,109 +134,156 @@
 }
 
 /* ========================================== */
-/* Google Form Aesthetics                     */
+/* Google Form Aesthetics - 50% Blue, 40% Orange, 10% White Theme */
 /* ========================================== */
 
 .google-form-container {
   font-family: 'Roboto', 'Inter', sans-serif;
-  background-color: #f8fafc;
+  background: linear-gradient(180deg, #eef4ff 0%, #f1f5f9 35%, #fff7ed 100%) !important;
+  min-height: 100vh;
 }
 
 .dark .google-form-container {
-  background-color: #0b1120;
+  background: linear-gradient(180deg, #091122 0%, #0b1329 35%, #150f08 100%) !important;
+  min-height: 100vh;
 }
 
 /* Style questions / inputs inside Google Form container */
-.google-form-container input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.google-form-container input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="button"]):not([type="submit"]),
 .google-form-container textarea {
   border-top: none !important;
   border-left: none !important;
   border-right: none !important;
-  border-bottom: 1px solid hsl(var(--border)) !important;
+  border-bottom: 2px solid #cbd5e1 !important;
   border-radius: 0px !important;
   box-shadow: none !important;
-  padding-left: 0px !important;
-  padding-right: 0px !important;
+  padding-left: 2px !important;
+  padding-right: 2px !important;
   background-color: transparent !important;
-  transition: border-color 0.2s ease-in-out, border-width 0.1s ease-in-out;
+  transition: all 0.2s ease-in-out;
   width: 100%;
 }
 
 .google-form-container input:focus,
 .google-form-container textarea:focus {
-  border-bottom: 2px solid #2563eb !important;
+  border-bottom: 2px solid #ea580c !important; /* 40% Orange */
   outline: none !important;
-  box-shadow: 0 1px 0 0 #ea580c !important;
+  box-shadow: 0 2px 0 0 #ea580c !important;
 }
 
 .dark .google-form-container input:focus,
 .dark .google-form-container textarea:focus {
-  border-bottom: 2px solid #3b82f6 !important;
-  box-shadow: 0 1px 0 0 #f97316 !important;
+  border-bottom: 2px solid #f97316 !important;
+  box-shadow: 0 2px 0 0 #f97316 !important;
 }
 
 /* Labels / Titles styling inside form container */
 .google-form-container label {
-  font-size: 16px !important;
+  font-size: 15px !important;
   font-weight: 600 !important;
   color: hsl(var(--foreground)) !important;
-  margin-bottom: 12px !important;
+  margin-bottom: 10px !important;
   display: block !important;
   line-height: 1.5 !important;
 }
 
 /* Checkbox and Radio buttons color - 50% Blue & 40% Orange */
-.google-form-container button[role="radio"][aria-checked="true"] {
-  border-color: #2563eb !important;
-  color: #2563eb !important;
-}
-.google-form-container button[role="radio"][aria-checked="true"] > span {
-  background-color: #ea580c !important;
+.google-form-container button[role="checkbox"] {
+  border: 2px solid #2563eb !important; /* 50% Blue border */
+  border-radius: 6px !important;
 }
 
 .google-form-container button[role="checkbox"][data-state="checked"] {
-  background-color: #ea580c !important;
+  background-color: #ea580c !important; /* 40% Orange */
   border-color: #ea580c !important;
+  color: #ffffff !important;
 }
 
-.google-form-container button[role="checkbox"] {
-  border-color: hsl(var(--muted-foreground)) !important;
+.google-form-container button[role="radio"] {
+  border: 2px solid #94a3b8 !important;
+}
+
+.google-form-container button[role="radio"][aria-checked="true"] {
+  border: 2px solid #2563eb !important; /* 50% Blue outer ring */
+  color: #2563eb !important;
+}
+
+.google-form-container button[role="radio"][aria-checked="true"] > span {
+  background-color: #ea580c !important; /* 40% Orange inner circle */
+}
+
+.dark .google-form-container button[role="checkbox"] {
+  border-color: #3b82f6 !important;
+}
+
+.dark .google-form-container button[role="checkbox"][data-state="checked"] {
+  background-color: #f97316 !important;
+  border-color: #f97316 !important;
 }
 
 .dark .google-form-container button[role="radio"][aria-checked="true"] {
   border-color: #3b82f6 !important;
   color: #3b82f6 !important;
 }
+
 .dark .google-form-container button[role="radio"][aria-checked="true"] > span {
   background-color: #f97316 !important;
 }
-.dark .google-form-container button[role="checkbox"][data-state="checked"] {
-  background-color: #f97316 !important;
-  border-color: #f97316 !important;
+
+/* Asterisks & required markers */
+.google-form-container .text-red-500,
+.google-form-container .text-rose-500 {
+  color: #ea580c !important; /* 40% Orange */
+  font-weight: 700 !important;
 }
 
 /* Header card style */
 .google-form-header-card {
-  border-radius: 12px !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.15), 0 8px 10px -6px rgba(234, 88, 12, 0.08) !important;
 }
 
-/* Question card active / focus accent */
-.google-form-container .bg-card:focus-within {
-  border-color: #2563eb !important;
-  box-shadow: 0 4px 14px -2px rgba(37, 99, 235, 0.1), 0 2px 6px -1px rgba(234, 88, 12, 0.06) !important;
+/* Question card base: Crisp 10% White surface with 50% Blue accent bar */
+.google-form-container .bg-card,
+.google-form-container [data-form-card="true"] {
+  background-color: #ffffff !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(37, 99, 235, 0.12) !important;
+  border-left: 5px solid #2563eb !important; /* 50% Blue default border */
+  box-shadow: 0 4px 12px -2px rgba(37, 99, 235, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.03) !important;
+  transition: all 0.2s ease-in-out !important;
 }
 
-.dark .google-form-container .bg-card:focus-within {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 4px 14px -2px rgba(59, 130, 246, 0.2) !important;
+.dark .google-form-container .bg-card,
+.dark .google-form-container [data-form-card="true"] {
+  background-color: #0f172a !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  border-left: 5px solid #3b82f6 !important;
+  box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Question card active / focus accent: Shifts to 40% Orange with radiant glow */
+.google-form-container .bg-card:focus-within,
+.google-form-container [data-form-card="true"]:focus-within {
+  border-left: 6px solid #ea580c !important; /* 40% Orange active border */
+  border-color: rgba(234, 88, 12, 0.35) !important;
+  box-shadow: 0 8px 24px -4px rgba(234, 88, 12, 0.18), 0 2px 6px -1px rgba(37, 99, 235, 0.08) !important;
+}
+
+.dark .google-form-container .bg-card:focus-within,
+.dark .google-form-container [data-form-card="true"]:focus-within {
+  border-left: 6px solid #f97316 !important;
+  border-color: rgba(249, 115, 22, 0.4) !important;
+  box-shadow: 0 8px 24px -4px rgba(249, 115, 22, 0.25) !important;
 }
 
 /* Date Picker Calendar Enhancements */
 .rdp-day_selected,
 button[aria-selected="true"].rdp-day {
-  background-color: #2563eb !important;
+  background-color: #2563eb !important; /* 50% Blue */
   color: #ffffff !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
 }
 
 button[aria-selected="true"].rdp-day:hover {
@@ -244,8 +291,38 @@ button[aria-selected="true"].rdp-day:hover {
 }
 
 .rdp-day_today:not([aria-selected="true"]) {
-  border: 1px solid #ea580c !important;
+  border: 2px solid #ea580c !important; /* 40% Orange */
   color: #ea580c !important;
   font-weight: 700 !important;
+}
+
+/* Rating Field Stars in Form */
+.google-form-container button[type="button"]:has(svg.lucide-star) {
+  transition: all 0.15s ease-in-out;
+}
+
+.google-form-container button[type="button"]:has(svg.lucide-star):hover {
+  border-color: #ea580c !important;
+  color: #ea580c !important;
+}
+
+/* Linear Scale / Slider in Form */
+.google-form-container [data-radix-collection-item],
+.google-form-container .relative.flex.w-full.touch-none span[class*="bg-primary"] {
+  background-color: #ea580c !important; /* 40% Orange range */
+}
+
+.google-form-container .relative.flex.w-full.touch-none span[class*="border-primary"] {
+  border-color: #ea580c !important; /* 40% Orange thumb */
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.25) !important;
+}
+
+.google-form-container .relative.flex.w-full.touch-none span[class*="bg-secondary"] {
+  background-color: #dbeafe !important; /* 50% Blue-100 track */
+}
+
+.dark .google-form-container .relative.flex.w-full.touch-none span[class*="bg-secondary"] {
+  background-color: #1e293b !important;
 }
 

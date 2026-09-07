@@ -297,9 +297,9 @@ export default function DesginerElementWrapper({
       ref={draggable.setNodeRef}
       className={cn(
         'group relative flex w-full flex-col rounded-xl text-foreground transition-all duration-150 bg-card shadow-sm border border-border/80',
-        !isSelected && 'hover:shadow-md cursor-pointer hover:border-border',
+        !isSelected && 'hover:shadow-md cursor-pointer hover:border-border border-l-[5px] border-l-blue-600/50 hover:border-l-blue-600',
         isSelected &&
-          'border-l-[6px] border-l-blue-600 dark:border-l-blue-500 shadow-lg ring-1 ring-black/5 dark:ring-white/10'
+          'border-l-[6px] border-l-orange-500 dark:border-l-orange-500 shadow-xl ring-2 ring-orange-500/20'
       )}
       onClick={(e) => {
         e.stopPropagation();
@@ -325,10 +325,10 @@ export default function DesginerElementWrapper({
 
       {/* Drag Over Indicators */}
       {topHalf.isOver && (
-        <div className="absolute top-0 h-[4px] w-full rounded-t-md bg-blue-600 z-30" />
+        <div className="absolute top-0 h-[4px] w-full rounded-t-md bg-orange-500 z-30" />
       )}
       {bottomHalf.isOver && (
-        <div className="absolute bottom-0 h-[4px] w-full rounded-b-md bg-blue-600 z-30" />
+        <div className="absolute bottom-0 h-[4px] w-full rounded-b-md bg-orange-500 z-30" />
       )}
 
       {/* Top 6-Dot Drag Handle (Centered) */}
@@ -354,7 +354,7 @@ export default function DesginerElementWrapper({
                 value={currentTitle}
                 onChange={(e) => handleLabelChange(e.target.value)}
                 placeholder="Question"
-                className="h-12 text-base font-normal bg-[#f8f9fa] dark:bg-muted/30 border-b-2 border-t-0 border-x-0 rounded-none focus-visible:ring-0 focus-visible:border-blue-600 px-3 transition-colors placeholder:text-muted-foreground/60 shadow-none"
+                className="h-12 text-base font-normal bg-[#f8f9fa] dark:bg-muted/30 border-b-2 border-t-0 border-x-0 rounded-none focus-visible:ring-0 focus-visible:border-orange-500 px-3 transition-colors placeholder:text-muted-foreground/60 shadow-none"
               />
             </div>
 
@@ -397,7 +397,7 @@ export default function DesginerElementWrapper({
                 value={element.extraAttributes?.helperText || ''}
                 onChange={(e) => handleHelperChange(e.target.value)}
                 placeholder="Description"
-                className="h-8 text-xs text-muted-foreground bg-transparent border-b border-t-0 border-x-0 rounded-none focus-visible:ring-0 focus-visible:border-blue-600 px-3"
+                className="h-8 text-xs text-muted-foreground bg-transparent border-b border-t-0 border-x-0 rounded-none focus-visible:ring-0 focus-visible:border-orange-500 px-3"
               />
             </div>
           )}
@@ -424,7 +424,7 @@ export default function DesginerElementWrapper({
                     <Input
                       value={opt}
                       onChange={(e) => handleOptionChange(idx, e.target.value)}
-                      className="h-9 text-sm flex-1 bg-transparent border-b border-t-0 border-x-0 rounded-none focus-visible:ring-0 focus-visible:border-blue-600 px-1 placeholder:text-muted-foreground/60"
+                      className="h-9 text-sm flex-1 bg-transparent border-b border-t-0 border-x-0 rounded-none focus-visible:ring-0 focus-visible:border-orange-500 px-1 placeholder:text-muted-foreground/60"
                       placeholder={`Option ${idx + 1}`}
                     />
 
@@ -469,7 +469,7 @@ export default function DesginerElementWrapper({
                         <button
                           type="button"
                           onClick={handleAddOtherOption}
-                          className="text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium hover:underline cursor-pointer"
+                          className="text-blue-600 hover:text-orange-600 dark:text-blue-400 dark:hover:text-orange-400 font-semibold hover:underline cursor-pointer"
                         >
                           add &quot;Other&quot;
                         </button>
@@ -701,7 +701,7 @@ export default function DesginerElementWrapper({
               <Switch
                 id={`req-${element.id}`}
                 checked={Boolean(element.extraAttributes?.required)}
-                className="data-[state=checked]:bg-blue-600 scale-90 my-auto"
+                className="data-[state=checked]:bg-orange-500 scale-90 my-auto"
                 onCheckedChange={(checked) => {
                   const updated = {
                     ...element,

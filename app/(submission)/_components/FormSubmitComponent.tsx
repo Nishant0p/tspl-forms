@@ -161,10 +161,10 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
       <div className="flex min-h-screen w-full items-start justify-center p-4 sm:p-8 google-form-container bg-slate-100 dark:bg-slate-950">
         <div
           key={renderKey}
-          className="flex w-full max-w-[640px] flex-col gap-6 google-form-header-card bg-card text-card-foreground p-0 rounded-xl shadow-md border border-border mt-6 sm:mt-10 overflow-hidden"
+          className="flex w-full max-w-[640px] flex-col gap-6 google-form-header-card bg-card text-card-foreground p-0 rounded-2xl shadow-xl border border-border mt-6 sm:mt-10 overflow-hidden"
         >
           {/* Branded 50% Blue, 40% Orange, 10% White Accent Strip */}
-          <div className="h-3 w-full flex overflow-hidden">
+          <div className="h-3.5 w-full flex overflow-hidden">
             <div className="w-1/2 bg-blue-600 dark:bg-blue-500" title="50% Blue" />
             <div className="w-[40%] bg-orange-500 dark:bg-orange-600" title="40% Orange" />
             <div className="w-[10%] bg-white dark:bg-slate-100 border-l border-orange-400/40" title="10% White" />
@@ -173,7 +173,7 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
           <div className="p-6 sm:p-8 flex flex-col gap-6">
             {/* Custom Banner / Image if configured */}
             {customImageUrl && (
-              <div className="w-full overflow-hidden rounded-lg border border-border/50 bg-muted/20">
+              <div className="w-full overflow-hidden rounded-xl border border-border/50 bg-muted/20">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={customImageUrl}
@@ -183,12 +183,13 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
               </div>
             )}
 
-            <div className="flex items-center gap-3 border-b pb-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
-                {customThankYou ? <PartyPopper className="h-6 w-6 text-orange-500" /> : <CheckCircle2 className="h-6 w-6 text-blue-600" />}
+            <div className="flex items-center gap-4 border-b border-border/80 pb-5">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500/15 to-orange-500/15 border border-blue-500/20 text-blue-600 dark:text-blue-400 shrink-0 shadow-xs">
+                {customThankYou ? <PartyPopper className="h-7 w-7 text-orange-500" /> : <CheckCircle2 className="h-7 w-7 text-blue-600" />}
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-semibold text-foreground">
+                <span className="text-xs font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">Response Recorded</span>
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground mt-0.5">
                   {customTitle}
                 </h1>
               </div>
@@ -199,13 +200,13 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
             </p>
 
             {showBtn && (
-              <div className="mt-4 pt-2">
+              <div className="mt-2 pt-2">
                 {customBtnUrl ? (
                   <a
                     href={customBtnUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-orange-600 text-white px-6 py-2.5 text-sm font-medium shadow-md hover:shadow-orange-500/20 transition-all"
+                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 via-orange-600 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-7 py-3 text-sm font-bold shadow-lg shadow-orange-500/25 hover:shadow-orange-500/35 transition-all"
                   >
                     <span>{customBtnText}</span>
                     <ExternalLink className="h-4 w-4" />
@@ -220,7 +221,7 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
                       setAnsweredCount(0);
                       setRenderKey(new Date().getTime());
                     }}
-                    className="text-sm font-medium text-blue-600 hover:text-orange-600 dark:text-blue-400 dark:hover:text-orange-400 underline transition-colors"
+                    className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-orange-600 dark:text-blue-400 dark:hover:text-orange-400 underline underline-offset-4 transition-colors"
                   >
                     {customBtnText}
                   </button>
@@ -247,22 +248,25 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
         )}
 
         {/* Google Form Header Card */}
-        <div className="w-full bg-card text-card-foreground rounded-xl border border-border shadow-sm overflow-hidden google-form-header-card relative">
+        <div className="w-full bg-card text-card-foreground rounded-2xl border border-border shadow-md overflow-hidden google-form-header-card relative">
           {/* Branded 50% Blue, 40% Orange, 10% White Theme Accent Strip */}
-          <div className="h-3 w-full flex overflow-hidden">
+          <div className="h-3.5 w-full flex overflow-hidden">
             <div className="w-1/2 bg-blue-600 dark:bg-blue-500" title="50% Blue" />
             <div className="w-[40%] bg-orange-500 dark:bg-orange-600" title="40% Orange" />
-            <div className="w-[10%] bg-white dark:bg-slate-100 border-l border-orange-400/30" title="10% White" />
+            <div className="w-[10%] bg-white dark:bg-slate-100 border-l border-orange-400/40" title="10% White" />
           </div>
 
           <div className="p-5 sm:p-7 flex flex-col gap-3">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-1 min-w-0 w-full">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/image.png"
-                alt="TSPL Logo"
-                className="h-9 sm:h-11 w-auto object-contain shrink-0 self-start sm:self-auto"
-              />
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3.5 pb-1 min-w-0 w-full">
+              {/* Logo badge */}
+              <div className="p-1.5 bg-white rounded-lg border border-border/40 shadow-xs shrink-0 self-start sm:self-auto">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/image.png"
+                  alt="TSPL Logo"
+                  className="h-8 sm:h-10 w-auto object-contain"
+                />
+              </div>
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words w-full leading-tight">
                 {formName}
               </h1>
@@ -273,25 +277,30 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
               </p>
             )}
             <hr className="border-border my-1" />
-            <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">* Required</p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold text-orange-600 dark:text-orange-400">* Required</p>
+              <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-900">
+                TSPL Form
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Dynamic Blue-to-Orange Progress Bar */}
         {totalQuestions > 0 && (
-          <div className="w-full bg-card p-3 sm:p-3.5 rounded-xl border border-border shadow-xs flex flex-col gap-1.5">
-            <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-              <span className="flex items-center gap-1.5 font-semibold text-foreground/80">
+          <div className="w-full bg-card p-3.5 sm:p-4 rounded-xl border border-border shadow-xs flex flex-col gap-2">
+            <div className="flex items-center justify-between text-xs font-semibold">
+              <span className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
                 <span className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
                 Progress
               </span>
-              <span className="text-muted-foreground">
+              <span className="text-muted-foreground font-medium">
                 {answeredCount} of {totalQuestions} answered ({progressPercentage}%)
               </span>
             </div>
-            <div className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+            <div className="w-full h-2.5 bg-slate-200/80 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
               <div
-                className="h-full bg-gradient-to-r from-blue-600 via-blue-500 to-orange-500 transition-all duration-300 rounded-full"
+                className="h-full bg-gradient-to-r from-blue-600 via-blue-500 to-orange-500 transition-all duration-300 rounded-full shadow-xs"
                 style={{ width: `${progressPercentage}%` }}
               />
             </div>
@@ -316,8 +325,8 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
             <div
               key={element.id}
               className={cn(
-                'w-full bg-card text-card-foreground p-5 sm:p-6 rounded-xl border border-border shadow-sm transition-all duration-200',
-                isInvalid && 'border-red-500 border-l-[6px] border-l-red-500',
+                'w-full bg-card text-card-foreground p-5 sm:p-6 rounded-xl border border-border shadow-sm transition-all duration-200 border-l-[5px] border-l-blue-600 focus-within:border-l-[6px] focus-within:border-l-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20',
+                isInvalid && 'border-red-500 border-l-[6px] border-l-red-500 focus-within:border-l-red-500 focus-within:ring-red-500/20',
                 element.type === 'BannerField' &&
                   'p-0 border-none shadow-none bg-transparent w-full overflow-hidden rounded-xl'
               )}
@@ -329,7 +338,7 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
                 defaultValues={formValues.current[element.id]}
               />
               {isInvalid && !isLayout && (
-                <p className="text-xs text-red-500 mt-3 flex items-center gap-1.5 font-medium">
+                <p className="text-xs text-orange-600 font-semibold mt-3 flex items-center gap-1.5">
                   <AlertCircle className="h-4 w-4" />
                   This is a required question
                 </p>
@@ -341,14 +350,14 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
         {/* Submit Actions */}
         <div className="flex items-center justify-between mt-4 px-1">
           <Button
-            className="bg-blue-600 hover:bg-orange-600 active:bg-orange-700 text-white font-semibold px-8 py-2.5 rounded-lg shadow-md hover:shadow-orange-500/20 active:scale-[0.98] transition-all flex items-center gap-2"
+            className="bg-gradient-to-r from-orange-500 via-orange-600 to-orange-600 hover:from-orange-600 hover:to-orange-700 active:from-orange-700 text-white font-bold text-sm px-8 py-2.5 h-11 rounded-xl shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 active:scale-[0.98] transition-all flex items-center gap-2 border border-orange-400/30"
             onClick={() => {
               startTransition(submitForm);
             }}
             disabled={pending}
           >
             {pending && <Loader className="h-4 w-4 animate-spin" />}
-            Submit
+            <span>Submit</span>
           </Button>
 
           <button
@@ -365,7 +374,7 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
                 description: 'Form cleared successfully.',
               });
             }}
-            className="text-sm font-medium text-muted-foreground hover:text-orange-600 hover:underline transition-colors"
+            className="text-sm font-semibold text-muted-foreground hover:text-orange-600 hover:underline transition-colors px-2 py-1"
           >
             Clear form
           </button>

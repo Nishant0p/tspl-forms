@@ -180,35 +180,35 @@ export default async function FormDetailsPage({
       <div className="container w-full grid-cols-1 items-center gap-4 space-y-4 pt-4 md:grid md:grid-cols-2 md:space-y-0 lg:grid-cols-4">
         <CardStat
           title="Total Visits"
-          icon={<EyeIcon className="h-4 w-4 text-sky-500" />}
+          icon={<EyeIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />}
           text="Total visits for all your forms"
           value={visits.toLocaleString() ?? '0'}
           loading={false}
-          className="shadow-sky-500/20 drop-shadow-sm"
+          className="shadow-blue-500/20 drop-shadow-sm border-l-[4px] border-l-blue-600"
         />
         <CardStat
           title="Total Submissions"
-          icon={<StickyNoteIcon className="h-4 w-4 text-amber-500" />}
+          icon={<StickyNoteIcon className="h-4 w-4 text-orange-500 dark:text-orange-400" />}
           text="All time form submissions"
           value={submissions.toLocaleString() ?? '0'}
           loading={false}
-          className="shadow-amber-500/20 drop-shadow-sm"
+          className="shadow-orange-500/20 drop-shadow-sm border-l-[4px] border-l-orange-500"
         />
         <CardStat
           title="Submissions Rate"
-          icon={<MousePointerClick className="h-4 w-4 text-emerald-500" />}
+          icon={<MousePointerClick className="h-4 w-4 text-blue-600 dark:text-blue-400" />}
           text="Visits that resulted in a submissions"
           value={`${submissionsRate.toLocaleString()}%`}
           loading={false}
-          className="shadow-emerald-500/20 drop-shadow-sm"
+          className="shadow-blue-500/20 drop-shadow-sm border-l-[4px] border-l-blue-600"
         />
         <CardStat
           title="Bounce Rate"
-          icon={<LogOut className="h-4 w-4 text-rose-500" />}
+          icon={<LogOut className="h-4 w-4 text-orange-500 dark:text-orange-400" />}
           text="Visits that leave without submitting"
           value={`${bounceRate.toLocaleString()}%`}
           loading={false}
-          className="shadow-rose-500/20 drop-shadow-sm"
+          className="shadow-orange-500/20 drop-shadow-sm border-l-[4px] border-l-orange-500"
         />
       </div>
       <div className="container pt-10">

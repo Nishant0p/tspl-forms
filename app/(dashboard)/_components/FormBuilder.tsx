@@ -209,7 +209,7 @@ export default function FormBuilder({ form, departments, branches, employees }: 
                   name: form.name,
                 }}
                 trigger={
-                  <Button size="sm" className="h-8 px-3.5 gap-1.5 bg-blue-600 hover:bg-orange-600 text-white font-medium shadow-sm text-xs rounded-md transition-all">
+                  <Button size="sm" className="h-8 px-3.5 gap-1.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-xs text-xs rounded-md transition-all">
                     <Send className="h-3.5 w-3.5" />
                     <span>Send</span>
                   </Button>
