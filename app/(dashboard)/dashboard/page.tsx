@@ -20,19 +20,35 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="container pt-4">
+    <div className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3.5 sm:py-6 space-y-4 sm:space-y-6">
       {/* CardStatsWrapper */}
       <Suspense fallback={<StatsCard loading={true} />}>
         <CardStatsWrapper />
       </Suspense>
-      <div className="mt-10 flex items-center justify-between gap-4">
-        <h2 className="text-2xl sm:text-4xl font-bold">
-          {isFormViewer ? 'My Assigned Forms' : 'Published Forms'}
-        </h2>
-        {!isFormViewer && <CreateFormBtn />}
+
+      {/* Header and Actions */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-1 sm:pt-2">
+        <div className="space-y-0.5">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">
+            {isFormViewer ? 'My Assigned Forms' : 'Published Forms'}
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            {isFormViewer
+              ? 'Forms assigned to your account for response review'
+              : 'Create, manage, and analyze all operational forms'}
+          </p>
+        </div>
+        {!isFormViewer && (
+          <div className="w-full sm:w-auto">
+            <CreateFormBtn />
+          </div>
+        )}
       </div>
-      <Separator className="my-6" />
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+
+      <Separator className="my-2 sm:my-4" />
+
+      {/* Forms Grid */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <Suspense
           fallback={[...Array(4)].map((_, i) => (
             <FormCardSkeleton key={i} />

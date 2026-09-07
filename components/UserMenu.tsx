@@ -46,7 +46,7 @@ export default function UserMenu({ user, isSuperAdmin, isAdmin = false }: UserMe
           )}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-60">
+      <DropdownMenuContent align="end" className="w-60 max-w-[calc(100vw-1.5rem)]">
         <DropdownMenuLabel className="space-y-1">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold overflow-hidden border">

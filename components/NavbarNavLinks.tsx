@@ -35,7 +35,7 @@ export default function NavbarNavLinks({
 
   const mobileLinkClass = (isActive: boolean) =>
     cn(
-      'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
+      'flex items-center gap-3 rounded-lg px-3.5 py-3 text-sm font-medium transition-colors',
       isActive
         ? 'bg-primary/10 font-semibold text-primary dark:bg-primary/20'
         : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
@@ -77,7 +77,7 @@ export default function NavbarNavLinks({
           )}
         >
           <Users className="h-4 w-4 shrink-0" />
-          <span className="hidden sm:inline">User Form</span>
+          <span className="hidden sm:inline">User</span>
           <span
             className={cn(
               'absolute bottom-0 left-2 right-2 h-[2.5px] rounded-full transition-all duration-300',
@@ -164,7 +164,7 @@ export default function NavbarNavLinks({
         type="button"
         variant="ghost"
         size="icon"
-        className="sm:hidden"
+        className="sm:hidden h-9 w-9 text-muted-foreground hover:text-foreground"
         aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
         aria-expanded={isMobileMenuOpen}
         onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
@@ -173,7 +173,7 @@ export default function NavbarNavLinks({
       </Button>
 
       {isMobileMenuOpen && (
-        <div className="absolute right-0 top-full z-50 mt-2 min-w-52 rounded-md border border-border bg-background p-2 shadow-lg sm:hidden">
+        <div className="absolute right-0 top-full z-50 mt-2 min-w-56 rounded-xl border border-border bg-background/95 backdrop-blur-md p-2 shadow-xl sm:hidden">
           <Link
             href="/dashboard"
             className={mobileLinkClass(isDashboardActive)}
@@ -190,7 +190,7 @@ export default function NavbarNavLinks({
               onClick={() => setIsMobileMenuOpen(false)}
             >
               <Users className="h-4 w-4 shrink-0" />
-              User Form
+              User
             </Link>
           )}
 

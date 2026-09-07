@@ -70,24 +70,24 @@ export default function DeleteFormBtn({
       <AlertDialogTrigger asChild>
         {trigger || defaultTrigger}
       </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>
+      <AlertDialogContent className="w-[92vw] max-w-md p-4 sm:p-6 rounded-xl mx-auto">
+        <AlertDialogHeader className="text-left">
+          <AlertDialogTitle className="text-base sm:text-lg">
             Are you sure you want to delete {formName ? `"${formName}"` : 'this form'}?
           </AlertDialogTitle>
-          <AlertDialogDescription>
+          <AlertDialogDescription className="text-xs sm:text-sm">
             This action cannot be undone. All submissions and data associated with this form will be permanently deleted.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+        <AlertDialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-2 pt-2">
+          <AlertDialogCancel className="w-full sm:w-auto min-h-[40px]">Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={() => {
               startTransition(() => {
                 handleDelete();
               });
             }}
-            className="bg-rose-600 hover:bg-rose-700 text-white font-semibold"
+            className="w-full sm:w-auto min-h-[40px] bg-rose-600 hover:bg-rose-700 text-white font-semibold"
           >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Delete

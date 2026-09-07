@@ -9,7 +9,7 @@ export default function Logo() {
         alt="TSPL Group"
         width={160}
         height={64}
-        className="h-14 w-auto object-contain"
+        className="h-9 sm:h-12 w-auto object-contain"
         priority
       />
     </Link>

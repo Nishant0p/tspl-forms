@@ -14,22 +14,24 @@ export default async function Navbar() {
   const isFormViewer = user?.role === 'FORM_VIEWER';
 
   return (
-    <nav className="flex h-[64px] items-center justify-between border-b border-border px-4 shadow-md">
-      <Logo />
-      <div className="flex items-center gap-3 sm:gap-4">
-        {user && (
-          <NavbarNavLinks isFormViewer={isFormViewer} isSuperAdmin={isSuperAdmin} isAdmin={isAdmin} />
-        )}
-        <ThemeSwitcher />
+    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85 shadow-xs">
+      <nav className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-6 max-w-7xl mx-auto">
+        <Logo />
+        <div className="flex items-center gap-1.5 sm:gap-3">
+          {user && (
+            <NavbarNavLinks isFormViewer={isFormViewer} isSuperAdmin={isSuperAdmin} isAdmin={isAdmin} />
+          )}
+          <ThemeSwitcher />
 
-        {user ? (
-          <UserMenu user={user} isSuperAdmin={isSuperAdmin} isAdmin={isAdmin} />
-        ) : (
-          <Button asChild variant="secondary" className="flex items-center gap-2 font-bold">
-            <Link href="/sign-in">Sign In</Link>
-          </Button>
-        )}
-      </div>
-    </nav>
+          {user ? (
+            <UserMenu user={user} isSuperAdmin={isSuperAdmin} isAdmin={isAdmin} />
+          ) : (
+            <Button asChild variant="secondary" className="flex items-center gap-1.5 text-xs sm:text-sm font-bold h-9 px-3">
+              <Link href="/sign-in">Sign In</Link>
+            </Button>
+          )}
+        </div>
+      </nav>
+    </header>
   );
 }

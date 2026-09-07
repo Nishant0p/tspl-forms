@@ -31,7 +31,7 @@ function FormMiniPreview({ contentJson }: { contentJson: string }) {
   const previewElements = elements.slice(0, 2); // Show first 2 fields in mini preview
 
   return (
-    <div className="relative h-[132px] w-full bg-gradient-to-br from-primary/10 via-muted/40 to-orange-500/10 border-b p-3 flex flex-col justify-start gap-1 overflow-hidden group-hover:border-primary/30 transition-colors">
+    <div className="relative h-[115px] sm:h-[132px] w-full bg-gradient-to-br from-primary/10 via-muted/40 to-orange-500/10 border-b p-3 flex flex-col justify-start gap-1 overflow-hidden group-hover:border-primary/30 transition-colors">
       {/* Top watermark badge */}
       <div className="flex items-center justify-between shrink-0">
         <span className="inline-flex items-center gap-1 rounded-full bg-background/90 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground backdrop-blur-xs border border-border/50">
@@ -84,15 +84,15 @@ function FormMiniPreview({ contentJson }: { contentJson: string }) {
 
 export default function FormCard({ form }: { form: Form }) {
   return (
-    <Card className="min-h-[260px] flex flex-col justify-between overflow-hidden group hover:shadow-md transition-shadow">
+    <Card className="min-h-[260px] flex flex-col justify-between overflow-hidden group hover:shadow-md transition-shadow rounded-xl">
       <div>
         {/* Form Mini Preview above Form Name */}
         <FormMiniPreview contentJson={form.content} />
 
-        <CardHeader className="pt-3 pb-2">
-          <CardTitle className="flex items-center justify-between gap-2">
-            <span className="truncate text-lg font-bold" title={form.name}>{form.name}</span>
-            <div className="flex items-center gap-1.5 shrink-0">
+        <CardHeader className="p-3.5 sm:p-4 pb-1 sm:pb-2">
+          <CardTitle className="flex items-start justify-between gap-2">
+            <span className="truncate text-base sm:text-lg font-bold" title={form.name}>{form.name}</span>
+            <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
               {(form as any).branch && (
                 <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 flex items-center gap-1">
                   <GitBranch className="h-3 w-3" />
@@ -103,58 +103,65 @@ export default function FormCard({ form }: { form: Form }) {
               {!form.published && <Badge variant="destructive" className="text-[10px] px-2 py-0.5">Draft</Badge>}
             </div>
           </CardTitle>
-          <CardDescription className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-            <span>
+          <CardDescription className="flex items-center justify-between text-xs text-muted-foreground pt-1 gap-2">
+            <span className="truncate">
               {formatDistance(form.createdAt, new Date(), {
                 addSuffix: true,
               })}
             </span>
             {form.published && (
-              <span className="flex items-center gap-3">
+              <span className="flex items-center gap-2.5 shrink-0">
                 <span className="flex items-center gap-1" title="Views">
                   <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>{form.visits.toLocaleString()}</span>
+                  <span className="font-mono">{form.visits.toLocaleString()}</span>
                 </span>
                 <span className="flex items-center gap-1" title="Responses">
                   <StickyNote className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>{form.submissions.toLocaleString()}</span>
+                  <span className="font-mono">{form.submissions.toLocaleString()}</span>
                 </span>
               </span>
             )}
           </CardDescription>
         </CardHeader>
-        <CardContent className="h-[24px] truncate text-xs text-muted-foreground">
+        <CardContent className="px-3.5 sm:px-4 py-1 h-[28px] truncate text-xs text-muted-foreground">
           {form.description || 'No description provided'}
         </CardContent>
       </div>
-      <CardFooter className="flex-col gap-2 pt-3 pb-3">
+      <CardFooter className="flex flex-col gap-2.5 p-3.5 sm:p-4 pt-2">
         {form.published && (
-          <div className="flex w-full items-center gap-1.5">
-            <Button
-              asChild
-              variant="outline"
-              className="flex-1 gap-1.5 text-xs font-semibold hover:border-primary">
-              <Link href={`/builder/${form.id}`}>
-                <Edit className="h-3.5 w-3.5 text-primary" />
-                Edit Form
-              </Link>
-            </Button>
-            <Button
-              asChild
-              className="flex-1 gap-1.5 text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 shadow-sm transition-colors">
-              <Link href={`/forms/${form.id}`}>
-                Submissions <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
-            <FormCollaboratorsModal formId={form.id} formName={form.name} iconOnly />
-            <DeleteFormBtn formId={form.id} formName={form.name} iconOnly />
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-2 w-full">
+              <Button
+                asChild
+                variant="outline"
+                className="w-full min-h-[38px] gap-1.5 text-xs font-semibold hover:border-primary">
+                <Link href={`/builder/${form.id}`}>
+                  <Edit className="h-3.5 w-3.5 text-primary" />
+                  Edit Form
+                </Link>
+              </Button>
+              <Button
+                asChild
+                className="w-full min-h-[38px] gap-1.5 text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 shadow-sm transition-colors">
+                <Link href={`/forms/${form.id}`}>
+                  Submissions <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            </div>
+            <div className="flex w-full items-center justify-between gap-2 pt-2 border-t border-border/60">
+              <span className="text-[11px] text-muted-foreground font-medium">Actions</span>
+              <div className="flex items-center gap-1.5">
+                <FormCollaboratorsModal formId={form.id} formName={form.name} iconOnly />
+                <DeleteFormBtn formId={form.id} formName={form.name} iconOnly />
+              </div>
+            </div>
+          </>
         )}
         {!form.published && (
-          <div className="flex w-full items-center gap-1.5">
+          <div className="flex w-full items-center gap-2">
             <Button
               asChild
-              className="flex-1 gap-2 text-sm text-zinc-50">
+              className="flex-1 min-h-[38px] gap-2 text-xs sm:text-sm font-semibold text-zinc-50">
               <Link href={`/builder/${form.id}`}>
                 Edit Form <Edit className="h-4 w-4" />
               </Link>

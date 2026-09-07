@@ -20,22 +20,24 @@ export default function CardStat({
 }: Props) {
   return (
     <Card className={className}>
-      <CardHeader className="flex flex-row items-center justify-between p-3.5 pb-1">
-        <CardTitle className="text-xs font-semibold text-muted-foreground">
+      <CardHeader className="flex flex-row items-center justify-between p-3 sm:p-3.5 pb-1 gap-1">
+        <CardTitle className="text-[11px] sm:text-xs font-semibold text-muted-foreground truncate">
           {title}
         </CardTitle>
-        {icon}
+        <div className="shrink-0">{icon}</div>
       </CardHeader>
-      <CardContent className="p-3.5 pt-0">
-        <div className="text-lg font-bold">
+      <CardContent className="p-3 sm:p-3.5 pt-0">
+        <div className="text-base sm:text-xl font-bold tracking-tight">
           {loading && (
-            <Skeleton className="w-14">
+            <Skeleton className="w-12 sm:w-14 h-5 sm:h-6">
               <span className="opacity-0">0</span>
             </Skeleton>
           )}
           {!loading && value}
         </div>
-        <p className="pt-1 text-[11px] font-medium text-muted-foreground">{text}</p>
+        <p className="pt-0.5 sm:pt-1 text-[10px] sm:text-[11px] font-medium text-muted-foreground line-clamp-1">
+          {text}
+        </p>
       </CardContent>
     </Card>
   );

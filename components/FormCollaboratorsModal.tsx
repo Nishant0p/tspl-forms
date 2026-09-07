@@ -228,13 +228,13 @@ export default function FormCollaboratorsModal({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl font-bold">
-            <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            Manage Form Access: &ldquo;{formName}&rdquo;
+      <DialogContent className="w-[94vw] max-w-xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-xl mx-auto">
+        <DialogHeader className="text-left">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-xl font-bold">
+            <Users className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
+            <span className="truncate">Manage Form Access: &ldquo;{formName}&rdquo;</span>
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
             Grant any team member access as an <strong>Editor</strong> (edit questions and view submissions) or a <strong>Viewer</strong> (unlimited viewers, view submissions only).
           </DialogDescription>
         </DialogHeader>
@@ -251,15 +251,15 @@ export default function FormCollaboratorsModal({
 
           {/* Select Existing Employee Tab */}
           <TabsContent value="existing" className="space-y-3 pt-2">
-            <form onSubmit={handleAssignExisting} className="space-y-3 rounded-lg border bg-muted/20 p-4">
+            <form onSubmit={handleAssignExisting} className="space-y-3 rounded-lg border bg-muted/20 p-3.5 sm:p-4">
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Search & Select Employee</Label>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Select
                     value={selectedEmployeeId}
                     onValueChange={setSelectedEmployeeId}
                   >
-                    <SelectTrigger className="flex-1 text-xs">
+                    <SelectTrigger className="flex-1 text-xs min-h-[38px]">
                       <SelectValue placeholder="Choose an organization employee..." />
                     </SelectTrigger>
                     <SelectContent className="max-h-60">
@@ -281,7 +281,7 @@ export default function FormCollaboratorsModal({
                     value={selectedAccessType}
                     onValueChange={(val) => setSelectedAccessType(val as 'EDITOR' | 'VIEWER')}
                   >
-                    <SelectTrigger className="w-[120px] text-xs font-semibold">
+                    <SelectTrigger className="w-full sm:w-[130px] text-xs font-semibold min-h-[38px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -449,20 +449,20 @@ export default function FormCollaboratorsModal({
                   key={`editor-${emp.id}`}
                   className="flex items-center justify-between p-3 bg-card hover:bg-muted/10 text-xs transition-colors"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold">
                       {emp.firstName[0]}
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-foreground">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-semibold text-foreground truncate">
                           {emp.firstName} {emp.lastName}
                         </span>
                         <Badge className="bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-300 text-[10px] px-1.5 py-0">
                           ✏️ Editor
                         </Badge>
                       </div>
-                      <p className="text-muted-foreground text-[11px]">
+                      <p className="text-muted-foreground text-[11px] truncate">
                         {emp.email} • ID: <code className="font-mono">{emp.employeeId}</code>
                       </p>
                     </div>
@@ -470,7 +470,7 @@ export default function FormCollaboratorsModal({
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="h-8 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                    className="h-8 shrink-0 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
                     disabled={pending}
                     onClick={() => handleRemove(emp.id)}
                   >
@@ -483,22 +483,22 @@ export default function FormCollaboratorsModal({
               {viewers.map((emp) => (
                 <div
                   key={`viewer-${emp.id}`}
-                  className="flex items-center justify-between p-3 bg-card hover:bg-muted/10 text-xs transition-colors"
+                  className="flex items-center justify-between p-3 bg-card hover:bg-muted/10 text-xs transition-colors gap-2"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold">
                       {emp.firstName[0]}
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-foreground">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-semibold text-foreground truncate">
                           {emp.firstName} {emp.lastName}
                         </span>
                         <Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-300 text-[10px] px-1.5 py-0">
                           👁️ Viewer
                         </Badge>
                       </div>
-                      <p className="text-muted-foreground text-[11px]">
+                      <p className="text-muted-foreground text-[11px] truncate">
                         {emp.email} • ID: <code className="font-mono">{emp.employeeId}</code>
                       </p>
                     </div>
@@ -506,7 +506,7 @@ export default function FormCollaboratorsModal({
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="h-8 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                    className="h-8 shrink-0 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
                     disabled={pending}
                     onClick={() => handleRemove(emp.id)}
                   >

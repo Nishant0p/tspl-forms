@@ -6,7 +6,7 @@ import { ShieldCheck } from 'lucide-react';
 
 export const metadata = {
   title: 'Super Admin Management | TSPL Forms',
-  description: 'Manage admin users, assign roles, and configure departments and branches.',
+  description: 'Manage admin users, assign roles, and configure branches.',
 };
 
 export default async function SuperAdminPage() {
@@ -29,16 +29,14 @@ export default async function SuperAdminPage() {
             Admin & Organization Management
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Logged in as Super Admin <span className="font-semibold text-foreground">{currentAdmin.email}</span>. Create departments & branches, create admins, assign roles, and manage permissions.
+            Logged in as Super Admin <span className="font-semibold text-foreground">{currentAdmin.email}</span>. Create branches, create admins, assign roles, and manage permissions.
           </p>
         </div>
       </div>
 
-      {/* Department & Branch Management Section */}
+      {/* Branch Management Section */}
       <DepartmentAndBranchManagement
-        initialDepartments={departments as any}
         initialBranches={branches as any}
-        allUsers={admins as any}
       />
 
       {/* Main Admin Management Table & Actions with Department and Branch Filter Dropdowns */}
