@@ -192,7 +192,7 @@ export default function DepartmentAndBranchManagement({ initialBranches }: Props
             ) : (
               <div className="flex flex-wrap items-center gap-2">
                 {branches.map((branch) => {
-                  const count = allUsers.filter(u => String(u.branchId || u.branch?.id) === String(branch.id)).length;
+                  const count = branch._count?.employees ?? 0;
                   return (
                     <div
                       key={branch.id}
