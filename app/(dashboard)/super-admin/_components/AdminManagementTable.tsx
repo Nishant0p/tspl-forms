@@ -51,6 +51,15 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from '@/components/ui/use-toast';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import Link from 'next/link';
+import {
   ShieldAlert,
   UserPlus,
   Search,
@@ -65,6 +74,9 @@ import {
   EyeOff,
   BadgeCheck,
   BarChart3,
+  ChevronDown,
+  ExternalLink,
+  FileText,
 } from 'lucide-react';
 
 interface AdminUser {
@@ -96,7 +108,6 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 import AssignFormAccessDialog from '@/components/AssignFormAccessDialog';
-import { FileText } from 'lucide-react';
 
 export default function AdminManagementTable({ initialAdmins, departments = [], branches = [] }: Props) {
   const [admins, setAdmins] = useState<AdminUser[]>(initialAdmins);
@@ -120,9 +131,11 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
   const [reportAdmin, setReportAdmin] = useState<AdminUser | null>(null);
   const [reportData, setReportData] = useState<any>(null);
   const [loadingReport, setLoadingReport] = useState(false);
+  const [reportActiveTab, setReportActiveTab] = useState<'forms' | 'team'>('forms');
 
-  const handleOpenReportCard = async (admin: AdminUser) => {
+  const handleOpenReportCard = async (admin: AdminUser, initialTab: 'forms' | 'team' = 'forms') => {
     setReportAdmin(admin);
+    setReportActiveTab(initialTab);
     setReportData(null);
     setLoadingReport(true);
     try {
@@ -153,7 +166,10 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
     branchId: undefined,
   });
 
-  const filteredAdmins = admins.filter((admin) => {
+  // Strictly filter for administrators only (SUPER_ADMIN and ADMIN)
+  const adminOnlyList = admins.filter((a) => a.role === 'SUPER_ADMIN' || a.role === 'ADMIN');
+
+  const filteredAdmins = adminOnlyList.filter((admin) => {
     const q = search.toLowerCase();
     const matchesSearch =
       admin.firstName.toLowerCase().includes(q) ||
@@ -173,10 +189,10 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
     return matchesSearch && matchesDept && matchesBranch && matchesRole;
   });
 
-  const totalUsers = admins.length;
-  const superAdminsCount = admins.filter((a) => a.role === 'SUPER_ADMIN').length;
-  const branchAdminsCount = admins.filter((a) => a.role === 'ADMIN').length;
-  const activeCount = admins.filter((a) => a.status === 'ACTIVE').length;
+  const totalAdmins = adminOnlyList.length;
+  const superAdminsCount = adminOnlyList.filter((a) => a.role === 'SUPER_ADMIN').length;
+  const branchAdminsCount = adminOnlyList.filter((a) => a.role === 'ADMIN').length;
+  const activeCount = adminOnlyList.filter((a) => a.status === 'ACTIVE').length;
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -207,7 +223,7 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
           branchId: undefined,
         });
         toast({
-          title: 'User Created Successfully',
+          title: 'Admin Created Successfully',
           description: `Created ${created.firstName} ${created.lastName} (${created.role} - ${created.employeeId})`,
         });
       } catch (err: any) {
@@ -319,11 +335,11 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Users className="h-6 w-6" />
+            <ShieldCheck className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Total Organization Users</p>
-            <h3 className="text-2xl font-bold">{totalUsers}</h3>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Total Admins</p>
+            <h3 className="text-2xl font-bold">{totalAdmins}</h3>
           </div>
         </div>
 
@@ -352,7 +368,7 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
             <CheckCircle2 className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Active Accounts</p>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Active Admins</p>
             <h3 className="text-2xl font-bold">{activeCount}</h3>
           </div>
         </div>
@@ -373,16 +389,13 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
 
           {/* Role Filter Dropdown */}
           <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="h-9 w-full sm:w-[150px] text-xs font-semibold">
-              <SelectValue placeholder="All Roles" />
+            <SelectTrigger className="h-9 w-full sm:w-[160px] text-xs font-semibold">
+              <SelectValue placeholder="All Admins" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">All Roles ({admins.length})</SelectItem>
-              <SelectItem value="SUPER_ADMIN">SUPER_ADMIN</SelectItem>
-              <SelectItem value="ADMIN">ADMIN</SelectItem>
-              <SelectItem value="EDITOR">EDITOR</SelectItem>
-              <SelectItem value="EMPLOYEE">EMPLOYEE</SelectItem>
-              <SelectItem value="FORM_VIEWER">FORM_VIEWER</SelectItem>
+              <SelectItem value="ALL">All Admins ({adminOnlyList.length})</SelectItem>
+              <SelectItem value="SUPER_ADMIN">Super Admin ({superAdminsCount})</SelectItem>
+              <SelectItem value="ADMIN">Branch Admin ({branchAdminsCount})</SelectItem>
             </SelectContent>
           </Select>
 
@@ -420,16 +433,16 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button className="flex items-center gap-2 font-bold bg-blue-600 hover:bg-blue-700 text-white">
-              <UserPlus className="h-4 w-4" /> Create User / Admin
+              <UserPlus className="h-4 w-4" /> Create Admin
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl font-bold">
-                <UserPlus className="h-5 w-5 text-primary" /> Create User / Admin
+                <UserPlus className="h-5 w-5 text-primary" /> Create Admin Account
               </DialogTitle>
               <DialogDescription>
-                Add a new team member, branch admin, or administrator to the organization.
+                Add a new Super Admin or Branch Admin (Head) to the organization.
               </DialogDescription>
             </DialogHeader>
 
@@ -522,11 +535,8 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
                       <SelectValue placeholder="Select Role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="SUPER_ADMIN">SUPER_ADMIN (Max 3)</SelectItem>
                       <SelectItem value="ADMIN">ADMIN (Branch Head - 1/Branch)</SelectItem>
-                      <SelectItem value="EDITOR">EDITOR</SelectItem>
-                      <SelectItem value="EMPLOYEE">EMPLOYEE</SelectItem>
-                      <SelectItem value="FORM_VIEWER">FORM_VIEWER</SelectItem>
+                      <SelectItem value="SUPER_ADMIN">SUPER_ADMIN (Max 3)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -615,7 +625,7 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
                 </Button>
                 <Button type="submit" disabled={pending} className="gap-2 font-bold bg-blue-600 hover:bg-blue-700 text-white">
                   {pending && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Create User
+                  Create Admin
                 </Button>
               </DialogFooter>
             </form>
@@ -628,10 +638,10 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
         <Table>
           <TableHeader className="bg-muted/40">
             <TableRow>
-              <TableHead>User / Admin</TableHead>
+              <TableHead>Admin</TableHead>
               <TableHead>User ID</TableHead>
               <TableHead>Branch & Dept</TableHead>
-              <TableHead>Current Role</TableHead>
+              <TableHead>Role</TableHead>
               <TableHead>Active Permission</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -641,7 +651,7 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
             {filteredAdmins.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-                  No admins or staff members found.
+                  No administrators found matching your filter.
                 </TableCell>
               </TableRow>
             ) : (
@@ -708,10 +718,8 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="ADMIN">ADMIN (Branch Head)</SelectItem>
                           <SelectItem value="SUPER_ADMIN">SUPER_ADMIN</SelectItem>
-                          <SelectItem value="ADMIN">ADMIN</SelectItem>
-                          <SelectItem value="EDITOR">EDITOR</SelectItem>
-                          <SelectItem value="EMPLOYEE">EMPLOYEE</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>
@@ -733,19 +741,50 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
                       </div>
                     </TableCell>
 
-                    {/* Actions: Report Card, Assign Forms, Reset Password & Delete */}
+                    {/* Actions: Report Card (Forms/Team), Assign Forms, Reset Password & Delete */}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        {/* Report Card Button */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          title="View Admin Report Card"
-                          onClick={() => handleOpenReportCard(admin)}
-                          className="h-8 text-xs font-bold gap-1 border-purple-500/30 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10"
-                        >
-                          <BarChart3 className="h-3.5 w-3.5" /> Report Card
-                        </Button>
+                        {/* Report Card Button with 2 Options: Forms & Team */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              title="View Admin Report Options"
+                              className="h-8 text-xs font-bold gap-1 border-purple-500/30 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10"
+                            >
+                              <BarChart3 className="h-3.5 w-3.5" />
+                              <span>Report Card</span>
+                              <ChevronDown className="h-3 w-3 ml-0.5 opacity-70" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuLabel className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                              Report Card Options
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleOpenReportCard(admin, 'forms')}
+                              className="cursor-pointer gap-2 py-2 font-medium"
+                            >
+                              <FileText className="h-4 w-4 text-purple-600" />
+                              <div className="flex flex-col">
+                                <span className="font-semibold text-foreground">Forms</span>
+                                <span className="text-[10px] text-muted-foreground">View created forms</span>
+                              </div>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleOpenReportCard(admin, 'team')}
+                              className="cursor-pointer gap-2 py-2 font-medium"
+                            >
+                              <Users className="h-4 w-4 text-emerald-600" />
+                              <div className="flex flex-col">
+                                <span className="font-semibold text-foreground">Team</span>
+                                <span className="text-[10px] text-muted-foreground">View team members</span>
+                              </div>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
 
                         {/* Assign Form Access Button */}
                         <Button
@@ -873,13 +912,17 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
 
       {/* Admin Performance Report Card Dialog */}
       <Dialog open={!!reportAdmin} onOpenChange={(open) => !open && setReportAdmin(null)}>
-        <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[750px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl font-bold text-primary">
-              <BarChart3 className="h-6 w-6 text-primary" /> Admin Performance Report Card
+              <BarChart3 className="h-6 w-6 text-primary" /> Admin Report Card
             </DialogTitle>
             <DialogDescription>
-              Overview stats, created forms, and team member directory for {reportAdmin?.firstName} {reportAdmin?.lastName}.
+              Performance metrics, created forms, and assigned team members for{' '}
+              <span className="font-semibold text-foreground">
+                {reportAdmin?.firstName} {reportAdmin?.lastName}
+              </span>
+              .
             </DialogDescription>
           </DialogHeader>
 
@@ -889,7 +932,7 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
               <p className="text-sm font-medium">Generating Report Card...</p>
             </div>
           ) : reportData ? (
-            <div className="space-y-6 py-2">
+            <div className="space-y-5 py-2">
               {/* Admin Profile Header Summary */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-muted/40 border border-border">
                 <div className="flex items-center gap-3">
@@ -924,149 +967,213 @@ export default function AdminManagementTable({ initialAdmins, departments = [], 
                 </div>
               </div>
 
-              {/* 3 Key Metric Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="flex flex-col p-4 rounded-xl border border-purple-500/20 bg-purple-500/5 shadow-sm">
-                  <span className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <FileText className="h-4 w-4 text-purple-600" /> Forms Created
-                  </span>
-                  <span className="text-3xl font-black mt-2 text-foreground">
-                    {reportData.stats.formsCreatedCount}
-                  </span>
-                </div>
-
-                <div className="flex flex-col p-4 rounded-xl border border-blue-500/20 bg-blue-500/5 shadow-sm">
-                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <BarChart3 className="h-4 w-4 text-blue-600" /> Total Responses
-                  </span>
-                  <span className="text-3xl font-black mt-2 text-foreground">
-                    {reportData.stats.totalSubmissionsCount}
-                  </span>
-                </div>
-
-                <div className="flex flex-col p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 shadow-sm">
-                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Users className="h-4 w-4 text-emerald-600" /> Team Members
-                  </span>
-                  <span className="text-3xl font-black mt-2 text-foreground">
-                    {reportData.stats.teamMembersCount}
-                  </span>
-                </div>
+              {/* 2-Option Tabs Switcher: Forms vs Team */}
+              <div className="grid grid-cols-2 p-1 bg-muted/60 rounded-xl border border-border">
+                <button
+                  type="button"
+                  onClick={() => setReportActiveTab('forms')}
+                  className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs sm:text-sm font-bold transition-all shadow-sm ${
+                    reportActiveTab === 'forms'
+                      ? 'bg-primary text-primary-foreground shadow'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-background/60'
+                  }`}
+                >
+                  <FileText className="h-4 w-4" />
+                  <span>Forms ({reportData.forms.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReportActiveTab('team')}
+                  className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs sm:text-sm font-bold transition-all shadow-sm ${
+                    reportActiveTab === 'team'
+                      ? 'bg-primary text-primary-foreground shadow'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-background/60'
+                  }`}
+                >
+                  <Users className="h-4 w-4" />
+                  <span>Team ({reportData.teamMembers.length})</span>
+                </button>
               </div>
 
-              {/* Team Members List Table */}
-              <div className="space-y-2">
-                <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <Users className="h-4 w-4 text-primary" /> Team Members Under Admin ({reportData.teamMembers.length})
-                </h4>
-                {reportData.teamMembers.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-muted-foreground rounded-lg border border-dashed">
-                    No team members assigned under this admin yet.
+              {/* Option 1: Forms Content */}
+              {reportActiveTab === 'forms' && (
+                <div className="space-y-4">
+                  {/* Forms Mini Stats */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="p-3 rounded-lg border border-purple-500/20 bg-purple-500/5">
+                      <p className="text-[11px] font-semibold text-purple-600 dark:text-purple-400 uppercase">Total Forms</p>
+                      <p className="text-2xl font-black mt-1 text-foreground">{reportData.forms.length}</p>
+                    </div>
+                    <div className="p-3 rounded-lg border border-blue-500/20 bg-blue-500/5">
+                      <p className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 uppercase">Total Responses</p>
+                      <p className="text-2xl font-black mt-1 text-foreground">{reportData.stats.totalSubmissionsCount}</p>
+                    </div>
+                    <div className="p-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
+                      <p className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 uppercase">Total Visits</p>
+                      <p className="text-2xl font-black mt-1 text-foreground">
+                        {reportData.forms.reduce((acc: number, f: any) => acc + (f.visits || 0), 0)}
+                      </p>
+                    </div>
                   </div>
-                ) : (
-                  <div className="rounded-lg border border-border overflow-hidden">
-                    <Table>
-                      <TableHeader className="bg-muted/40">
-                        <TableRow className="text-xs">
-                          <TableHead className="font-bold">Team Member</TableHead>
-                          <TableHead className="font-bold">User ID</TableHead>
-                          <TableHead className="font-bold">Role</TableHead>
-                          <TableHead className="font-bold">Branch</TableHead>
-                          <TableHead className="font-bold text-right">Status</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {reportData.teamMembers.map((member: any) => (
-                          <TableRow key={member.id} className="text-xs hover:bg-muted/30">
-                            <TableCell>
-                              <div className="flex flex-col">
-                                <span className="font-bold text-foreground">
-                                  {member.firstName} {member.lastName}
-                                </span>
-                                <span className="text-[11px] text-muted-foreground">{member.email}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">
-                                {member.employeeId}
-                              </code>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className={ROLE_COLORS[member.role] || ''}>
-                                {member.role}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {member.branch ? (
-                                <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
-                                  🌿 {member.branch.name}
-                                </span>
-                              ) : (
-                                <span className="text-muted-foreground italic text-[11px]">-</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <span
-                                className={`text-[11px] font-bold ${
-                                  member.status === 'ACTIVE'
-                                    ? 'text-emerald-600 dark:text-emerald-400'
-                                    : 'text-rose-600 dark:text-rose-400'
-                                }`}
-                              >
-                                {member.status}
-                              </span>
-                            </TableCell>
+
+                  {/* Forms Table */}
+                  {reportData.forms.length === 0 ? (
+                    <div className="p-8 text-center text-xs text-muted-foreground rounded-xl border border-dashed flex flex-col items-center gap-2">
+                      <FileText className="h-8 w-8 text-muted-foreground/40" />
+                      <p className="font-semibold text-foreground text-sm">No Forms Found</p>
+                      <p>This admin has not created any forms yet.</p>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-border overflow-hidden shadow-sm">
+                      <Table>
+                        <TableHeader className="bg-muted/40">
+                          <TableRow className="text-xs">
+                            <TableHead className="font-bold">Form Name</TableHead>
+                            <TableHead className="font-bold">Status</TableHead>
+                            <TableHead className="font-bold text-center">Visits</TableHead>
+                            <TableHead className="font-bold text-center">Responses</TableHead>
+                            <TableHead className="font-bold text-right">Actions</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </div>
+                        </TableHeader>
+                        <TableBody>
+                          {reportData.forms.map((form: any) => (
+                            <TableRow key={form.id} className="text-xs hover:bg-muted/30">
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span className="font-bold text-foreground text-sm">{form.name}</span>
+                                  {form.description && (
+                                    <span className="text-[11px] text-muted-foreground line-clamp-1">
+                                      {form.description}
+                                    </span>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={form.published ? 'default' : 'secondary'}
+                                  className="text-[10px] font-bold"
+                                >
+                                  {form.published ? 'PUBLISHED' : 'DRAFT'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-center font-mono font-medium">{form.visits}</TableCell>
+                              <TableCell className="text-center font-mono font-bold text-primary">
+                                {form.submissions}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <Button asChild size="sm" variant="outline" className="h-7 text-xs px-2.5 font-semibold">
+                                    <Link href={`/forms/${form.id}`}>Details</Link>
+                                  </Button>
+                                  {form.published && form.shareUrl && (
+                                    <Button
+                                      asChild
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-7 text-xs px-2 text-primary hover:text-primary"
+                                      title="Open Live Form"
+                                    >
+                                      <Link href={`/form/${form.shareUrl}`} target="_blank">
+                                        <ExternalLink className="h-3.5 w-3.5" />
+                                      </Link>
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </div>
+              )}
 
-              {/* Forms Created List Table */}
-              <div className="space-y-2">
-                <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-primary" /> Forms Created ({reportData.forms.length})
-                </h4>
-                {reportData.forms.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-muted-foreground rounded-lg border border-dashed">
-                    No forms created by this admin yet.
+              {/* Option 2: Team Content */}
+              {reportActiveTab === 'team' && (
+                <div className="space-y-4">
+                  {/* Team Mini Stats */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
+                      <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase">Total Team Members</p>
+                      <p className="text-2xl font-black mt-1 text-foreground">{reportData.teamMembers.length}</p>
+                    </div>
+                    <div className="p-3 rounded-lg border border-teal-500/20 bg-teal-500/5">
+                      <p className="text-[11px] font-semibold text-teal-600 dark:text-teal-400 uppercase">Active Accounts</p>
+                      <p className="text-2xl font-black mt-1 text-foreground">
+                        {reportData.teamMembers.filter((m: any) => m.status === 'ACTIVE').length}
+                      </p>
+                    </div>
                   </div>
-                ) : (
-                  <div className="rounded-lg border border-border overflow-hidden">
-                    <Table>
-                      <TableHeader className="bg-muted/40">
-                        <TableRow className="text-xs">
-                          <TableHead className="font-bold">Form Name</TableHead>
-                          <TableHead className="font-bold">Publish Status</TableHead>
-                          <TableHead className="font-bold text-right">Visits</TableHead>
-                          <TableHead className="font-bold text-right">Responses</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {reportData.forms.map((form: any) => (
-                          <TableRow key={form.id} className="text-xs hover:bg-muted/30">
-                            <TableCell className="font-bold text-foreground">{form.name}</TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={form.published ? 'default' : 'secondary'}
-                                className="text-[10px] font-bold"
-                              >
-                                {form.published ? 'PUBLISHED' : 'DRAFT'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right font-mono">{form.visits}</TableCell>
-                            <TableCell className="text-right font-mono font-bold text-primary">
-                              {form.submissions}
-                            </TableCell>
+
+                  {/* Team Members Table */}
+                  {reportData.teamMembers.length === 0 ? (
+                    <div className="p-8 text-center text-xs text-muted-foreground rounded-xl border border-dashed flex flex-col items-center gap-2">
+                      <Users className="h-8 w-8 text-muted-foreground/40" />
+                      <p className="font-semibold text-foreground text-sm">No Team Members</p>
+                      <p>No team members are currently assigned under this admin.</p>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-border overflow-hidden shadow-sm">
+                      <Table>
+                        <TableHeader className="bg-muted/40">
+                          <TableRow className="text-xs">
+                            <TableHead className="font-bold">Team Member</TableHead>
+                            <TableHead className="font-bold">User ID</TableHead>
+                            <TableHead className="font-bold">Role</TableHead>
+                            <TableHead className="font-bold">Branch</TableHead>
+                            <TableHead className="font-bold text-right">Status</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </div>
+                        </TableHeader>
+                        <TableBody>
+                          {reportData.teamMembers.map((member: any) => (
+                            <TableRow key={member.id} className="text-xs hover:bg-muted/30">
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span className="font-bold text-foreground">
+                                    {member.firstName} {member.lastName}
+                                  </span>
+                                  <span className="text-[11px] text-muted-foreground">{member.email}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">
+                                  {member.employeeId}
+                                </code>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={ROLE_COLORS[member.role] || ''}>
+                                  {member.role}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {member.branch ? (
+                                  <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                                    🌿 {member.branch.name}
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground italic text-[11px]">-</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <span
+                                  className={`text-[11px] font-bold ${
+                                    member.status === 'ACTIVE'
+                                      ? 'text-emerald-600 dark:text-emerald-400'
+                                      : 'text-rose-600 dark:text-rose-400'
+                                  }`}
+                                >
+                                  {member.status}
+                                </span>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ) : null}
         </DialogContent>

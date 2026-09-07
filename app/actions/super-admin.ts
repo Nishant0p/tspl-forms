@@ -29,6 +29,9 @@ export async function getAdminsList() {
   await requireSuperAdmin();
 
   const admins = await prisma.employee.findMany({
+    where: {
+      role: { in: ['SUPER_ADMIN', 'ADMIN'] },
+    },
     orderBy: { createdAt: 'desc' },
     include: {
       department: true,
@@ -85,6 +88,7 @@ export async function getAdminReportCard(adminId: number) {
       status: true,
       visits: true,
       submissions: true,
+      shareUrl: true,
       createdAt: true,
     },
   });
