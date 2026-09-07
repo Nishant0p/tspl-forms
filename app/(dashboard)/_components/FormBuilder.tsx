@@ -209,7 +209,7 @@ export default function FormBuilder({ form, departments, branches, employees }: 
                   name: form.name,
                 }}
                 trigger={
-                  <Button size="sm" className="h-8 px-3.5 gap-1.5 bg-[#673ab7] hover:bg-[#5e35b1] text-white font-medium shadow-sm text-xs rounded-md">
+                  <Button size="sm" className="h-8 px-3.5 gap-1.5 bg-blue-600 hover:bg-orange-600 text-white font-medium shadow-sm text-xs rounded-md transition-all">
                     <Send className="h-3.5 w-3.5" />
                     <span>Send</span>
                   </Button>
@@ -273,13 +273,13 @@ export default function FormBuilder({ form, departments, branches, employees }: 
             className={cn(
               'relative pb-2.5 pt-2.5 text-xs sm:text-sm font-medium transition-colors hover:text-foreground cursor-pointer select-none',
               activeTab === 'questions'
-                ? 'text-[#673ab7] dark:text-purple-400 font-semibold'
+                ? 'text-blue-600 dark:text-blue-400 font-semibold'
                 : 'text-muted-foreground'
             )}
           >
             Questions
             {activeTab === 'questions' && (
-              <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#673ab7] dark:bg-purple-400 rounded-t-sm" />
+              <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-600 dark:bg-blue-400 rounded-t-sm" />
             )}
           </button>
 
@@ -289,18 +289,18 @@ export default function FormBuilder({ form, departments, branches, employees }: 
             className={cn(
               'relative pb-2.5 pt-2.5 text-xs sm:text-sm font-medium transition-colors hover:text-foreground flex items-center gap-1.5 cursor-pointer select-none',
               activeTab === 'responses'
-                ? 'text-[#673ab7] dark:text-purple-400 font-semibold'
+                ? 'text-blue-600 dark:text-blue-400 font-semibold'
                 : 'text-muted-foreground'
             )}
           >
             Responses
             {form.submissions > 0 && (
-              <span className="rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 px-1.5 py-0.2 text-[10px] font-bold">
+              <span className="rounded-full bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300 px-1.5 py-0.2 text-[10px] font-bold">
                 {form.submissions}
               </span>
             )}
             {activeTab === 'responses' && (
-              <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#673ab7] dark:bg-purple-400 rounded-t-sm" />
+              <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-600 dark:bg-blue-400 rounded-t-sm" />
             )}
           </button>
 
@@ -310,32 +310,32 @@ export default function FormBuilder({ form, departments, branches, employees }: 
             className={cn(
               'relative pb-2.5 pt-2.5 text-xs sm:text-sm font-medium transition-colors hover:text-foreground cursor-pointer select-none',
               activeTab === 'settings'
-                ? 'text-[#673ab7] dark:text-purple-400 font-semibold'
+                ? 'text-blue-600 dark:text-blue-400 font-semibold'
                 : 'text-muted-foreground'
             )}
           >
             Settings
             {activeTab === 'settings' && (
-              <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#673ab7] dark:bg-purple-400 rounded-t-sm" />
+              <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-600 dark:bg-blue-400 rounded-t-sm" />
             )}
           </button>
         </div>
 
         {/* Tab Content */}
         {activeTab === 'questions' && (
-          <div className="relative flex h-[calc(100vh-95px)] min-h-[600px] w-full grow items-center justify-center overflow-hidden bg-[#f0ebf8] dark:bg-[#121016] google-form-container">
+          <div className="relative flex h-[calc(100vh-95px)] min-h-[600px] w-full grow items-center justify-center overflow-hidden bg-slate-100 dark:bg-slate-950 google-form-container">
             <Designer formId={form.id} initialContent={form.content} />
           </div>
         )}
 
         {activeTab === 'responses' && (
-          <div className="h-[calc(100vh-95px)] overflow-y-auto bg-[#f0ebf8] dark:bg-[#121016] p-4 sm:p-6">
+          <div className="h-[calc(100vh-95px)] overflow-y-auto bg-slate-100 dark:bg-slate-950 p-4 sm:p-6">
             <FormBuilderResponsesTab formId={form.id} />
           </div>
         )}
 
         {activeTab === 'settings' && (
-          <div className="h-[calc(100vh-95px)] overflow-y-auto bg-[#f0ebf8] dark:bg-[#121016] p-4 sm:p-6">
+          <div className="h-[calc(100vh-95px)] overflow-y-auto bg-slate-100 dark:bg-slate-950 p-4 sm:p-6">
             <FormBuilderSettingsTab
               form={form}
               departments={departments}

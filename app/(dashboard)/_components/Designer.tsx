@@ -10,7 +10,7 @@ import DesignerSidebar from './DesignerSidebar';
 import FloatingRightCapsuleToolbar from './FloatingRightCapsuleToolbar';
 import { ElementsType, FormElements } from './FormElements';
 import { useEffect, useRef, useState } from 'react';
-import { ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight, Layers } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight, Layers, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -24,7 +24,14 @@ export default function Designer({ formId, initialContent }: { formId: number; i
     useDesginerStore();
   const lastSavedRef = useRef(initialContent);
   const [zoom, setZoom] = useState<number>(100);
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Only auto-open elements menu on desktop screens (>= 768px)
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+      setSidebarOpen(true);
+    }
+  }, []);
 
   const handleZoomIn = () => setZoom((prev) => Math.min(prev + 10, 150));
   const handleZoomOut = () => setZoom((prev) => Math.max(prev - 10, 50));
@@ -274,9 +281,36 @@ export default function Designer({ formId, initialContent }: { formId: number; i
           )}
         </div>
 
-        {/* Mobile Floating Bottom Bar */}
-        <div className="sm:hidden fixed bottom-5 right-5 z-40">
+        {/* Mobile Floating Quick Actions Toolbar */}
+        <div className="sm:hidden fixed bottom-20 right-4 z-30">
           <FloatingRightCapsuleToolbar />
+        </div>
+
+        {/* Mobile Dedicated Elements Menu ON/OFF Toggle Button */}
+        <div className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center">
+          <Button
+            type="button"
+            onClick={() => setSidebarOpen((prev) => !prev)}
+            className={cn(
+              "flex items-center gap-2 px-5 py-2.5 h-11 rounded-full font-bold text-xs tracking-wide shadow-2xl transition-all duration-300 active:scale-95 border",
+              sidebarOpen
+                ? "bg-orange-600 hover:bg-orange-700 text-white border-orange-500 shadow-orange-600/35 ring-4 ring-orange-500/20"
+                : "bg-blue-600 hover:bg-blue-700 text-white border-blue-500 shadow-blue-600/35 ring-4 ring-blue-500/20"
+            )}
+            aria-label={sidebarOpen ? "Turn Elements Menu OFF" : "Turn Elements Menu ON"}
+          >
+            {sidebarOpen ? (
+              <>
+                <X className="h-4 w-4 shrink-0" />
+                <span>Elements Menu: ON (Tap to Hide)</span>
+              </>
+            ) : (
+              <>
+                <Layers className="h-4 w-4 shrink-0" />
+                <span>Elements Menu: OFF (Tap to Show)</span>
+              </>
+            )}
+          </Button>
         </div>
       </div>
 

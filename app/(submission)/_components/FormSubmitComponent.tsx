@@ -158,78 +158,87 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
     const showBtn = extra.showRedirectButton ?? true;
 
     return (
-      <div className="flex min-h-screen w-full items-start justify-center p-4 sm:p-8 google-form-container bg-[#f0ebf8] dark:bg-[#121016]">
+      <div className="flex min-h-screen w-full items-start justify-center p-4 sm:p-8 google-form-container bg-slate-100 dark:bg-slate-950">
         <div
           key={renderKey}
-          className="flex w-full max-w-[640px] flex-col gap-6 google-form-header-card bg-card text-card-foreground p-8 rounded-lg shadow-md border border-border mt-10 overflow-hidden"
+          className="flex w-full max-w-[640px] flex-col gap-6 google-form-header-card bg-card text-card-foreground p-0 rounded-xl shadow-md border border-border mt-6 sm:mt-10 overflow-hidden"
         >
-          {/* Custom Banner / Image if configured */}
-          {customImageUrl && (
-            <div className="w-full overflow-hidden rounded-md border border-border/50 bg-muted/20">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={customImageUrl}
-                alt="Thank You Illustration"
-                className="w-full max-h-64 object-cover rounded-md"
-              />
-            </div>
-          )}
-
-          <div className="flex items-center gap-3 border-b pb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
-              {customThankYou ? <PartyPopper className="h-6 w-6" /> : <CheckCircle2 className="h-6 w-6" />}
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-semibold text-foreground">
-                {customTitle}
-              </h1>
-            </div>
+          {/* Branded 50% Blue, 40% Orange, 10% White Accent Strip */}
+          <div className="h-3 w-full flex overflow-hidden">
+            <div className="w-1/2 bg-blue-600 dark:bg-blue-500" title="50% Blue" />
+            <div className="w-[40%] bg-orange-500 dark:bg-orange-600" title="40% Orange" />
+            <div className="w-[10%] bg-white dark:bg-slate-100 border-l border-orange-400/40" title="10% White" />
           </div>
 
-          <p className="text-base text-foreground/85 whitespace-pre-wrap leading-relaxed">
-            {customMessage}
-          </p>
+          <div className="p-6 sm:p-8 flex flex-col gap-6">
+            {/* Custom Banner / Image if configured */}
+            {customImageUrl && (
+              <div className="w-full overflow-hidden rounded-lg border border-border/50 bg-muted/20">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={customImageUrl}
+                  alt="Thank You Illustration"
+                  className="w-full max-h-64 object-cover rounded-md"
+                />
+              </div>
+            )}
 
-          {showBtn && (
-            <div className="mt-4 pt-2">
-              {customBtnUrl ? (
-                <a
-                  href={customBtnUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-md bg-[#673ab7] hover:bg-[#5e35b1] text-white px-6 py-2.5 text-sm font-medium shadow-sm hover:shadow-md transition-all"
-                >
-                  <span>{customBtnText}</span>
-                  <ExternalLink className="h-4 w-4" />
-                </a>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    formValues.current = {};
-                    formErrors.current = {};
-                    setSubmitted(false);
-                    setAnsweredCount(0);
-                    setRenderKey(new Date().getTime());
-                  }}
-                  className="text-sm font-medium text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300 underline"
-                >
-                  {customBtnText}
-                </button>
-              )}
+            <div className="flex items-center gap-3 border-b pb-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
+                {customThankYou ? <PartyPopper className="h-6 w-6 text-orange-500" /> : <CheckCircle2 className="h-6 w-6 text-blue-600" />}
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-semibold text-foreground">
+                  {customTitle}
+                </h1>
+              </div>
             </div>
-          )}
+
+            <p className="text-base text-foreground/85 whitespace-pre-wrap leading-relaxed">
+              {customMessage}
+            </p>
+
+            {showBtn && (
+              <div className="mt-4 pt-2">
+                {customBtnUrl ? (
+                  <a
+                    href={customBtnUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-orange-600 text-white px-6 py-2.5 text-sm font-medium shadow-md hover:shadow-orange-500/20 transition-all"
+                  >
+                    <span>{customBtnText}</span>
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      formValues.current = {};
+                      formErrors.current = {};
+                      setSubmitted(false);
+                      setAnsweredCount(0);
+                      setRenderKey(new Date().getTime());
+                    }}
+                    className="text-sm font-medium text-blue-600 hover:text-orange-600 dark:text-blue-400 dark:hover:text-orange-400 underline transition-colors"
+                  >
+                    {customBtnText}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen w-full items-start justify-center p-4 sm:p-8 google-form-container bg-[#f0ebf8] dark:bg-[#121016]">
-      <div key={renderKey} className="flex w-full max-w-[640px] flex-col gap-4 py-4">
-        {/* Top Banner Card (Above Form Header) */}
+    <div className="flex min-h-screen w-full items-start justify-center p-4 sm:p-8 google-form-container bg-slate-100 dark:bg-slate-950">
+      <div key={renderKey} className="flex w-full max-w-[640px] flex-col gap-4 py-2 sm:py-4">
+        {/* Top Banner Card (Above Form Header) - 100% width on all phones */}
         {bannerElement && (
-          <div className="w-[calc(100%+2rem)] sm:w-full overflow-hidden shadow-sm -mx-4 sm:mx-0">
+          <div className="w-full overflow-hidden rounded-xl shadow-md border border-border/60">
             {(() => {
               const BannerComponent = FormElements.BannerField.formComponent;
               return <BannerComponent elementInstance={bannerElement} />;
@@ -238,26 +247,56 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
         )}
 
         {/* Google Form Header Card */}
-        <div className="w-full bg-card text-card-foreground rounded-lg border border-border shadow-sm overflow-hidden google-form-header-card p-6 flex flex-col gap-3">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-1 min-w-0 w-full">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/image.png"
-              alt="TSPL Logo"
-              className="h-9 sm:h-11 w-auto object-contain shrink-0 self-start sm:self-auto"
-            />
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words w-full leading-tight">
-              {formName}
-            </h1>
+        <div className="w-full bg-card text-card-foreground rounded-xl border border-border shadow-sm overflow-hidden google-form-header-card relative">
+          {/* Branded 50% Blue, 40% Orange, 10% White Theme Accent Strip */}
+          <div className="h-3 w-full flex overflow-hidden">
+            <div className="w-1/2 bg-blue-600 dark:bg-blue-500" title="50% Blue" />
+            <div className="w-[40%] bg-orange-500 dark:bg-orange-600" title="40% Orange" />
+            <div className="w-[10%] bg-white dark:bg-slate-100 border-l border-orange-400/30" title="10% White" />
           </div>
-          {formDescription && (
-            <p className="text-sm text-foreground/85 whitespace-pre-wrap leading-relaxed mt-1">
-              {formDescription}
-            </p>
-          )}
-          <hr className="border-border my-1" />
-          <p className="text-xs text-red-500">* Required</p>
+
+          <div className="p-5 sm:p-7 flex flex-col gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-1 min-w-0 w-full">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/image.png"
+                alt="TSPL Logo"
+                className="h-9 sm:h-11 w-auto object-contain shrink-0 self-start sm:self-auto"
+              />
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words w-full leading-tight">
+                {formName}
+              </h1>
+            </div>
+            {formDescription && (
+              <p className="text-sm text-foreground/85 whitespace-pre-wrap leading-relaxed mt-1">
+                {formDescription}
+              </p>
+            )}
+            <hr className="border-border my-1" />
+            <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">* Required</p>
+          </div>
         </div>
+
+        {/* Dynamic Blue-to-Orange Progress Bar */}
+        {totalQuestions > 0 && (
+          <div className="w-full bg-card p-3 sm:p-3.5 rounded-xl border border-border shadow-xs flex flex-col gap-1.5">
+            <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+              <span className="flex items-center gap-1.5 font-semibold text-foreground/80">
+                <span className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
+                Progress
+              </span>
+              <span className="text-muted-foreground">
+                {answeredCount} of {totalQuestions} answered ({progressPercentage}%)
+              </span>
+            </div>
+            <div className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-blue-600 via-blue-500 to-orange-500 transition-all duration-300 rounded-full"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Form Question Cards */}
         {questionsContent.map((element) => {
@@ -277,10 +316,10 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
             <div
               key={element.id}
               className={cn(
-                'w-full bg-card text-card-foreground p-6 rounded-lg border border-border shadow-sm transition-all duration-200',
+                'w-full bg-card text-card-foreground p-5 sm:p-6 rounded-xl border border-border shadow-sm transition-all duration-200',
                 isInvalid && 'border-red-500 border-l-[6px] border-l-red-500',
                 element.type === 'BannerField' &&
-                  'p-0 border-none shadow-none bg-transparent -mx-4 sm:mx-0 w-[calc(100%+2rem)] sm:w-full overflow-hidden'
+                  'p-0 border-none shadow-none bg-transparent w-full overflow-hidden rounded-xl'
               )}
             >
               <FormElement
@@ -302,7 +341,7 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
         {/* Submit Actions */}
         <div className="flex items-center justify-between mt-4 px-1">
           <Button
-            className="bg-[#673ab7] hover:bg-[#5e35b1] text-white px-8 py-2 rounded-md font-medium shadow-sm hover:shadow-md transition-all flex items-center gap-2"
+            className="bg-blue-600 hover:bg-orange-600 active:bg-orange-700 text-white font-semibold px-8 py-2.5 rounded-lg shadow-md hover:shadow-orange-500/20 active:scale-[0.98] transition-all flex items-center gap-2"
             onClick={() => {
               startTransition(submitForm);
             }}
@@ -326,7 +365,7 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
                 description: 'Form cleared successfully.',
               });
             }}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground hover:underline transition-colors"
+            className="text-sm font-medium text-muted-foreground hover:text-orange-600 hover:underline transition-colors"
           >
             Clear form
           </button>

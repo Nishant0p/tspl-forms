@@ -35,7 +35,7 @@ const extraAttributes = {
   height: '200px',
   textAlign: 'center' as 'left' | 'center' | 'right',
   overlay: false,
-  preset: 'custom',
+  preset: 'gradient-tspl',
 };
 
 const propertiesSchema = z.object({
@@ -45,7 +45,7 @@ const propertiesSchema = z.object({
   height: z.string().default('200px'),
   textAlign: z.enum(['left', 'center', 'right']).default('center'),
   overlay: z.boolean().default(false),
-  preset: z.string().default('custom'),
+  preset: z.string().default('gradient-tspl'),
 });
 
 export const BannerFieldFormElement: FormElement = {
@@ -73,6 +73,10 @@ type CustomInstance = FormElementInstance & {
 type propertiesType = z.infer<typeof propertiesSchema>;
 
 const PRESETS: Record<string, { name: string; bg: string }> = {
+  'gradient-tspl': {
+    name: 'TSPL Blue & Orange (50/40/10)',
+    bg: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #ffffff 50.5%, #ffffff 51.5%, #ea580c 52%, #f97316 100%)',
+  },
   'gradient-blue': {
     name: 'Ocean Blue',
     bg: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
@@ -95,24 +99,30 @@ const PRESETS: Record<string, { name: string; bg: string }> = {
   },
 };
 
-function BannerDisplay({ extraAttrs }: { extraAttrs: typeof extraAttributes }) {
+function BannerDisplay({
+  extraAttrs,
+  isDesigner = false,
+}: {
+  extraAttrs: typeof extraAttributes;
+  isDesigner?: boolean;
+}) {
   const { imageUrl, title, subtitle, height, textAlign, overlay, preset } = extraAttrs;
 
   const isPreset = preset && preset !== 'custom' && PRESETS[preset];
   const bgStyle = isPreset
     ? { backgroundImage: PRESETS[preset].bg }
-    : { backgroundImage: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' };
+    : { backgroundImage: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #ffffff 50.5%, #ffffff 51.5%, #ea580c 52%, #f97316 100%)' };
 
   return (
     <div
-      className="relative flex w-full flex-col justify-end overflow-hidden rounded-none sm:rounded-xl shadow-md transition-all border-y sm:border border-border/50 min-h-[160px] sm:min-h-[180px]"
+      className="relative flex w-full flex-col justify-end overflow-hidden rounded-xl shadow-md transition-all border border-border/50 min-h-[140px] sm:min-h-[180px]"
       style={{
         ...bgStyle,
         height: height || '200px',
       }}
     >
       {/* Explicit img element for fail-safe data URL & Web image display */}
-      {imageUrl && (!isPreset || preset === 'custom') && (
+      {imageUrl && (
         <img
           src={imageUrl}
           alt={title || 'Form banner'}
@@ -120,10 +130,10 @@ function BannerDisplay({ extraAttrs }: { extraAttrs: typeof extraAttributes }) {
         />
       )}
 
-      {!imageUrl && !isPreset && (
+      {isDesigner && !imageUrl && preset === 'custom' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-muted/60 text-muted-foreground backdrop-blur-xs">
-          <ImageIcon className="h-10 w-10 opacity-50" />
-          <p className="text-sm font-medium">Click settings to upload custom banner image</p>
+          <ImageIcon className="h-8 w-8 opacity-50 text-primary" />
+          <p className="text-xs sm:text-sm font-medium">Click settings to upload custom banner image</p>
         </div>
       )}
 
@@ -157,11 +167,11 @@ function DesignerComponent({
     <div className="flex w-full flex-col gap-1">
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span className="flex items-center gap-1 font-semibold">
-          <ImageIcon className="h-3.5 w-3.5" /> Form Banner
+          <ImageIcon className="h-3.5 w-3.5 text-primary" /> Form Banner
         </span>
-        <span>Click to edit properties</span>
+        <span className="text-[10px] font-mono opacity-70">Top of form</span>
       </div>
-      <BannerDisplay extraAttrs={element.extraAttributes} />
+      <BannerDisplay extraAttrs={element.extraAttributes} isDesigner={true} />
     </div>
   );
 }
@@ -338,6 +348,7 @@ function PropertiesComponent({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
+                  <SelectItem value="gradient-tspl">TSPL Blue & Orange (50/40/10)</SelectItem>
                   <SelectItem value="custom">Custom Uploaded Image</SelectItem>
                   <SelectItem value="gradient-blue">Ocean Blue Gradient</SelectItem>
                   <SelectItem value="gradient-purple">Royal Purple Gradient</SelectItem>

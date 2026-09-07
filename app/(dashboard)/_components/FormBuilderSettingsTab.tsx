@@ -53,7 +53,8 @@ type Props = {
 };
 
 const COLOR_PRESETS = [
-  { name: 'Google Purple', hex: '#673ab7', bg: '#f0ebf8' },
+  { name: 'TSPL Blue & Orange', hex: '#2563eb', bg: '#eff6ff' },
+  { name: 'TSPL Vibrant Orange', hex: '#ea580c', bg: '#fff7ed' },
   { name: 'Royal Indigo', hex: '#4f46e5', bg: '#eef2ff' },
   { name: 'Google Blue', hex: '#1a73e8', bg: '#e8f0fe' },
   { name: 'Ocean Teal', hex: '#0d9488', bg: '#f0fdfa' },
@@ -85,8 +86,8 @@ export default function FormBuilderSettingsTab({
   const [emailReceipt, setEmailReceipt] = useState<boolean>(false);
 
   // 2. Color Palette & Wheel Customizer
-  const [primaryColor, setPrimaryColor] = useState<string>('#673ab7');
-  const [customHex, setCustomHex] = useState<string>('#673ab7');
+  const [primaryColor, setPrimaryColor] = useState<string>('#2563eb');
+  const [customHex, setCustomHex] = useState<string>('#2563eb');
 
   // 3. Schedule & Availability (Never Ending Option)
   const [neverEnding, setNeverEnding] = useState<boolean>(
@@ -223,7 +224,7 @@ export default function FormBuilderSettingsTab({
         <Button
           onClick={handleSave}
           disabled={pending}
-          className="bg-[#673ab7] hover:bg-[#5e35b1] text-white font-semibold gap-1.5 shadow-sm px-5 h-9 shrink-0"
+          className="bg-blue-600 hover:bg-orange-600 text-white font-semibold gap-1.5 shadow-sm px-5 h-9 shrink-0 transition-all"
         >
           {pending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -406,7 +407,7 @@ export default function FormBuilderSettingsTab({
                     type="text"
                     value={customHex}
                     onChange={handleHexInputChange}
-                    placeholder="#673ab7"
+                    placeholder="#2563eb"
                     className="h-10 text-xs font-mono font-semibold uppercase tracking-wider"
                   />
                 </div>
