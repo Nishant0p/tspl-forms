@@ -39,9 +39,9 @@ export default function DesignerSidebar({ open, onClose }: Props) {
 
         <div className="flex items-center justify-between pb-3 mb-2 border-b shrink-0">
           <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-foreground">
-            <Layers className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <Layers className="h-4 w-4 text-foreground" />
             <span>Form Elements</span>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-foreground">
               Menu ON
             </span>
           </div>

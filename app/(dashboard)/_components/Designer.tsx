@@ -239,7 +239,7 @@ export default function Designer({ formId, initialContent }: { formId: number; i
         ref={droppable.setNodeRef}
         className={cn(
           'w-full h-full p-4 sm:py-8 sm:pl-8 sm:pr-24 overflow-auto flex flex-col items-center justify-start transition-all relative flex-1 google-form-container',
-          droppable.isOver && 'bg-blue-500/5 ring-2 ring-blue-500 ring-inset'
+          droppable.isOver && 'bg-foreground/5 ring-2 ring-foreground/30 ring-inset'
         )}
       >
         <div
@@ -265,7 +265,7 @@ export default function Designer({ formId, initialContent }: { formId: number; i
           )}
           {droppable.isOver && elements.length === 0 && (
             <div className="w-full p-4 sm:p-6">
-              <div className="h-[120px] rounded-md bg-primary/20 animate-pulse"></div>
+              <div className="h-[120px] rounded-md bg-foreground/10 animate-pulse"></div>
             </div>
           )}
           {elements.length > 0 && (
@@ -294,8 +294,8 @@ export default function Designer({ formId, initialContent }: { formId: number; i
             className={cn(
               "flex items-center gap-2 px-5 py-2.5 h-11 rounded-full font-bold text-xs tracking-wide shadow-2xl transition-all duration-300 active:scale-95 border",
               sidebarOpen
-                ? "bg-orange-600 hover:bg-orange-700 text-white border-orange-500 shadow-orange-600/35 ring-4 ring-orange-500/20"
-                : "bg-blue-600 hover:bg-blue-700 text-white border-blue-500 shadow-blue-600/35 ring-4 ring-blue-500/20"
+                ? "bg-foreground text-background border-border shadow-lg ring-2 ring-foreground/20"
+                : "bg-background text-foreground hover:bg-muted border-border shadow-md ring-1 ring-border"
             )}
             aria-label={sidebarOpen ? "Turn Elements Menu OFF" : "Turn Elements Menu ON"}
           >

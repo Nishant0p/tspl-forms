@@ -198,13 +198,13 @@ function DesignerComponent({
     <div className="flex w-full flex-col gap-2">
       <Label className="mr-2 text-foreground font-semibold text-sm">
         {label}
-        {required && <span className="ml-2 text-orange-600 font-bold">*</span>}
+        {required && <span className="ml-2 text-red-500 font-bold">*</span>}
       </Label>
       <Button
         variant={'outline'}
         className="w-full justify-start text-left font-normal h-11 px-3.5 border-border rounded-xl pointer-events-none bg-background shadow-xs"
       >
-        <CalendarIcon className="mr-2.5 h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+        <CalendarIcon className="mr-2.5 h-4 w-4 text-foreground/70 shrink-0" />
         <span className="text-muted-foreground">Select date (Calendar & Year Picker)</span>
       </Button>
       {helperText && (
@@ -307,7 +307,7 @@ function FormComponent({
     <div className="flex w-full flex-col gap-2">
       <Label className={cn("mr-2 text-foreground font-semibold text-sm", error && 'text-red-500')}>
         {label}
-        {required && <span className="ml-2 text-orange-600 dark:text-orange-400 font-bold">*</span>}
+        {required && <span className="ml-2 text-red-500 font-bold">*</span>}
       </Label>
 
       <Popover open={open} onOpenChange={setOpen}>
@@ -320,10 +320,10 @@ function FormComponent({
                 "w-full justify-start text-left font-normal h-11 px-3.5 border-border rounded-xl bg-background transition-all shadow-xs",
                 !date && "text-muted-foreground",
                 error && "border-red-500 ring-1 ring-red-500",
-                open && "border-blue-600 ring-2 ring-blue-500/20"
+                open && "border-foreground ring-1 ring-foreground/20"
               )}
             >
-              <CalendarIcon className="mr-2.5 h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+              <CalendarIcon className="mr-2.5 h-4 w-4 text-foreground/70 shrink-0" />
               {date ? (
                 <span className="font-semibold text-foreground truncate">
                   {format(date, "dd/MM/yyyy")} &mdash; {format(date, "EEE, MMM d, yyyy")}
@@ -376,7 +376,7 @@ function FormComponent({
               value={String(currentMonth.getFullYear())}
               onValueChange={handleYearChange}
             >
-              <SelectTrigger className="h-8 text-xs font-bold w-[95px] text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900 rounded-lg">
+              <SelectTrigger className="h-8 text-xs font-bold w-[95px] text-foreground border-border rounded-lg">
                 <SelectValue placeholder="Year" />
               </SelectTrigger>
               <SelectContent className="max-h-56 z-50">
@@ -405,7 +405,7 @@ function FormComponent({
             <button
               type="button"
               onClick={handleSetToday}
-              className="text-blue-600 dark:text-blue-400 font-semibold hover:underline cursor-pointer flex items-center gap-1"
+              className="text-foreground font-semibold hover:underline cursor-pointer flex items-center gap-1"
             >
               <span>Today ({format(new Date(), 'dd/MM/yyyy')})</span>
             </button>

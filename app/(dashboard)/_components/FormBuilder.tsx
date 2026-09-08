@@ -209,7 +209,7 @@ export default function FormBuilder({ form, departments, branches, employees }: 
                   name: form.name,
                 }}
                 trigger={
-                  <Button size="sm" className="h-8 px-3.5 gap-1.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-xs text-xs rounded-md transition-all">
+                  <Button size="sm" className="h-8 px-3.5 gap-1.5 bg-foreground text-background hover:bg-foreground/90 font-medium shadow-xs text-xs rounded-md transition-all">
                     <Send className="h-3.5 w-3.5" />
                     <span>Send</span>
                   </Button>
@@ -273,13 +273,13 @@ export default function FormBuilder({ form, departments, branches, employees }: 
             className={cn(
               'relative pb-2.5 pt-2.5 text-xs sm:text-sm font-medium transition-colors hover:text-foreground cursor-pointer select-none',
               activeTab === 'questions'
-                ? 'text-blue-600 dark:text-blue-400 font-semibold'
+                ? 'text-foreground font-semibold'
                 : 'text-muted-foreground'
             )}
           >
             Questions
             {activeTab === 'questions' && (
-              <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-600 dark:bg-blue-400 rounded-t-sm" />
+              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground rounded-t-sm" />
             )}
           </button>
 
@@ -289,18 +289,18 @@ export default function FormBuilder({ form, departments, branches, employees }: 
             className={cn(
               'relative pb-2.5 pt-2.5 text-xs sm:text-sm font-medium transition-colors hover:text-foreground flex items-center gap-1.5 cursor-pointer select-none',
               activeTab === 'responses'
-                ? 'text-blue-600 dark:text-blue-400 font-semibold'
+                ? 'text-foreground font-semibold'
                 : 'text-muted-foreground'
             )}
           >
             Responses
             {form.submissions > 0 && (
-              <span className="rounded-full bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300 px-1.5 py-0.2 text-[10px] font-bold">
+              <span className="rounded-full bg-muted text-foreground px-1.5 py-0.2 text-[10px] font-bold">
                 {form.submissions}
               </span>
             )}
             {activeTab === 'responses' && (
-              <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-600 dark:bg-blue-400 rounded-t-sm" />
+              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground rounded-t-sm" />
             )}
           </button>
 
@@ -310,13 +310,13 @@ export default function FormBuilder({ form, departments, branches, employees }: 
             className={cn(
               'relative pb-2.5 pt-2.5 text-xs sm:text-sm font-medium transition-colors hover:text-foreground cursor-pointer select-none',
               activeTab === 'settings'
-                ? 'text-blue-600 dark:text-blue-400 font-semibold'
+                ? 'text-foreground font-semibold'
                 : 'text-muted-foreground'
             )}
           >
             Settings
             {activeTab === 'settings' && (
-              <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-600 dark:bg-blue-400 rounded-t-sm" />
+              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground rounded-t-sm" />
             )}
           </button>
         </div>

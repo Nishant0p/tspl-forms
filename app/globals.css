@@ -134,17 +134,17 @@
 }
 
 /* ========================================== */
-/* Google Form Aesthetics - 50% Blue, 40% Orange, 10% White Theme */
+/* Form Aesthetics - Clean Black & White Theme */
 /* ========================================== */
 
 .google-form-container {
   font-family: 'Roboto', 'Inter', sans-serif;
-  background: linear-gradient(180deg, #eef4ff 0%, #f1f5f9 35%, #fff7ed 100%) !important;
+  background-color: #f8fafc !important;
   min-height: 100vh;
 }
 
 .dark .google-form-container {
-  background: linear-gradient(180deg, #091122 0%, #0b1329 35%, #150f08 100%) !important;
+  background-color: #09090b !important;
   min-height: 100vh;
 }
 
@@ -154,7 +154,7 @@
   border-top: none !important;
   border-left: none !important;
   border-right: none !important;
-  border-bottom: 2px solid #cbd5e1 !important;
+  border-bottom: 1px solid hsl(var(--border)) !important;
   border-radius: 0px !important;
   box-shadow: none !important;
   padding-left: 2px !important;
@@ -166,15 +166,15 @@
 
 .google-form-container input:focus,
 .google-form-container textarea:focus {
-  border-bottom: 2px solid #ea580c !important; /* 40% Orange */
+  border-bottom: 2px solid hsl(var(--foreground)) !important;
   outline: none !important;
-  box-shadow: 0 2px 0 0 #ea580c !important;
+  box-shadow: none !important;
 }
 
 .dark .google-form-container input:focus,
 .dark .google-form-container textarea:focus {
-  border-bottom: 2px solid #f97316 !important;
-  box-shadow: 0 2px 0 0 #f97316 !important;
+  border-bottom: 2px solid hsl(var(--foreground)) !important;
+  box-shadow: none !important;
 }
 
 /* Labels / Titles styling inside form container */
@@ -187,112 +187,115 @@
   line-height: 1.5 !important;
 }
 
-/* Checkbox and Radio buttons color - 50% Blue & 40% Orange */
+/* Checkbox and Radio buttons color - Black and White */
 .google-form-container button[role="checkbox"] {
-  border: 2px solid #2563eb !important; /* 50% Blue border */
+  border: 2px solid hsl(var(--border)) !important;
   border-radius: 6px !important;
+  transition: all 0.15s ease-in-out;
 }
 
 .google-form-container button[role="checkbox"][data-state="checked"] {
-  background-color: #ea580c !important; /* 40% Orange */
-  border-color: #ea580c !important;
-  color: #ffffff !important;
+  background-color: hsl(var(--foreground)) !important;
+  border-color: hsl(var(--foreground)) !important;
+  color: hsl(var(--background)) !important;
 }
 
 .google-form-container button[role="radio"] {
-  border: 2px solid #94a3b8 !important;
+  border: 2px solid hsl(var(--border)) !important;
 }
 
 .google-form-container button[role="radio"][aria-checked="true"] {
-  border: 2px solid #2563eb !important; /* 50% Blue outer ring */
-  color: #2563eb !important;
+  border: 2px solid hsl(var(--foreground)) !important;
+  color: hsl(var(--foreground)) !important;
 }
 
 .google-form-container button[role="radio"][aria-checked="true"] > span {
-  background-color: #ea580c !important; /* 40% Orange inner circle */
+  background-color: hsl(var(--foreground)) !important;
 }
 
 .dark .google-form-container button[role="checkbox"] {
-  border-color: #3b82f6 !important;
+  border-color: hsl(var(--border)) !important;
 }
 
 .dark .google-form-container button[role="checkbox"][data-state="checked"] {
-  background-color: #f97316 !important;
-  border-color: #f97316 !important;
+  background-color: hsl(var(--foreground)) !important;
+  border-color: hsl(var(--foreground)) !important;
+  color: hsl(var(--background)) !important;
 }
 
 .dark .google-form-container button[role="radio"][aria-checked="true"] {
-  border-color: #3b82f6 !important;
-  color: #3b82f6 !important;
+  border-color: hsl(var(--foreground)) !important;
+  color: hsl(var(--foreground)) !important;
 }
 
 .dark .google-form-container button[role="radio"][aria-checked="true"] > span {
-  background-color: #f97316 !important;
+  background-color: hsl(var(--foreground)) !important;
 }
 
 /* Asterisks & required markers */
 .google-form-container .text-red-500,
 .google-form-container .text-rose-500 {
-  color: #ea580c !important; /* 40% Orange */
-  font-weight: 700 !important;
+  color: #ef4444 !important;
+  font-weight: 600 !important;
 }
 
 /* Header card style */
 .google-form-header-card {
   border-radius: 16px !important;
   overflow: hidden !important;
-  box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.15), 0 8px 10px -6px rgba(234, 88, 12, 0.08) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.05) !important;
 }
 
-/* Question card base: Crisp 10% White surface with 50% Blue accent bar */
+/* Question card base: Clean surface with neutral left border */
 .google-form-container .bg-card,
 .google-form-container [data-form-card="true"] {
-  background-color: #ffffff !important;
+  background-color: hsl(var(--card)) !important;
   border-radius: 14px !important;
-  border: 1px solid rgba(37, 99, 235, 0.12) !important;
-  border-left: 5px solid #2563eb !important; /* 50% Blue default border */
-  box-shadow: 0 4px 12px -2px rgba(37, 99, 235, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.03) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-left: 4px solid hsl(var(--border)) !important;
+  box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.04) !important;
   transition: all 0.2s ease-in-out !important;
 }
 
 .dark .google-form-container .bg-card,
 .dark .google-form-container [data-form-card="true"] {
-  background-color: #0f172a !important;
-  border: 1px solid rgba(59, 130, 246, 0.2) !important;
-  border-left: 5px solid #3b82f6 !important;
-  box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.4) !important;
+  background-color: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-left: 4px solid hsl(var(--border)) !important;
+  box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.3) !important;
 }
 
-/* Question card active / focus accent: Shifts to 40% Orange with radiant glow */
+/* Question card active / focus accent: Shifts to clean black/white line */
 .google-form-container .bg-card:focus-within,
 .google-form-container [data-form-card="true"]:focus-within {
-  border-left: 6px solid #ea580c !important; /* 40% Orange active border */
-  border-color: rgba(234, 88, 12, 0.35) !important;
-  box-shadow: 0 8px 24px -4px rgba(234, 88, 12, 0.18), 0 2px 6px -1px rgba(37, 99, 235, 0.08) !important;
+  border-left: 4px solid hsl(var(--foreground)) !important;
+  border-color: hsl(var(--border)) !important;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.08) !important;
 }
 
 .dark .google-form-container .bg-card:focus-within,
 .dark .google-form-container [data-form-card="true"]:focus-within {
-  border-left: 6px solid #f97316 !important;
-  border-color: rgba(249, 115, 22, 0.4) !important;
-  box-shadow: 0 8px 24px -4px rgba(249, 115, 22, 0.25) !important;
+  border-left: 4px solid hsl(var(--foreground)) !important;
+  border-color: hsl(var(--border)) !important;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.4) !important;
 }
 
 /* Date Picker Calendar Enhancements */
 .rdp-day_selected,
 button[aria-selected="true"].rdp-day {
-  background-color: #2563eb !important; /* 50% Blue */
-  color: #ffffff !important;
+  background-color: hsl(var(--foreground)) !important;
+  color: hsl(var(--background)) !important;
   font-weight: 700 !important;
 }
 
 button[aria-selected="true"].rdp-day:hover {
-  background-color: #1d4ed8 !important;
+  background-color: hsl(var(--foreground)/0.9) !important;
 }
 
 .rdp-day_today:not([aria-selected="true"]) {
-  border: 2px solid #ea580c !important; /* 40% Orange */
-  color: #ea580c !important;
+  border: 1px solid hsl(var(--foreground)) !important;
+  color: hsl(var(--foreground)) !important;
   font-weight: 700 !important;
 }
 
@@ -302,27 +305,27 @@ button[aria-selected="true"].rdp-day:hover {
 }
 
 .google-form-container button[type="button"]:has(svg.lucide-star):hover {
-  border-color: #ea580c !important;
-  color: #ea580c !important;
+  border-color: hsl(var(--foreground)) !important;
+  color: #eab308 !important;
 }
 
 /* Linear Scale / Slider in Form */
 .google-form-container [data-radix-collection-item],
 .google-form-container .relative.flex.w-full.touch-none span[class*="bg-primary"] {
-  background-color: #ea580c !important; /* 40% Orange range */
+  background-color: hsl(var(--foreground)) !important;
 }
 
 .google-form-container .relative.flex.w-full.touch-none span[class*="border-primary"] {
-  border-color: #ea580c !important; /* 40% Orange thumb */
-  background-color: #ffffff !important;
-  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.25) !important;
+  border-color: hsl(var(--foreground)) !important;
+  background-color: hsl(var(--background)) !important;
+  box-shadow: 0 0 0 2px hsl(var(--foreground)/0.2) !important;
 }
 
 .google-form-container .relative.flex.w-full.touch-none span[class*="bg-secondary"] {
-  background-color: #dbeafe !important; /* 50% Blue-100 track */
+  background-color: hsl(var(--muted)) !important;
 }
 
 .dark .google-form-container .relative.flex.w-full.touch-none span[class*="bg-secondary"] {
-  background-color: #1e293b !important;
+  background-color: hsl(var(--muted)) !important;
 }
 
