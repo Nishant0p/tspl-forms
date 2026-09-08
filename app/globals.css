@@ -200,36 +200,86 @@
   color: hsl(var(--background)) !important;
 }
 
+/* Radio button base: White circle with clear border */
 .google-form-container button[role="radio"] {
-  border: 2px solid hsl(var(--border)) !important;
+  background-color: #ffffff !important;
+  border: 2px solid #94a3b8 !important;
+  border-radius: 9999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease-in-out;
 }
 
-.google-form-container button[role="radio"][aria-checked="true"] {
-  border: 2px solid hsl(var(--foreground)) !important;
-  color: hsl(var(--foreground)) !important;
+.dark .google-form-container button[role="radio"] {
+  background-color: #09090b !important;
+  border: 2px solid #52525b !important;
 }
 
-.google-form-container button[role="radio"][aria-checked="true"] > span {
-  background-color: hsl(var(--foreground)) !important;
+/* Radio button selected: White circle with black outer ring */
+.google-form-container button[role="radio"][aria-checked="true"],
+.google-form-container button[role="radio"][data-state="checked"] {
+  border: 2px solid #000000 !important;
+  background-color: #ffffff !important;
 }
 
-.dark .google-form-container button[role="checkbox"] {
-  border-color: hsl(var(--border)) !important;
+.dark .google-form-container button[role="radio"][aria-checked="true"],
+.dark .google-form-container button[role="radio"][data-state="checked"] {
+  border: 2px solid #ffffff !important;
+  background-color: #09090b !important;
 }
 
-.dark .google-form-container button[role="checkbox"][data-state="checked"] {
-  background-color: hsl(var(--foreground)) !important;
-  border-color: hsl(var(--foreground)) !important;
-  color: hsl(var(--background)) !important;
+/* Transparent indicator wrapper */
+.google-form-container button[role="radio"] > span,
+.google-form-container button[role="radio"] [data-radix-radio-group-indicator] {
+  background: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
-.dark .google-form-container button[role="radio"][aria-checked="true"] {
-  border-color: hsl(var(--foreground)) !important;
-  color: hsl(var(--foreground)) !important;
+/* Center black dot on the white circle */
+.google-form-container button[role="radio"][aria-checked="true"] .radio-dot,
+.google-form-container button[role="radio"][aria-checked="true"] span.radio-dot,
+.google-form-container button[role="radio"][aria-checked="true"] > span > span,
+.google-form-container button[role="radio"][aria-checked="true"] svg,
+.google-form-container button[role="radio"][data-state="checked"] .radio-dot,
+.google-form-container button[role="radio"][data-state="checked"] span.radio-dot,
+.google-form-container button[role="radio"][data-state="checked"] > span > span,
+.google-form-container button[role="radio"][data-state="checked"] svg {
+  background-color: #000000 !important;
+  fill: #000000 !important;
+  color: #000000 !important;
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 9999px !important;
+  display: block !important;
 }
 
-.dark .google-form-container button[role="radio"][aria-checked="true"] > span {
-  background-color: hsl(var(--foreground)) !important;
+.dark .google-form-container button[role="radio"][aria-checked="true"] .radio-dot,
+.dark .google-form-container button[role="radio"][aria-checked="true"] span.radio-dot,
+.dark .google-form-container button[role="radio"][aria-checked="true"] > span > span,
+.dark .google-form-container button[role="radio"][aria-checked="true"] svg,
+.dark .google-form-container button[role="radio"][data-state="checked"] .radio-dot,
+.dark .google-form-container button[role="radio"][data-state="checked"] span.radio-dot,
+.dark .google-form-container button[role="radio"][data-state="checked"] > span > span,
+.dark .google-form-container button[role="radio"][data-state="checked"] svg {
+  background-color: #ffffff !important;
+  fill: #ffffff !important;
+  color: #ffffff !important;
+}
+
+/* Option labels next to radio and checkbox items */
+.google-form-container [role="radiogroup"] label,
+.google-form-container div:has(> button[role="radio"]) label,
+.google-form-container div:has(> button[role="checkbox"]) label {
+  margin-bottom: 0 !important;
+  display: inline-block !important;
+  font-weight: 400 !important;
+  cursor: pointer !important;
 }
 
 /* Asterisks & required markers */

@@ -46,7 +46,7 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
 function DesignerComponent({ elementInstance }: { elementInstance: FormElementInstance }) {
   const element = elementInstance as CustomInstance;
   const { label, helperText, required, options } = element.extraAttributes;
-  return <div className="flex w-full flex-col gap-2"><Label className="mr-2 text-foreground">{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><div className="space-y-2">{options.slice(0, 3).map((option) => <div key={option} className='flex items-center gap-2 text-sm text-muted-foreground'><div className='h-4 w-4 rounded-full border' />{option}</div>)}</div>{helperText && <p className="text-[.8rem] text-muted-foreground">{helperText}</p>}</div>;
+  return <div className="flex w-full flex-col gap-2"><Label className="mr-2 text-foreground">{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><div className="space-y-2">{options.slice(0, 3).map((option) => <div key={option} className='flex items-center gap-2 text-sm text-muted-foreground'><div className='h-5 w-5 rounded-full border-2 border-slate-400 dark:border-zinc-500 bg-white dark:bg-zinc-950 shrink-0' />{option}</div>)}</div>{helperText && <p className="text-[.8rem] text-muted-foreground">{helperText}</p>}</div>;
 }
 
 function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValues }: { elementInstance: FormElementInstance; submitFunction?: SubmitFunction; isInvalid?: boolean; defaultValues?: string; }) {
