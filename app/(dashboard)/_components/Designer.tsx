@@ -24,12 +24,12 @@ export default function Designer({ formId, initialContent }: { formId: number; i
     useDesginerStore();
   const lastSavedRef = useRef(initialContent);
   const [zoom, setZoom] = useState<number>(100);
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
 
   useEffect(() => {
-    // Only auto-open elements menu on desktop screens (>= 768px)
-    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
-      setSidebarOpen(true);
+    // Keep elements menu closed on small mobile screens (< 768px) by default
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setSidebarOpen(false);
     }
   }, []);
 

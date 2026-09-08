@@ -38,13 +38,13 @@ export default function SidebarBtnElement({
       variant={'outline'}
       onClick={handleClick}
       className={cn(
-        'flex flex-col items-center justify-center gap-1.5 cursor-pointer h-[72px] w-full p-1.5 text-center hover:bg-accent hover:border-primary/50 transition-all shadow-xs [&_svg]:h-5 [&_svg]:w-5 [&_svg]:shrink-0',
+        'flex flex-col items-center justify-center gap-1.5 cursor-pointer h-[74px] w-full p-1.5 text-center bg-card hover:bg-accent border border-border/80 hover:border-foreground/40 transition-all shadow-xs [&_svg]:h-5 [&_svg]:w-5 [&_svg]:shrink-0 [&_svg]:text-foreground text-foreground',
         draggable.isDragging && 'ring-2 ring-primary opacity-50'
       )}
       {...draggable.attributes}
       {...draggable.listeners}>
       {icon}
-      <p className="text-[11px] font-medium leading-tight text-foreground/80 line-clamp-2">{label}</p>
+      <p className="text-[11px] font-semibold leading-tight text-foreground line-clamp-2">{label}</p>
     </Button>
   );
 }

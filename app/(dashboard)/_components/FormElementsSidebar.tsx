@@ -3,25 +3,12 @@
 import React, { useState } from 'react';
 import SidebarBtnElement from './SidebarBtnElement';
 import { FormElements } from './FormElements';
-import { Separator } from '@/components/ui/separator';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { LayoutGrid, FormInput, Layers } from 'lucide-react';
+import { LayoutGrid, FormInput, ChevronDown, ChevronUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export default function FormElementsSidebar() {
-  const [openAccordion, setOpenAccordion] = useState<string[]>(['layout', 'form']);
+  const [layoutOpen, setLayoutOpen] = useState(true);
+  const [formOpen, setFormOpen] = useState(true);
 
   const layoutElements = [
     FormElements.BannerField,
@@ -54,52 +41,74 @@ export default function FormElementsSidebar() {
   ];
 
   return (
-    <div className="w-full space-y-3 pt-1">
-      {/* Accordion Drop Boxes for Layout & Form Elements */}
-      <Accordion
-        type="multiple"
-        value={openAccordion}
-        onValueChange={setOpenAccordion}
-        className="w-full space-y-2.5"
-      >
-        <AccordionItem value="layout" className="border rounded-md px-3 py-0.5 bg-card shadow-xs">
-          <AccordionTrigger className="hover:no-underline py-2.5 text-xs font-semibold">
-            <div className="flex items-center gap-2 text-foreground">
-              <LayoutGrid className="h-4 w-4 text-blue-500" />
-              <span>Layout Elements</span>
-              <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0 h-4">
-                {layoutElements.length}
-              </Badge>
+    <div className="w-full space-y-3 pt-1 pb-4">
+      {/* Layout Elements Section */}
+      <div className="rounded-xl border border-border/80 bg-card p-2.5 shadow-xs transition-all">
+        <button
+          type="button"
+          onClick={() => setLayoutOpen((prev) => !prev)}
+          className="w-full flex items-center justify-between py-1 px-1 text-xs font-semibold text-foreground hover:text-foreground/80 cursor-pointer select-none transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center h-6 w-6 rounded-md bg-muted text-foreground">
+              <LayoutGrid className="h-3.5 w-3.5" />
             </div>
-          </AccordionTrigger>
-          <AccordionContent className="pt-2 pb-3">
-            <div className="grid grid-cols-4 gap-2">
+            <span className="font-semibold text-xs text-foreground">Layout Elements</span>
+            <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0 h-4 font-bold">
+              {layoutElements.length}
+            </Badge>
+          </div>
+          {layoutOpen ? (
+            <ChevronUp className="h-4 w-4 text-muted-foreground transition-transform" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform" />
+          )}
+        </button>
+
+        {layoutOpen && (
+          <div className="pt-2.5">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {layoutElements.map((element) => (
                 <SidebarBtnElement key={element.type} formElement={element} />
               ))}
             </div>
-          </AccordionContent>
-        </AccordionItem>
+          </div>
+        )}
+      </div>
 
-        <AccordionItem value="form" className="border rounded-md px-3 py-0.5 bg-card shadow-xs">
-          <AccordionTrigger className="hover:no-underline py-2.5 text-xs font-semibold">
-            <div className="flex items-center gap-2 text-foreground">
-              <FormInput className="h-4 w-4 text-emerald-500" />
-              <span>Form Elements</span>
-              <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0 h-4">
-                {formElements.length}
-              </Badge>
+      {/* Form Elements Section */}
+      <div className="rounded-xl border border-border/80 bg-card p-2.5 shadow-xs transition-all">
+        <button
+          type="button"
+          onClick={() => setFormOpen((prev) => !prev)}
+          className="w-full flex items-center justify-between py-1 px-1 text-xs font-semibold text-foreground hover:text-foreground/80 cursor-pointer select-none transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center h-6 w-6 rounded-md bg-muted text-foreground">
+              <FormInput className="h-3.5 w-3.5" />
             </div>
-          </AccordionTrigger>
-          <AccordionContent className="pt-2 pb-3">
-            <div className="grid grid-cols-4 gap-2">
+            <span className="font-semibold text-xs text-foreground">Form Elements</span>
+            <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0 h-4 font-bold">
+              {formElements.length}
+            </Badge>
+          </div>
+          {formOpen ? (
+            <ChevronUp className="h-4 w-4 text-muted-foreground transition-transform" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform" />
+          )}
+        </button>
+
+        {formOpen && (
+          <div className="pt-2.5">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {formElements.map((element) => (
                 <SidebarBtnElement key={element.type} formElement={element} />
               ))}
             </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

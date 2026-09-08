@@ -323,7 +323,7 @@ export default function FormBuilder({ form, departments, branches, employees }: 
 
         {/* Tab Content */}
         {activeTab === 'questions' && (
-          <div className="relative flex h-[calc(100vh-95px)] min-h-[600px] w-full grow items-center justify-center overflow-hidden bg-slate-100 dark:bg-slate-950 google-form-container">
+          <div className="relative flex h-[calc(100vh-95px)] min-h-[600px] w-full grow items-center justify-center overflow-hidden bg-slate-100 dark:bg-slate-950">
             <Designer formId={form.id} initialContent={form.content} />
           </div>
         )}
