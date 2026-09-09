@@ -33,11 +33,16 @@ import {
   UserCheck,
   UserX,
   Lock,
+  Trash2,
+  AlertTriangle,
+  FileText,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import AssignFormAccessDialog from '@/components/AssignFormAccessDialog';
 import {
   updateAdminManagedUserRoleAndStatus,
   updateAdminManagedUserPassword,
+  deleteAdminManagedUser,
 } from '@/app/actions/admin-management';
 
 type Department = {
@@ -78,9 +83,6 @@ interface AdminManagedUsersTableProps {
 
 const ALLOWED_ROLES = ['EDITOR', 'EMPLOYEE', 'FORM_VIEWER'];
 
-import AssignFormAccessDialog from '@/components/AssignFormAccessDialog';
-import { FileText } from 'lucide-react';
-
 export default function AdminManagedUsersTable({ users }: AdminManagedUsersTableProps) {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
@@ -98,6 +100,10 @@ export default function AdminManagedUsersTable({ users }: AdminManagedUsersTable
 
   // Assign Forms Modal
   const [assignFormsUser, setAssignFormsUser] = useState<ManagedUser | null>(null);
+
+  // Delete User Modal
+  const [deleteUser, setDeleteUser] = useState<ManagedUser | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const filteredUsers = users.filter((u) => {
     const fullName = `${u.firstName} ${u.lastName}`.toLowerCase();
@@ -165,6 +171,27 @@ export default function AdminManagedUsersTable({ users }: AdminManagedUsersTable
       });
     } finally {
       setUpdatingPass(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deleteUser) return;
+    try {
+      setDeleting(true);
+      await deleteAdminManagedUser(deleteUser.id);
+      toast({
+        title: 'User Deleted',
+        description: `Successfully deleted ${deleteUser.firstName} ${deleteUser.lastName} (${deleteUser.employeeId}).`,
+      });
+      setDeleteUser(null);
+    } catch (err: any) {
+      toast({
+        title: 'Delete Failed',
+        description: err?.message || 'Failed to delete user.',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -308,6 +335,15 @@ export default function AdminManagedUsersTable({ users }: AdminManagedUsersTable
                         >
                           <KeyRound className="h-3.5 w-3.5" /> Password
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 text-xs gap-1 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                          onClick={() => setDeleteUser(u)}
+                          title={`Delete ${u.firstName} ${u.lastName}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" /> Delete
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -415,6 +451,60 @@ export default function AdminManagedUsersTable({ users }: AdminManagedUsersTable
         open={!!assignFormsUser}
         onOpenChange={(o) => !o && setAssignFormsUser(null)}
       />
+
+      {/* Delete User Confirmation Modal */}
+      <Dialog open={!!deleteUser} onOpenChange={(o) => !o && !deleting && setDeleteUser(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" /> Delete User
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete <strong className="text-foreground">{deleteUser?.firstName} {deleteUser?.lastName}</strong> ({deleteUser?.employeeId})?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 pt-2">
+            <div className="rounded-md border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-700 dark:text-rose-400 space-y-1">
+              <p className="font-semibold flex items-center gap-1.5">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                This action is permanent and cannot be undone.
+              </p>
+              <p>
+                Deleting this user will permanently remove their credentials, department/branch associations, and assigned form permissions.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDeleteUser(null)}
+                disabled={deleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                className="gap-1.5"
+                onClick={handleDeleteUser}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4" /> Delete User
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

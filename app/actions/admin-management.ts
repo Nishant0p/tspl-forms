@@ -318,3 +318,95 @@ export async function updateUserFormAssignments(employeeId: number, formIds: num
   revalidatePath('/dashboard');
   return { success: true };
 }
+
+export async function deleteAdminManagedUser(userId: number) {
+  const caller = await requireEmployee();
+
+  if (caller.role !== 'SUPER_ADMIN' && caller.role !== 'ADMIN') {
+    throw new ForbiddenError('Access denied: Only Admins can delete users.');
+  }
+
+  // Find user to delete
+  const userToDelete = await prisma.employee.findUnique({
+    where: { id: userId },
+    include: { branch: true },
+  });
+
+  if (!userToDelete) {
+    throw new Error('User not found.');
+  }
+
+  // Cannot delete yourself
+  if (userToDelete.id === caller.id || userToDelete.employeeId === caller.employeeId) {
+    throw new Error('You cannot delete your own user account.');
+  }
+
+  // Cannot delete SUPER_ADMIN accounts
+  if (userToDelete.role === 'SUPER_ADMIN') {
+    throw new ForbiddenError('Cannot delete Super Admin accounts.');
+  }
+
+  // If caller is an ADMIN (not SUPER_ADMIN), enforce branch or creator ownership
+  if (caller.role === 'ADMIN') {
+    if (userToDelete.role === 'ADMIN') {
+      throw new ForbiddenError('Admins cannot delete other Admin accounts.');
+    }
+
+    // Lookup Admin's DB record
+    const adminDb = await prisma.employee.findFirst({
+      where: {
+        OR: [
+          { id: typeof caller.id === 'number' && caller.id < 1000000 ? caller.id : -1 },
+          { employeeId: caller.employeeId },
+          { email: caller.email?.toLowerCase() },
+        ],
+      },
+      select: { id: true, branchId: true },
+    });
+
+    const adminDbId = adminDb?.id;
+    const adminBranchId = adminDb?.branchId || caller.branchId;
+
+    const isCreatedByAdmin = adminDbId && userToDelete.createdById === adminDbId;
+    const isSameBranch = adminBranchId && userToDelete.branchId === adminBranchId;
+
+    if (!isCreatedByAdmin && !isSameBranch) {
+      throw new ForbiddenError('You can only delete users created by you or belonging to your branch.');
+    }
+  }
+
+  // Perform clean deletion inside a transaction
+  await prisma.$transaction(async (tx: any) => {
+    // 1. Delete form access entries
+    await tx.formAllowedEmployee.deleteMany({ where: { employeeId: userId } });
+    await tx.formViewerAccess.deleteMany({ where: { employeeId: userId } });
+
+    // 2. Unlink any manager or creator relationships
+    await tx.employee.updateMany({
+      where: { managerId: userId },
+      data: { managerId: null },
+    });
+    await tx.employee.updateMany({
+      where: { createdById: userId },
+      data: { createdById: null },
+    });
+
+    // 3. Delete form requests raised by user or unlink assigned ones
+    await tx.formRequest.deleteMany({ where: { requestedById: userId } });
+    await tx.formRequest.updateMany({
+      where: { assignedToId: userId },
+      data: { assignedToId: null },
+    });
+
+    // 4. Delete the employee record
+    await tx.employee.delete({ where: { id: userId } });
+  });
+
+  revalidatePath('/', 'layout');
+  revalidatePath('/admin');
+  revalidatePath('/employees');
+  revalidatePath('/dashboard');
+
+  return { success: true };
+}
+
