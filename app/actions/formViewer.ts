@@ -3,6 +3,7 @@
 import prisma from '@/lib/prisma';
 import { requireEmployee, getCurrentEmployee, getCurrentUser } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
+import { generateResponseToken } from '@/lib/response-token';
 
 function formatTsplEmployeeId(id: string): string {
   let clean = (id || '').trim().toUpperCase();
@@ -381,4 +382,13 @@ export const getFormViewers = async (formId: number) => {
   return res.viewers;
 };
 export const removeFormViewerAccess = removeFormCollaborator;
+
+/**
+ * Generates a randomized 12-15 character unique token with mixed case and numbers
+ * for viewing form responses without login or edit rights.
+ */
+export async function generateFormResponseToken(formId: number): Promise<string> {
+  await requireEmployee();
+  return generateResponseToken(formId);
+}
 

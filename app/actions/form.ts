@@ -6,6 +6,7 @@ import { generateCustomSlug } from '@/lib/url';
 import { FormSchema, formSchema } from '@/schemas/form';
 import { FormElementInstance } from '../(dashboard)/_components/FormElements';
 import { canAccessForm, FormAccessBlockedError, FormAccessRecord, getFormAccessErrorMessage } from '@/lib/form-access';
+import { decodeResponseToken } from '@/lib/response-token';
 import { redirect } from 'next/navigation';
 
 class UserNotFoundErr extends Error {}
@@ -797,26 +798,64 @@ export async function GetFormSubmissionsByShareUrl(shareUrl: string) {
 
   const cleanShareUrl = shareUrl.trim().replace(/^\/+/, '');
 
-  const form = await prisma.form.findUnique({
-    where: {
-      shareUrl: cleanShareUrl,
-    },
-    include: {
-      FormSubmissions: {
-        include: {
-          employee: {
-            include: {
-              department: true,
-              branch: true,
+  // Check if token is a randomized response token (12 to 15 chars)
+  let formIdFromToken: number | null = null;
+  if (cleanShareUrl.length >= 12 && cleanShareUrl.length <= 15) {
+    try {
+      formIdFromToken = decodeResponseToken(cleanShareUrl);
+    } catch {
+      formIdFromToken = null;
+    }
+  }
+
+  let form = null;
+
+  if (formIdFromToken) {
+    form = await prisma.form.findUnique({
+      where: {
+        id: formIdFromToken,
+      },
+      include: {
+        FormSubmissions: {
+          include: {
+            employee: {
+              include: {
+                department: true,
+                branch: true,
+              },
             },
           },
-        },
-        orderBy: {
-          createdAt: 'desc',
+          orderBy: {
+            createdAt: 'desc',
+          },
         },
       },
-    },
-  });
+    });
+  }
+
+  // Fallback to lookup by shareUrl if not resolved by token or for legacy shareUrls
+  if (!form) {
+    form = await prisma.form.findUnique({
+      where: {
+        shareUrl: cleanShareUrl,
+      },
+      include: {
+        FormSubmissions: {
+          include: {
+            employee: {
+              include: {
+                department: true,
+                branch: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
+      },
+    });
+  }
 
   if (!form) {
     throw new Error('Form not found');

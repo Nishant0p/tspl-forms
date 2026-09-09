@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from '@/components/ui/use-toast';
+import { cn } from '@/lib/utils';
 import {
   UserPlus,
   Users,
@@ -39,11 +40,14 @@ import {
   Lock,
   ShieldCheck,
   FileSpreadsheet,
+  RefreshCw,
+  Sparkles,
 } from 'lucide-react';
 import {
   getFormCollaborators,
   assignFormCollaborator,
   removeFormCollaborator,
+  generateFormResponseToken,
   FormCollaboratorUser,
 } from '@/app/actions/formViewer';
 
@@ -70,12 +74,39 @@ export default function FormCollaboratorsModal({
   const [allEmployees, setAllEmployees] = useState<FormCollaboratorUser[]>([]);
   const [fetching, setFetching] = useState(false);
   const [formShareUrl, setFormShareUrl] = useState<string>(shareUrl || '');
+  const [responseToken, setResponseToken] = useState<string>('');
+  const [generatingToken, setGeneratingToken] = useState(false);
   const [copied, setCopied] = useState(false);
 
   // Existing employee assignment
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
   const [selectedAccessType, setSelectedAccessType] = useState<'EDITOR' | 'VIEWER'>('VIEWER');
   const [employeeSearch, setEmployeeSearch] = useState('');
+
+  const handleGenerateNewToken = async (silent = false) => {
+    try {
+      setGeneratingToken(true);
+      const token = await generateFormResponseToken(formId);
+      setResponseToken(token);
+      if (!silent) {
+        toast({
+          title: 'New Unique Link Generated',
+          description: `Generated secure response link with randomized token (${token.length} chars).`,
+        });
+      }
+    } catch (err: any) {
+      console.error('Failed to generate response token', err);
+      if (!silent) {
+        toast({
+          title: 'Failed to generate link',
+          description: err?.message || 'Could not generate unique token.',
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      setGeneratingToken(false);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -97,6 +128,9 @@ export default function FormCollaboratorsModal({
   useEffect(() => {
     if (open) {
       loadData();
+      if (!responseToken) {
+        handleGenerateNewToken(true);
+      }
     }
   }, [open, formId]);
 
@@ -131,9 +165,9 @@ export default function FormCollaboratorsModal({
     });
   };
 
-  const effectiveShareUrl = formShareUrl || shareUrl;
+  const effectiveToken = responseToken || formShareUrl || shareUrl;
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://forms.tsplgroup.in';
-  const responseLink = effectiveShareUrl ? `${origin}/responses/${effectiveShareUrl}` : '';
+  const responseLink = effectiveToken ? `${origin}/responses/${effectiveToken}` : '';
 
   const handleCopyLink = () => {
     if (!responseLink) return;
@@ -338,31 +372,57 @@ export default function FormCollaboratorsModal({
           <TabsContent value="responses-link" className="space-y-4 pt-2">
             <div className="rounded-xl border bg-muted/20 p-4 space-y-4">
               <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <h4 className="text-sm font-bold text-foreground">View-Only Responses Link</h4>
-                  <Badge variant="outline" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 text-[10px] font-semibold gap-1">
-                    <Lock className="h-2.5 w-2.5" /> Responses Only
-                  </Badge>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-foreground">View-Only Responses Link</h4>
+                    <Badge variant="outline" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 text-[10px] font-semibold gap-1">
+                      <Lock className="h-2.5 w-2.5" /> Responses Only
+                    </Badge>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleGenerateNewToken(false)}
+                    disabled={generatingToken}
+                    className="h-8 text-xs gap-1.5 border-blue-500/30 text-blue-600 hover:bg-blue-500/10 hover:text-blue-700 dark:text-blue-400 font-medium shrink-0"
+                    title="Generate a brand-new unique 12-15 char randomized link"
+                  >
+                    <RefreshCw className={cn('h-3.5 w-3.5', generatingToken && 'animate-spin')} />
+                    <span>{generatingToken ? 'Generating...' : 'Generate New Link'}</span>
+                  </Button>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Anyone with this link can view form responses, real-time submission statistics, and export records to Excel. They have <strong>no access</strong> to edit questions, modify settings, or delete anything.
+                  Anyone with this link can view form responses, real-time submission statistics, and export records to Excel. Each generated link uses a unique 12–15 character randomized secure token. They have <strong>no access</strong> to edit questions, modify settings, or delete anything.
                 </p>
               </div>
 
               {/* Link Input & Action Buttons */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Shareable Responses URL</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold">Shareable Responses URL</Label>
+                  {responseToken && (
+                    <span className="text-[10px] font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded border">
+                      Token: <span className="font-bold text-foreground">{responseToken}</span> ({responseToken.length} chars)
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center gap-2">
-                  <Input
-                    readOnly
-                    value={responseLink || 'Generating link...'}
-                    className="h-9 text-xs font-mono bg-background text-foreground select-all"
-                  />
+                  <div className="relative flex-1">
+                    <Input
+                      readOnly
+                      value={generatingToken ? 'Generating unique link...' : responseLink || 'Loading link...'}
+                      className="h-9 text-xs font-mono bg-background text-foreground select-all pr-8"
+                    />
+                    {generatingToken && (
+                      <Loader2 className="absolute right-2.5 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
                   <Button
                     type="button"
                     size="sm"
                     onClick={handleCopyLink}
-                    disabled={!responseLink}
+                    disabled={!responseLink || generatingToken}
                     className="h-9 px-3.5 gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold shrink-0"
                   >
                     {copied ? (
@@ -384,7 +444,7 @@ export default function FormCollaboratorsModal({
                     onClick={() => {
                       if (responseLink) window.open(responseLink, '_blank');
                     }}
-                    disabled={!responseLink}
+                    disabled={!responseLink || generatingToken}
                     className="h-9 px-3 text-xs shrink-0"
                     title="Open responses page in a new tab"
                   >
