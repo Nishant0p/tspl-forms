@@ -303,7 +303,7 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
           </div>
         )}
 
-        {/* Google Form Header Card */}
+        {/* Google Form Header Card (Dedicated Title Tile) */}
         <div className="w-full bg-card text-card-foreground rounded-2xl border border-border shadow-md overflow-hidden google-form-header-card relative">
           {/* Top Theme Accent Bar if no banner */}
           {!bannerElement && (
@@ -313,38 +313,47 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
             />
           )}
 
-          <div className="p-4 sm:p-7 flex flex-col gap-3">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-1 min-w-0 w-full">
-              {/* Logo badge */}
-              <div className="p-1.5 bg-white dark:bg-zinc-900 rounded-lg border border-border/60 shadow-xs shrink-0 self-start sm:self-auto">
+          <div className="p-5 sm:p-7 flex flex-col gap-3.5">
+            {/* Top Row: Logo & Official Badge */}
+            <div className="flex items-center justify-between gap-3">
+              <div className="p-1.5 bg-white dark:bg-zinc-900 rounded-lg border border-border/60 shadow-xs shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/image.png"
                   alt="TSPL Logo"
-                  className="h-8 sm:h-10 w-auto object-contain"
+                  className="h-8 sm:h-9 w-auto object-contain"
                 />
               </div>
-              <h1 className="text-xl sm:text-3xl font-bold text-foreground break-words w-full leading-tight">
-                {formName}
-              </h1>
-            </div>
-            {formDescription && (
-              <p className="text-sm text-foreground/85 whitespace-pre-wrap leading-relaxed mt-1">
-                {formDescription}
-              </p>
-            )}
-            <hr className="border-border my-1" />
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-red-500 dark:text-red-400">* Required</p>
               <span
                 style={{ borderColor: `${primaryColor}40` }}
-                className="text-[11px] font-semibold text-muted-foreground bg-muted/60 px-2.5 py-0.5 rounded-full border"
+                className="text-[11px] font-semibold text-muted-foreground bg-muted/60 px-3 py-1 rounded-full border shadow-2xs"
               >
                 TSPL Form
               </span>
             </div>
+
+            {/* Title & Description */}
+            <div className="space-y-1.5 pt-1">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground break-words w-full leading-tight tracking-tight">
+                {formName}
+              </h1>
+              {formDescription && (
+                <p className="text-sm sm:text-base text-foreground/80 whitespace-pre-wrap leading-relaxed">
+                  {formDescription}
+                </p>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Required Notice (Google Forms style outside title tile) */}
+        {questionsContent.some((q) => q.extraAttributes?.required) && (
+          <div className="px-1 -mb-1">
+            <p className="text-xs font-semibold text-red-500 dark:text-red-400">
+              * Indicates required question
+            </p>
+          </div>
+        )}
 
         {/* Dynamic Progress Bar */}
         {totalQuestions > 0 && (
