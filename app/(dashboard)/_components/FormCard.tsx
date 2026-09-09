@@ -82,7 +82,7 @@ function FormMiniPreview({ contentJson }: { contentJson: string }) {
   );
 }
 
-export default function FormCard({ form }: { form: Form }) {
+export default function FormCard({ form, isAdmin = false }: { form: Form; isAdmin?: boolean }) {
   return (
     <Card className="min-h-[260px] flex flex-col justify-between overflow-hidden group hover:shadow-md transition-shadow rounded-xl">
       <div>
@@ -151,7 +151,7 @@ export default function FormCard({ form }: { form: Form }) {
             <div className="flex w-full items-center justify-between gap-2 pt-2 border-t border-border/60">
               <span className="text-[11px] text-muted-foreground font-medium">Actions</span>
               <div className="flex items-center gap-1.5">
-                <FormCollaboratorsModal formId={form.id} formName={form.name} iconOnly />
+                {isAdmin && <FormCollaboratorsModal formId={form.id} formName={form.name} iconOnly />}
                 <DeleteFormBtn formId={form.id} formName={form.name} iconOnly />
               </div>
             </div>
@@ -166,7 +166,7 @@ export default function FormCard({ form }: { form: Form }) {
                 Edit Form <Edit className="h-4 w-4" />
               </Link>
             </Button>
-            <FormCollaboratorsModal formId={form.id} formName={form.name} iconOnly />
+            {isAdmin && <FormCollaboratorsModal formId={form.id} formName={form.name} iconOnly />}
             <DeleteFormBtn formId={form.id} formName={form.name} iconOnly />
           </div>
         )}

@@ -7,7 +7,7 @@ import Link from 'next/link';
 import AddEmployeeDialog from '@/components/AddEmployeeDialog';
 
 export default async function EmployeesPage() {
-  const caller = await requireRole(['SUPER_ADMIN', 'ADMIN', 'HR']);
+  const caller = await requireRole(['SUPER_ADMIN', 'ADMIN']);
   const isSuperAdmin = caller.role === 'SUPER_ADMIN';
 
   // Get caller's assigned branch
