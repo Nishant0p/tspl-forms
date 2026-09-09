@@ -256,7 +256,7 @@ export default function FormCard({ form }: { form: Form }) {
                 </span>
               </div>
               <div className="flex w-full items-center justify-end gap-1.5">
-                <FormCollaboratorsModal formId={form.id} formName={form.name} iconOnly />
+                <FormCollaboratorsModal formId={form.id} formName={form.name} shareUrl={form.shareUrl} iconOnly />
                 <DeleteFormBtn formId={form.id} formName={form.name} iconOnly />
               </div>
             </div>
@@ -277,7 +277,7 @@ export default function FormCard({ form }: { form: Form }) {
                   Edit Form <Edit className="h-4 w-4" />
                 </Link>
               </Button>
-              <FormCollaboratorsModal formId={form.id} formName={form.name} iconOnly />
+              <FormCollaboratorsModal formId={form.id} formName={form.name} shareUrl={form.shareUrl} iconOnly />
               <DeleteFormBtn formId={form.id} formName={form.name} iconOnly />
             </div>
           </div>

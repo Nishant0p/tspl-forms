@@ -187,6 +187,7 @@ export default function FormBuilder({ form, departments, branches, employees }: 
                     <FormCollaboratorsModal
                       formId={form.id}
                       formName={form.name}
+                      shareUrl={form.shareUrl}
                       iconOnly
                     />
                   </div>

@@ -59,3 +59,9 @@ export function buildFormSubmitUrl(formUrl: string, source?: 'qr' | 'link' | str
 
   return url.toString();
 }
+
+export function buildFormResponsesUrl(formUrl: string) {
+  const cleanFormUrl = formUrl.replace(/^\/+/, '');
+  const url = new URL(`/responses/${cleanFormUrl}`, getAppBaseUrl());
+  return url.toString();
+}

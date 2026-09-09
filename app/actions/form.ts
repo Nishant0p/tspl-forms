@@ -720,6 +720,41 @@ export async function GetFormSubmissions(id: number) {
   return form;
 }
 
+export async function GetFormSubmissionsByShareUrl(shareUrl: string) {
+  if (!shareUrl) {
+    throw new Error('Share URL is required');
+  }
+
+  const cleanShareUrl = shareUrl.trim().replace(/^\/+/, '');
+
+  const form = await prisma.form.findUnique({
+    where: {
+      shareUrl: cleanShareUrl,
+    },
+    include: {
+      FormSubmissions: {
+        include: {
+          employee: {
+            include: {
+              department: true,
+              branch: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      },
+    },
+  });
+
+  if (!form) {
+    throw new Error('Form not found');
+  }
+
+  return form;
+}
+
 export async function DeleteForm(id: number) {
   const user = await getCurrentUser();
 

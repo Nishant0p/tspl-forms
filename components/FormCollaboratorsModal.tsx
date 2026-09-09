@@ -30,22 +30,27 @@ import {
   Edit,
   Shield,
   Search,
-  KeyRound,
   CheckCircle2,
-  Sparkles,
   Loader2,
+  Copy,
+  Check,
+  ExternalLink,
+  Link as LinkIcon,
+  Lock,
+  ShieldCheck,
+  FileSpreadsheet,
 } from 'lucide-react';
 import {
   getFormCollaborators,
   assignFormCollaborator,
   removeFormCollaborator,
-  createAndAssignNewCollaborator,
   FormCollaboratorUser,
 } from '@/app/actions/formViewer';
 
 type FormCollaboratorsModalProps = {
   formId: number;
   formName: string;
+  shareUrl?: string;
   trigger?: React.ReactNode;
   iconOnly?: boolean;
 };
@@ -53,6 +58,7 @@ type FormCollaboratorsModalProps = {
 export default function FormCollaboratorsModal({
   formId,
   formName,
+  shareUrl,
   trigger,
   iconOnly,
 }: FormCollaboratorsModalProps) {
@@ -63,19 +69,13 @@ export default function FormCollaboratorsModal({
   const [viewers, setViewers] = useState<FormCollaboratorUser[]>([]);
   const [allEmployees, setAllEmployees] = useState<FormCollaboratorUser[]>([]);
   const [fetching, setFetching] = useState(false);
+  const [formShareUrl, setFormShareUrl] = useState<string>(shareUrl || '');
+  const [copied, setCopied] = useState(false);
 
   // Existing employee assignment
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
   const [selectedAccessType, setSelectedAccessType] = useState<'EDITOR' | 'VIEWER'>('VIEWER');
   const [employeeSearch, setEmployeeSearch] = useState('');
-
-  // New employee creation
-  const [newFirstName, setNewFirstName] = useState('');
-  const [newLastName, setNewLastName] = useState('');
-  const [newEmail, setNewEmail] = useState('');
-  const [newEmpId, setNewEmpId] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [newAccessType, setNewAccessType] = useState<'EDITOR' | 'VIEWER'>('VIEWER');
 
   const loadData = async () => {
     try {
@@ -84,6 +84,9 @@ export default function FormCollaboratorsModal({
       setEditors(data.editors as any);
       setViewers(data.viewers as any);
       setAllEmployees(data.allEmployees as any);
+      if (data.form?.shareUrl) {
+        setFormShareUrl(data.form.shareUrl);
+      }
     } catch (err: any) {
       console.error('Failed to load form collaborators', err);
     } finally {
@@ -116,6 +119,7 @@ export default function FormCollaboratorsModal({
           description: `Granted ${selectedAccessType.toLowerCase()} access successfully.`,
         });
         setSelectedEmployeeId('');
+        setEmployeeSearch('');
         await loadData();
       } catch (err: any) {
         toast({
@@ -127,49 +131,19 @@ export default function FormCollaboratorsModal({
     });
   };
 
-  const handleCreateNew = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newFirstName || !newLastName || !newEmail || !newEmpId) {
-      toast({
-        title: 'Missing Fields',
-        description: 'First Name, Last Name, Email, and Employee ID are required.',
-        variant: 'destructive',
-      });
-      return;
-    }
+  const effectiveShareUrl = formShareUrl || shareUrl;
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://forms.tsplgroup.in';
+  const responseLink = effectiveShareUrl ? `${origin}/responses/${effectiveShareUrl}` : '';
 
-    startTransition(async () => {
-      try {
-        await createAndAssignNewCollaborator({
-          formId,
-          firstName: newFirstName,
-          lastName: newLastName,
-          email: newEmail,
-          employeeId: newEmpId,
-          password: newPassword,
-          accessType: newAccessType,
-        });
-
-        toast({
-          title: 'User Created & Access Granted',
-          description: `Created ${newFirstName} ${newLastName} and granted ${newAccessType.toLowerCase()} access.`,
-        });
-
-        setNewFirstName('');
-        setNewLastName('');
-        setNewEmail('');
-        setNewEmpId('');
-        setNewPassword('');
-
-        await loadData();
-      } catch (err: any) {
-        toast({
-          title: 'Failed to create user',
-          description: err?.message || 'An error occurred.',
-          variant: 'destructive',
-        });
-      }
+  const handleCopyLink = () => {
+    if (!responseLink) return;
+    navigator.clipboard.writeText(responseLink);
+    setCopied(true);
+    toast({
+      title: 'Responses Link Copied',
+      description: 'Anyone with this link can view form responses only (no changes allowed).',
     });
+    setTimeout(() => setCopied(false), 2500);
   };
 
   const handleRemove = (employeeId: number) => {
@@ -200,7 +174,11 @@ export default function FormCollaboratorsModal({
   const availableEmployees = allEmployees
     .filter((emp) => !existingAccessIds.has(emp.id))
     .filter((emp) => {
-      const q = employeeSearch.toLowerCase();
+      if (selectedEmployeeId && String(emp.id) === selectedEmployeeId) {
+        return true;
+      }
+      const q = employeeSearch.trim().toLowerCase();
+      if (!q) return true;
       return (
         emp.firstName.toLowerCase().includes(q) ||
         emp.lastName.toLowerCase().includes(q) ||
@@ -235,37 +213,71 @@ export default function FormCollaboratorsModal({
             <span className="truncate">Manage Form Access: &ldquo;{formName}&rdquo;</span>
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm">
-            Grant any team member access as an <strong>Editor</strong> (edit questions and view submissions) or a <strong>Viewer</strong> (unlimited viewers, view submissions only).
+            Grant your team members access as an <strong>Editor</strong> (edit questions and view submissions) or a <strong>Viewer</strong> (unlimited viewers, view submissions only).
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="existing" className="w-full mt-2">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="existing" className="text-xs font-semibold">
-              Select Teammate
+            <TabsTrigger value="existing" className="text-xs font-semibold gap-1.5">
+              <Users className="h-3.5 w-3.5" /> Select Teammate
             </TabsTrigger>
-            <TabsTrigger value="new" className="text-xs font-semibold">
-              Create New Member
+            <TabsTrigger value="responses-link" className="text-xs font-semibold gap-1.5">
+              <LinkIcon className="h-3.5 w-3.5" /> Share Responses Link
             </TabsTrigger>
           </TabsList>
 
           {/* Select Existing Employee Tab */}
           <TabsContent value="existing" className="space-y-3 pt-2">
             <form onSubmit={handleAssignExisting} className="space-y-3 rounded-lg border bg-muted/20 p-3.5 sm:p-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Search & Select Employee</Label>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold">Search & Select Employee</Label>
+                  {allEmployees.length > 0 && (
+                    <span className="text-[11px] text-muted-foreground font-normal">
+                      {availableEmployees.length} of {allEmployees.length} available
+                    </span>
+                  )}
+                </div>
+
+                {allEmployees.length > 0 && (
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      placeholder="Search team member by name, ID, or email..."
+                      value={employeeSearch}
+                      onChange={(e) => setEmployeeSearch(e.target.value)}
+                      className="h-8 pl-8 pr-8 text-xs bg-background"
+                    />
+                    {employeeSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setEmployeeSearch('')}
+                        className="absolute right-2.5 top-2 text-xs text-muted-foreground hover:text-foreground p-0.5 rounded"
+                        title="Clear search"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Select
                     value={selectedEmployeeId}
                     onValueChange={setSelectedEmployeeId}
                   >
                     <SelectTrigger className="flex-1 text-xs min-h-[38px]">
-                      <SelectValue placeholder="Choose an organization employee..." />
+                      <SelectValue placeholder="Choose a team member..." />
                     </SelectTrigger>
                     <SelectContent className="max-h-60">
                       {availableEmployees.length === 0 ? (
-                        <div className="p-2 text-center text-xs text-muted-foreground">
-                          {allEmployees.length === 0 ? 'Loading employees...' : 'No other employees available'}
+                        <div className="p-3 text-center text-xs text-muted-foreground">
+                          {allEmployees.length === 0
+                            ? 'No team members found created by this admin'
+                            : employeeSearch
+                            ? `No team members match "${employeeSearch}"`
+                            : 'All team members already have access'}
                         </div>
                       ) : (
                         availableEmployees.map((emp) => (
@@ -322,108 +334,92 @@ export default function FormCollaboratorsModal({
             </form>
           </TabsContent>
 
-          {/* Create New Employee Tab */}
-          <TabsContent value="new" className="space-y-3 pt-2">
-            <form onSubmit={handleCreateNew} className="space-y-3 rounded-lg border bg-muted/20 p-4">
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="space-y-1">
-                  <Label className="text-xs">First Name *</Label>
-                  <Input
-                    required
-                    placeholder="e.g. Vinay"
-                    value={newFirstName}
-                    onChange={(e) => setNewFirstName(e.target.value)}
-                    className="h-8 text-xs"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Last Name *</Label>
-                  <Input
-                    required
-                    placeholder="e.g. Sharma"
-                    value={newLastName}
-                    onChange={(e) => setNewLastName(e.target.value)}
-                    className="h-8 text-xs"
-                  />
-                </div>
-              </div>
-
+          {/* Share Responses Link Tab (View Only) */}
+          <TabsContent value="responses-link" className="space-y-4 pt-2">
+            <div className="rounded-xl border bg-muted/20 p-4 space-y-4">
               <div className="space-y-1">
-                <Label className="text-xs">Email Address *</Label>
-                <Input
-                  required
-                  type="email"
-                  placeholder="vinay@tspl.in"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  className="h-8 text-xs"
-                />
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-foreground">View-Only Responses Link</h4>
+                  <Badge variant="outline" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 text-[10px] font-semibold gap-1">
+                    <Lock className="h-2.5 w-2.5" /> Responses Only
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Anyone with this link can view form responses, real-time submission statistics, and export records to Excel. They have <strong>no access</strong> to edit questions, modify settings, or delete anything.
+                </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="space-y-1">
-                  <Label className="text-xs">Employee ID * (Prefix: TSPL)</Label>
+              {/* Link Input & Action Buttons */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Shareable Responses URL</Label>
+                <div className="flex items-center gap-2">
                   <Input
-                    required
-                    placeholder="e.g. TSPL101"
-                    value={newEmpId}
-                    onChange={(e) => setNewEmpId(e.target.value)}
-                    className="h-8 text-xs"
+                    readOnly
+                    value={responseLink || 'Generating link...'}
+                    className="h-9 text-xs font-mono bg-background text-foreground select-all"
                   />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Grant Access As *</Label>
-                  <Select
-                    value={newAccessType}
-                    onValueChange={(val) => setNewAccessType(val as 'EDITOR' | 'VIEWER')}
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleCopyLink}
+                    disabled={!responseLink}
+                    className="h-9 px-3.5 gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold shrink-0"
                   >
-                    <SelectTrigger className="h-8 text-xs font-semibold">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="VIEWER" className="text-xs">
-                        👁️ Viewer (Unlimited)
-                      </SelectItem>
-                      <SelectItem value="EDITOR" className="text-xs">
-                        ✏️ Editor
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                    {copied ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-white" />
+                        <span>Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5" />
+                        <span>Copy Link</span>
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      if (responseLink) window.open(responseLink, '_blank');
+                    }}
+                    disabled={!responseLink}
+                    className="h-9 px-3 text-xs shrink-0"
+                    title="Open responses page in a new tab"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <Label className="text-xs flex items-center gap-1">
-                  <KeyRound className="h-3 w-3" /> Password (Optional, default: Tspl123456)
-                </Label>
-                <Input
-                  type="password"
-                  placeholder="Set login password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="h-8 text-xs"
-                />
-              </div>
+              {/* Permissions Summary Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 space-y-1.5 text-xs text-emerald-900 dark:text-emerald-300">
+                  <div className="font-bold flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> What Viewers CAN Do
+                  </div>
+                  <ul className="space-y-1 text-[11px] text-muted-foreground list-disc list-inside">
+                    <li>View all submissions in real-time</li>
+                    <li>Export responses to Excel (.xlsx)</li>
+                    <li>Inspect submitted files & signatures</li>
+                    <li>Search & filter response records</li>
+                  </ul>
+                </div>
 
-              <Button
-                type="submit"
-                size="sm"
-                disabled={pending}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold gap-1.5"
-              >
-                {pending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Creating & Assigning...</span>
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="h-4 w-4" />
-                    <span>Create Member & Grant Access</span>
-                  </>
-                )}
-              </Button>
-            </form>
+                <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3 space-y-1.5 text-xs text-red-900 dark:text-red-300">
+                  <div className="font-bold flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-red-600 dark:text-red-400">
+                    <Lock className="h-3.5 w-3.5" /> Strictly Protected (No Changes)
+                  </div>
+                  <ul className="space-y-1 text-[11px] text-muted-foreground list-disc list-inside">
+                    <li>Cannot edit or add form questions</li>
+                    <li>Cannot alter form access or settings</li>
+                    <li>Cannot delete or archive the form</li>
+                    <li>Cannot access admin dashboard</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
 
