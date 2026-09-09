@@ -12,8 +12,9 @@ import {
 } from '@/components/ui/card';
 import { Form } from '@prisma/client';
 import { formatDistance } from 'date-fns';
-import { ArrowRight, Edit, Eye, FileText, GitBranch, Layout, Star, StickyNote } from 'lucide-react';
+import { ArrowRight, Edit, Eye, FileText, GitBranch, Layout, Star, StickyNote, Users, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 import DeleteFormBtn from './DeleteFormBtn';
 import FormCollaboratorsModal from '@/components/FormCollaboratorsModal';
@@ -258,37 +259,99 @@ export default function FormCard({ form, isAdmin = false }: { form: Form; isAdmi
                 </Link>
               </Button>
             </div>
-            <div className="flex flex-col w-full gap-1.5 pt-2 border-t border-border/60">
+            <div className="flex flex-col w-full gap-2 pt-2 border-t border-border/60">
               <div className="flex w-full items-center justify-between gap-2 text-[11px] text-muted-foreground">
                 <span className="text-[11px] font-medium text-muted-foreground">Actions</span>
                 <span className="text-[11px] text-muted-foreground truncate text-right max-w-[190px]" title={`created by ${userName}`}>
                   created by <span className="font-semibold text-foreground/90">{userName}</span>
                 </span>
               </div>
-              <div className="flex w-full items-center justify-end gap-1.5">
-                {isAdmin && <FormCollaboratorsModal formId={form.id} formName={form.name} shareUrl={form.shareUrl} iconOnly />}
-                <DeleteFormBtn formId={form.id} formName={form.name} iconOnly />
+              <div className={cn("grid gap-2 w-full", isAdmin ? "grid-cols-2" : "grid-cols-1")}>
+                {isAdmin && (
+                  <FormCollaboratorsModal
+                    formId={form.id}
+                    formName={form.name}
+                    shareUrl={form.shareUrl}
+                    trigger={
+                      <Button
+                        variant="outline"
+                        className="w-full min-h-[38px] gap-1.5 text-xs font-semibold border-blue-500/30 text-blue-600 hover:border-blue-500 hover:bg-blue-500/10 dark:text-blue-400"
+                      >
+                        <Users className="h-4 w-4" />
+                        <span>Collaborators</span>
+                      </Button>
+                    }
+                  />
+                )}
+                <DeleteFormBtn
+                  formId={form.id}
+                  formName={form.name}
+                  trigger={
+                    <Button
+                      variant="outline"
+                      className="w-full min-h-[38px] gap-1.5 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-900/50 dark:hover:bg-rose-950/50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>Delete</span>
+                    </Button>
+                  }
+                />
               </div>
             </div>
           </>
         )}
         {!form.published && (
-          <div className="flex flex-col w-full gap-1.5">
-            <div className="flex w-full items-center justify-end text-[11px] text-muted-foreground">
-              <span className="truncate text-right max-w-[200px]" title={`created by ${userName}`}>
-                created by <span className="font-semibold text-foreground/90">{userName}</span>
-              </span>
-            </div>
-            <div className="flex w-full items-center gap-2">
-              <Button
-                asChild
-                className="flex-1 min-h-[38px] gap-2 text-xs sm:text-sm font-semibold text-zinc-50">
-                <Link href={`/builder/${form.id}`}>
-                  Edit Form <Edit className="h-4 w-4" />
-                </Link>
-              </Button>
-              {isAdmin && <FormCollaboratorsModal formId={form.id} formName={form.name} shareUrl={form.shareUrl} iconOnly />}
-              <DeleteFormBtn formId={form.id} formName={form.name} iconOnly />
+          <div className="flex flex-col w-full gap-2">
+            {/* Big Edit Form button on top */}
+            <Button
+              asChild
+              className="w-full min-h-[38px] gap-2 text-xs sm:text-sm font-semibold text-zinc-50 bg-primary hover:bg-primary/90 shadow-sm">
+              <Link href={`/builder/${form.id}`}>
+                Edit Form <Edit className="h-4 w-4" />
+              </Link>
+            </Button>
+
+            {/* Actions & Creator Header */}
+            <div className="flex flex-col w-full gap-2 pt-2 border-t border-border/60">
+              <div className="flex w-full items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                <span className="text-[11px] font-medium text-muted-foreground">Actions</span>
+                <span className="text-[11px] text-muted-foreground truncate text-right max-w-[190px]" title={`created by ${userName}`}>
+                  created by <span className="font-semibold text-foreground/90">{userName}</span>
+                </span>
+              </div>
+
+              {/* Bottom two buttons bigger side-by-side */}
+              <div className={cn("grid gap-2 w-full", isAdmin ? "grid-cols-2" : "grid-cols-1")}>
+                {isAdmin && (
+                  <FormCollaboratorsModal
+                    formId={form.id}
+                    formName={form.name}
+                    shareUrl={form.shareUrl}
+                    trigger={
+                      <Button
+                        variant="outline"
+                        className="w-full min-h-[38px] gap-1.5 text-xs font-semibold border-blue-500/30 text-blue-600 hover:border-blue-500 hover:bg-blue-500/10 dark:text-blue-400"
+                      >
+                        <Users className="h-4 w-4" />
+                        <span>Collaborators</span>
+                      </Button>
+                    }
+                  />
+                )}
+                <DeleteFormBtn
+                  formId={form.id}
+                  formName={form.name}
+                  trigger={
+                    <Button
+                      variant="outline"
+                      className="w-full min-h-[38px] gap-1.5 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-900/50 dark:hover:bg-rose-950/50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>Delete</span>
+                    </Button>
+                  }
+                />
+              </div>
             </div>
           </div>
         )}

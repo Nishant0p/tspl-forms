@@ -135,7 +135,7 @@ export default function ResponsesViewerClient({ form }: ResponsesViewerClientPro
     return allRows.filter((row) => {
       if (row.respondent?.toLowerCase().includes(q)) return true;
       for (const col of columns) {
-        const val = row[col.id];
+        const val = (row as any)[col.id];
         if (val !== undefined && val !== null) {
           if (String(val).toLowerCase().includes(q)) return true;
         }
