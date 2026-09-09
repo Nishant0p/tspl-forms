@@ -16,7 +16,7 @@ import { Textarea } from '../ui/textarea';
 import { cn } from '@/lib/utils';
 
 const type: ElementsType = 'SignatureField';
-const extraAttributes = { label: 'Digital Signature', helperText: 'Helper Text', required: false };
+const extraAttributes = { label: 'Digital Signature', helperText: '', required: false };
 const propertiesSchema = z.object({ label: z.string().min(2).max(50), helperText: z.string().max(200), required: z.boolean().default(false) });
 
 export const SignatureFieldFormElement: FormElement = {
@@ -117,5 +117,5 @@ function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValu
     setPreview('');
   }
 
-  return <div className="flex w-full flex-col gap-2"><Label className={cn('mr-2 text-foreground', error && 'text-red-500')}>{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><div className={cn('rounded-lg border bg-background p-3', error && 'border-rose-500')}><canvas ref={canvasRef} width={640} height={180} className="h-40 w-full touch-none rounded-md border bg-white" onPointerDown={startDrawing} onPointerMove={draw} onPointerUp={stopDrawing} onPointerLeave={stopDrawing} /><div className="mt-3 flex items-center justify-between"><p className="text-xs text-muted-foreground">Sign inside the box above.</p><Button type="button" variant="outline" size="sm" onClick={clearCanvas}><RotateCcw className="mr-2 h-4 w-4" />Clear</Button></div></div>{preview && <img alt="Signature preview" src={preview} className="max-h-28 rounded-md border" />}{helperText && <p className={cn('text-[.8rem] text-muted-foreground', error && 'text-rose-500')}>{helperText}</p>}</div>;
+  return <div className="flex w-full flex-col gap-2"><Label className={cn('mr-2 text-foreground', error && 'text-red-500')}>{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><div className={cn('rounded-lg border bg-background p-3', error && 'border-rose-500')}><canvas ref={canvasRef} width={640} height={180} className="h-40 w-full touch-none rounded-md border bg-white" onPointerDown={startDrawing} onPointerMove={draw} onPointerUp={stopDrawing} onPointerLeave={stopDrawing} /><div className="mt-3 flex items-center justify-between"><p className="text-xs text-muted-foreground">Sign inside the box above.</p><Button type="button" variant="outline" size="sm" onClick={clearCanvas}><RotateCcw className="mr-2 h-4 w-4" />Clear</Button></div></div>{preview && <img alt="Signature preview" src={preview} className="max-h-28 rounded-md border" />}</div>;
 }

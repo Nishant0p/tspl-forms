@@ -15,7 +15,7 @@ import { Textarea } from '../ui/textarea';
 import { cn } from '@/lib/utils';
 
 const type: ElementsType = 'PhoneField';
-const extraAttributes = { label: 'Phone Field', helperText: 'Helper Text', required: false, placeholder: '+91 00000 00000' };
+const extraAttributes = { label: 'Phone Field', helperText: '', required: false, placeholder: '+91 00000 00000' };
 const propertiesSchema = z.object({ label: z.string().min(2).max(50), helperText: z.string().max(200), required: z.boolean().default(false), placeholder: z.string().max(50) });
 const phoneRegex = /^[+\d][\d\s()-]{7,}$/;
 
@@ -65,5 +65,5 @@ function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValu
   const [error, setError] = useState(false);
   useEffect(() => { setError(isInvalid === true); }, [isInvalid]);
   const { label, helperText, required, placeholder } = element.extraAttributes;
-  return <div className="flex w-full flex-col gap-2"><Label className={cn('mr-2 text-foreground', error && 'text-red-500')}>{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><Input value={value} type="tel" placeholder={placeholder} onChange={(e) => setValue(e.target.value)} onBlur={(e) => { if (!submitFunction) return; const valid = PhoneFieldFormElement.validate(element, e.target.value); setError(!valid); if (!valid) return; submitFunction(element.id, e.target.value); }} />{helperText && <p className={cn('text-[.8rem] text-muted-foreground', error && 'text-rose-500')}>{helperText}</p>}</div>;
+  return <div className="flex w-full flex-col gap-2"><Label className={cn('mr-2 text-foreground', error && 'text-red-500')}>{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><Input value={value} type="tel" placeholder={placeholder} onChange={(e) => setValue(e.target.value)} onBlur={(e) => { if (!submitFunction) return; const valid = PhoneFieldFormElement.validate(element, e.target.value); setError(!valid); if (!valid) return; submitFunction(element.id, e.target.value); }} /></div>;
 }

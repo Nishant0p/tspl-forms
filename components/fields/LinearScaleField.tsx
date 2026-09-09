@@ -24,7 +24,7 @@ const type: ElementsType = 'LinearScaleField';
 
 const extraAttributes = {
   label: 'Linear Scale Field',
-  helperText: 'Helper Text',
+  helperText: '',
   required: false,
   min: 1,
   max: 10,
@@ -251,11 +251,6 @@ function FormComponent({
           }}
         />
       </div>
-      {helperText && (
-        <p className={cn('text-[.8rem] text-muted-foreground', error && 'text-rose-500')}>
-          {helperText}
-        </p>
-      )}
     </div>
   );
 }

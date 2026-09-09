@@ -18,7 +18,7 @@ import FileViewerModal from '../FileViewerModal';
 import { FileText } from 'lucide-react';
 
 const type: ElementsType = 'FileUploadField';
-const extraAttributes = { label: 'File Upload', helperText: 'Helper Text', required: false, accept: '*' };
+const extraAttributes = { label: 'File Upload', helperText: '', required: false, accept: '*' };
 const propertiesSchema = z.object({ label: z.string().min(2).max(50), helperText: z.string().max(200), required: z.boolean().default(false), accept: z.string().max(100) });
 
 export const FileUploadFieldFormElement: FormElement = {
@@ -121,7 +121,6 @@ function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValu
           <FileViewerModal fileUrl={fileUrl} fileName={fileName} />
         </div>
       )}
-      {helperText && <p className={cn('text-[.8rem] text-muted-foreground', error && 'text-rose-500')}>{helperText}</p>}
     </div>
   );
 }

@@ -32,7 +32,7 @@ const type: ElementsType = 'CheckboxField';
 
 const extraAttributes = {
   label: 'Label Field',
-  helperText: 'Helper Text',
+  helperText: '',
   required: false,
 };
 
@@ -234,9 +234,6 @@ function FormComponent({
           {label}
           {required && <span className="ml-2 text-red-500">*</span>}
         </Label>
-        {helperText && (
-          <p className={cn("text-[.8rem] text-muted-foreground", error && ("text-rose-500"))}>{helperText}</p>
-        )}
       </div>
     </div>
   );

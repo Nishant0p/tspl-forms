@@ -18,7 +18,7 @@ import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 
 const type: ElementsType = 'RadioField';
-const extraAttributes = { label: 'Radio Field', helperText: 'Helper Text', required: false, placeholder: 'Placeholder', options: ['Option 1', 'Option 2'] };
+const extraAttributes = { label: 'Radio Field', helperText: '', required: false, placeholder: 'Placeholder', options: ['Option 1', 'Option 2'] };
 const propertiesSchema = z.object({ label: z.string().min(2).max(50), helperText: z.string().max(200), required: z.boolean().default(false), placeholder: z.string().max(50), options: z.array(z.string()).default([]) });
 
 export const RadioFieldFormElement: FormElement = {
@@ -55,5 +55,5 @@ function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValu
   const [error, setError] = useState(false);
   useEffect(() => { setError(isInvalid === true); }, [isInvalid]);
   const { label, helperText, required, options } = element.extraAttributes;
-  return <div className="flex w-full flex-col gap-2"><Label className={cn('mr-2 text-foreground', error && 'text-red-500')}>{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><RadioGroup value={value} onValueChange={(nextValue) => { setValue(nextValue); if (!submitFunction) return; const valid = RadioFieldFormElement.validate(element, nextValue); setError(!valid); submitFunction(element.id, nextValue); }} className="space-y-2">{options.map((option) => (<div key={option} className='flex items-center space-x-2'><RadioGroupItem value={option} id={`${element.id}-${option}`} /><Label htmlFor={`${element.id}-${option}`}>{option}</Label></div>))}</RadioGroup>{helperText && <p className={cn('text-[.8rem] text-muted-foreground', error && 'text-rose-500')}>{helperText}</p>}</div>;
+  return <div className="flex w-full flex-col gap-2"><Label className={cn('mr-2 text-foreground', error && 'text-red-500')}>{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><RadioGroup value={value} onValueChange={(nextValue) => { setValue(nextValue); if (!submitFunction) return; const valid = RadioFieldFormElement.validate(element, nextValue); setError(!valid); submitFunction(element.id, nextValue); }} className="space-y-2">{options.map((option) => (<div key={option} className='flex items-center space-x-2'><RadioGroupItem value={option} id={`${element.id}-${option}`} /><Label htmlFor={`${element.id}-${option}`}>{option}</Label></div>))}</RadioGroup></div>;
 }

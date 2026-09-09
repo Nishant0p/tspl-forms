@@ -15,7 +15,7 @@ import { Textarea } from '../ui/textarea';
 import { cn } from '@/lib/utils';
 
 const type: ElementsType = 'ImageField';
-const extraAttributes = { label: 'Image Field', helperText: 'Helper Text', required: false };
+const extraAttributes = { label: 'Image Field', helperText: '', required: false };
 const propertiesSchema = z.object({ label: z.string().min(2).max(50), helperText: z.string().max(200), required: z.boolean().default(false) });
 
 export const ImageFieldFormElement: FormElement = {
@@ -93,7 +93,6 @@ function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValu
           <FileViewerModal fileUrl={preview} fileName="Uploaded Image" fileType="image" />
         </div>
       )}
-      {helperText && <p className={cn('text-[.8rem] text-muted-foreground', error && 'text-rose-500')}>{helperText}</p>}
     </div>
   );
 }

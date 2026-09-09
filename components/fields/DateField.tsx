@@ -36,7 +36,7 @@ const type: ElementsType = 'DateField';
 
 const extraAttributes = {
   label: 'Date Field',
-  helperText: 'Helper Text',
+  helperText: '',
   required: false,
 };
 
@@ -421,10 +421,6 @@ function FormComponent({
           </div>
         </PopoverContent>
       </Popover>
-
-      {helperText && (
-        <p className={cn("text-[.8rem] text-muted-foreground", error && ("text-rose-500"))}>{helperText}</p>
-      )}
     </div>
   );
 }

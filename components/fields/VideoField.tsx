@@ -15,7 +15,7 @@ import { Textarea } from '../ui/textarea';
 import { cn } from '@/lib/utils';
 
 const type: ElementsType = 'VideoField';
-const extraAttributes = { label: 'Video Field', helperText: 'Helper Text', required: false };
+const extraAttributes = { label: 'Video Field', helperText: '', required: false };
 const propertiesSchema = z.object({ label: z.string().min(2).max(50), helperText: z.string().max(200), required: z.boolean().default(false) });
 
 export const VideoFieldFormElement: FormElement = {
@@ -56,5 +56,5 @@ function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValu
   const [preview, setPreview] = useState('');
   useEffect(() => { setError(isInvalid === true); }, [isInvalid]);
   const { label, helperText, required } = element.extraAttributes;
-  return <div className="flex w-full flex-col gap-2"><Label className={cn('mr-2 text-foreground', error && 'text-red-500')}>{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><Input type="file" accept="video/*" onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; try { const dataUrl = await readFileAsDataUrl(file); const payload = toFilePayload(file, dataUrl); setValue(payload); setPreview(dataUrl); if (!submitFunction) return; const valid = VideoFieldFormElement.validate(element, payload); setError(!valid); submitFunction(element.id, payload); } catch { setError(true); } }} />{preview && <video controls className="max-h-40 w-full rounded-md" src={preview} />}{helperText && <p className={cn('text-[.8rem] text-muted-foreground', error && 'text-rose-500')}>{helperText}</p>}</div>;
+  return <div className="flex w-full flex-col gap-2"><Label className={cn('mr-2 text-foreground', error && 'text-red-500')}>{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><Input type="file" accept="video/*" onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; try { const dataUrl = await readFileAsDataUrl(file); const payload = toFilePayload(file, dataUrl); setValue(payload); setPreview(dataUrl); if (!submitFunction) return; const valid = VideoFieldFormElement.validate(element, payload); setError(!valid); submitFunction(element.id, payload); } catch { setError(true); } }} />{preview && <video controls className="max-h-40 w-full rounded-md" src={preview} />}</div>;
 }

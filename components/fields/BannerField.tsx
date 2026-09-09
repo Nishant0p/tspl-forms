@@ -348,7 +348,6 @@ function PropertiesComponent({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="gradient-tspl">TSPL Blue & Orange (50/40/10)</SelectItem>
                   <SelectItem value="custom">Custom Uploaded Image</SelectItem>
                   <SelectItem value="gradient-blue">Ocean Blue Gradient</SelectItem>
                   <SelectItem value="gradient-purple">Royal Purple Gradient</SelectItem>

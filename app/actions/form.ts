@@ -1,6 +1,6 @@
 'use server';
 
-import { getCurrentUser, AuthRequiredError, ForbiddenError, getCurrentEmployee } from '@/lib/auth';
+import { getCurrentUser, AuthRequiredError, ForbiddenError, getCurrentEmployee, getSuperAdminIdpConfig, getHardcodedAdminSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { generateCustomSlug } from '@/lib/url';
 import { FormSchema, formSchema } from '@/schemas/form';
@@ -236,6 +236,63 @@ export async function CreateForm(data: FormSchema & { branchId?: number | null }
   return form.id;
 }
 
+async function resolveUserMap(userIds: string[]) {
+  const userMap = new Map<string, { name: string; email?: string }>();
+
+  if (!userIds || userIds.length === 0) {
+    return userMap;
+  }
+
+  const idpConfig = getSuperAdminIdpConfig();
+  const hardcodedAdmin = getHardcodedAdminSession();
+  const adminName = `${hardcodedAdmin.firstName || 'Tech'} ${hardcodedAdmin.lastName || 'Admin'}`.trim();
+
+  if (idpConfig.idp) {
+    userMap.set(idpConfig.idp, { name: adminName, email: idpConfig.email });
+  }
+  if (idpConfig.email) {
+    userMap.set(idpConfig.email.toLowerCase(), { name: adminName, email: idpConfig.email });
+  }
+  userMap.set('super_admin_seed', { name: adminName, email: idpConfig.email });
+
+  const numericIds = userIds
+    .map((id) => Number(id))
+    .filter((id) => !isNaN(id) && id < 1000000);
+
+  try {
+    const employees = await (prisma as any).employee.findMany({
+      where: {
+        OR: [
+          { clerkUserId: { in: userIds } },
+          { employeeId: { in: userIds } },
+          { email: { in: userIds } },
+          ...(numericIds.length > 0 ? [{ id: { in: numericIds } }] : []),
+        ],
+      },
+      select: {
+        id: true,
+        clerkUserId: true,
+        employeeId: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+      },
+    });
+
+    for (const emp of employees) {
+      const fullName = `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || emp.email || emp.employeeId;
+      if (emp.clerkUserId) userMap.set(emp.clerkUserId, { name: fullName, email: emp.email });
+      if (emp.employeeId) userMap.set(emp.employeeId, { name: fullName, email: emp.email });
+      if (emp.email) userMap.set(emp.email.toLowerCase(), { name: fullName, email: emp.email });
+      userMap.set(String(emp.id), { name: fullName, email: emp.email });
+    }
+  } catch (error) {
+    console.error('Failed to resolve employees for form creators', error);
+  }
+
+  return userMap;
+}
+
 /** Get forms - scoped strictly to Creator, Super Admin, and explicit Editors / Viewers */
 export async function GetForm() {
   const user = await getCurrentUser();
@@ -246,9 +303,42 @@ export async function GetForm() {
 
   const employee = await getCurrentEmployee();
 
+  let forms: any[] = [];
+
   // Super Admin can view all forms
   if (employee?.role === 'SUPER_ADMIN') {
-    return await (prisma as any).form.findMany({
+    forms = await (prisma as any).form.findMany({
+      include: {
+        branch: true,
+        allowedEmployees: { include: { employee: true } },
+        formViewerAccesses: { include: { employee: true } },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  } else {
+    // Collect all possible caller identifiers for matching creator
+    const userIds: string[] = [user.id];
+    if (employee?.clerkUserId) userIds.push(employee.clerkUserId);
+    if (employee?.employeeId) userIds.push(employee.employeeId);
+    if (employee?.email) userIds.push(employee.email.toLowerCase());
+    if (typeof employee?.id === 'number' && employee.id < 1000000) userIds.push(String(employee.id));
+
+    const empDbId = typeof employee?.id === 'number' && employee.id < 1000000 ? employee.id : null;
+
+    forms = await (prisma as any).form.findMany({
+      where: {
+        OR: [
+          { userId: { in: userIds } },
+          ...(empDbId
+            ? [
+                { allowedEmployees: { some: { employeeId: empDbId } } },
+                { formViewerAccesses: { some: { employeeId: empDbId } } },
+              ]
+            : []),
+        ],
+      },
       include: {
         branch: true,
         allowedEmployees: { include: { employee: true } },
@@ -260,38 +350,30 @@ export async function GetForm() {
     });
   }
 
-  // Collect all possible caller identifiers for matching creator
-  const userIds: string[] = [user.id];
-  if (employee?.clerkUserId) userIds.push(employee.clerkUserId);
-  if (employee?.employeeId) userIds.push(employee.employeeId);
-  if (employee?.email) userIds.push(employee.email.toLowerCase());
-  if (typeof employee?.id === 'number' && employee.id < 1000000) userIds.push(String(employee.id));
+  const userIdsInForms = Array.from(new Set(forms.map((f: any) => f.userId).filter(Boolean)));
+  const userMap = await resolveUserMap(userIdsInForms as string[]);
 
-  const empDbId = typeof employee?.id === 'number' && employee.id < 1000000 ? employee.id : null;
+  if (user) {
+    const curName = user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim();
+    if (curName && user.id && !userMap.has(user.id)) {
+      userMap.set(user.id, { name: curName });
+    }
+  }
 
-  const forms = await (prisma as any).form.findMany({
-    where: {
-      OR: [
-        { userId: { in: userIds } },
-        ...(empDbId
-          ? [
-              { allowedEmployees: { some: { employeeId: empDbId } } },
-              { formViewerAccesses: { some: { employeeId: empDbId } } },
-            ]
-          : []),
-      ],
-    },
-    include: {
-      branch: true,
-      allowedEmployees: { include: { employee: true } },
-      formViewerAccesses: { include: { employee: true } },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
+  return forms.map((f: any) => {
+    const creator: { name: string; email?: string } = userMap.get(f.userId) ||
+      userMap.get(f.userId?.toLowerCase()) ||
+      { name: f.userId || 'User', email: undefined };
+
+    return {
+      ...f,
+      user: {
+        name: creator.name,
+        email: creator.email,
+      },
+      createdByName: creator.name,
+    };
   });
-
-  return forms;
 }
 
 export async function GetFormById(id: number) {

@@ -32,7 +32,7 @@ const type: ElementsType = 'TextAreaField';
 
 const extraAttributes = {
   label: 'Textarea Field',
-  helperText: 'Helper Text',
+  helperText: '',
   required: false,
   placeholder: 'Placeholder',
   rows: 3,
@@ -277,9 +277,6 @@ function FormComponent({
           submitFunction(element.id, e.target.value)
         }}
       />
-      {helperText && (
-        <p className={cn("text-[.8rem] text-muted-foreground", error && ("text-rose-500"))}>{helperText}</p>
-      )}
     </div>
   );
 }
