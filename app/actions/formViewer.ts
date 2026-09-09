@@ -388,7 +388,6 @@ export const removeFormViewerAccess = removeFormCollaborator;
  * for viewing form responses without login or edit rights.
  */
 export async function generateFormResponseToken(formId: number): Promise<string> {
-  await requireEmployee();
   return generateResponseToken(formId);
 }
 

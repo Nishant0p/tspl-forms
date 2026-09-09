@@ -47,9 +47,9 @@ import {
   getFormCollaborators,
   assignFormCollaborator,
   removeFormCollaborator,
-  generateFormResponseToken,
   FormCollaboratorUser,
 } from '@/app/actions/formViewer';
+import { generateResponseToken } from '@/lib/response-token';
 
 type FormCollaboratorsModalProps = {
   formId: number;
@@ -74,8 +74,8 @@ export default function FormCollaboratorsModal({
   const [allEmployees, setAllEmployees] = useState<FormCollaboratorUser[]>([]);
   const [fetching, setFetching] = useState(false);
   const [formShareUrl, setFormShareUrl] = useState<string>(shareUrl || '');
-  const [responseToken, setResponseToken] = useState<string>('');
-  const [generatingToken, setGeneratingToken] = useState(false);
+  // Initialize responseToken immediately with a randomized 12-15 char unique token!
+  const [responseToken, setResponseToken] = useState<string>(() => generateResponseToken(formId));
   const [copied, setCopied] = useState(false);
 
   // Existing employee assignment
@@ -83,28 +83,14 @@ export default function FormCollaboratorsModal({
   const [selectedAccessType, setSelectedAccessType] = useState<'EDITOR' | 'VIEWER'>('VIEWER');
   const [employeeSearch, setEmployeeSearch] = useState('');
 
-  const handleGenerateNewToken = async (silent = false) => {
-    try {
-      setGeneratingToken(true);
-      const token = await generateFormResponseToken(formId);
-      setResponseToken(token);
-      if (!silent) {
-        toast({
-          title: 'New Unique Link Generated',
-          description: `Generated secure response link with randomized token (${token.length} chars).`,
-        });
-      }
-    } catch (err: any) {
-      console.error('Failed to generate response token', err);
-      if (!silent) {
-        toast({
-          title: 'Failed to generate link',
-          description: err?.message || 'Could not generate unique token.',
-          variant: 'destructive',
-        });
-      }
-    } finally {
-      setGeneratingToken(false);
+  const handleGenerateNewToken = (notify = true) => {
+    const token = generateResponseToken(formId);
+    setResponseToken(token);
+    if (notify) {
+      toast({
+        title: 'New Unique Link Generated',
+        description: `Randomized Token: ${token} (${token.length} chars)`,
+      });
     }
   };
 
@@ -128,9 +114,8 @@ export default function FormCollaboratorsModal({
   useEffect(() => {
     if (open) {
       loadData();
-      if (!responseToken) {
-        handleGenerateNewToken(true);
-      }
+      // Generate a fresh unique token every time the modal is opened
+      handleGenerateNewToken(false);
     }
   }, [open, formId]);
 
@@ -165,9 +150,8 @@ export default function FormCollaboratorsModal({
     });
   };
 
-  const effectiveToken = responseToken || formShareUrl || shareUrl;
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://forms.tsplgroup.in';
-  const responseLink = effectiveToken ? `${origin}/responses/${effectiveToken}` : '';
+  const responseLink = `${origin}/responses/${responseToken}`;
 
   const handleCopyLink = () => {
     if (!responseLink) return;
@@ -383,13 +367,12 @@ export default function FormCollaboratorsModal({
                     type="button"
                     size="sm"
                     variant="outline"
-                    onClick={() => handleGenerateNewToken(false)}
-                    disabled={generatingToken}
+                    onClick={() => handleGenerateNewToken(true)}
                     className="h-8 text-xs gap-1.5 border-blue-500/30 text-blue-600 hover:bg-blue-500/10 hover:text-blue-700 dark:text-blue-400 font-medium shrink-0"
                     title="Generate a brand-new unique 12-15 char randomized link"
                   >
-                    <RefreshCw className={cn('h-3.5 w-3.5', generatingToken && 'animate-spin')} />
-                    <span>{generatingToken ? 'Generating...' : 'Generate New Link'}</span>
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    <span>Generate New Link</span>
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
@@ -411,18 +394,15 @@ export default function FormCollaboratorsModal({
                   <div className="relative flex-1">
                     <Input
                       readOnly
-                      value={generatingToken ? 'Generating unique link...' : responseLink || 'Loading link...'}
-                      className="h-9 text-xs font-mono bg-background text-foreground select-all pr-8"
+                      value={responseLink}
+                      className="h-9 text-xs font-mono bg-background text-foreground select-all"
                     />
-                    {generatingToken && (
-                      <Loader2 className="absolute right-2.5 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
-                    )}
                   </div>
                   <Button
                     type="button"
                     size="sm"
                     onClick={handleCopyLink}
-                    disabled={!responseLink || generatingToken}
+                    disabled={!responseLink}
                     className="h-9 px-3.5 gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold shrink-0"
                   >
                     {copied ? (
@@ -444,7 +424,7 @@ export default function FormCollaboratorsModal({
                     onClick={() => {
                       if (responseLink) window.open(responseLink, '_blank');
                     }}
-                    disabled={!responseLink || generatingToken}
+                    disabled={!responseLink}
                     className="h-9 px-3 text-xs shrink-0"
                     title="Open responses page in a new tab"
                   >

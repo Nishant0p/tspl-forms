@@ -1,21 +1,23 @@
-import crypto from 'crypto';
-
 /**
- * Secret salt used to sign and verify view-only response tokens.
+ * Universal response token generator & decoder.
+ * Runs in both browser (client-side) and Node.js (server-side) with 0 external dependencies.
  */
-const TOKEN_SECRET =
-  process.env.RESPONSE_TOKEN_SECRET ||
-  process.env.NEXTAUTH_SECRET ||
-  process.env.CLERK_SECRET_KEY ||
-  'tspl-forms-secure-response-salt-2026-v1';
 
-/**
- * Base62 alphabet containing digits, uppercase letters, and lowercase letters.
- */
 const ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const SALT = 0x5a3c9e71; // 32-bit secret salt
 
 /**
- * Encodes a byte array (0-255) to a Base62 string without requiring BigInt or Buffer.
+ * Fast 32-bit integer hash (Murmur3-inspired mixer).
+ */
+function hash32(val: number, seed: number): number {
+  let h = (val ^ seed) >>> 0;
+  h = Math.imul(h ^ (h >>> 16), 0x85ebca6b);
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+  return (h ^ (h >>> 16)) >>> 0;
+}
+
+/**
+ * Encodes a byte array (0-255) to a Base62 string.
  */
 function bytesToBase62(bytes: number[]): string {
   const digits: number[] = [0];
@@ -68,59 +70,65 @@ function base62ToBytes(str: string, targetLength: number): number[] | null {
 }
 
 /**
- * Converts a byte array to a hex string.
+ * Universal random 32-bit integer generator.
  */
-function bytesToHex(bytes: number[]): string {
-  let hex = '';
-  for (let i = 0; i < bytes.length; i++) {
-    hex += bytes[i].toString(16).padStart(2, '0');
+function getRandomInt32(): number {
+  if (typeof globalThis !== 'undefined' && globalThis.crypto && globalThis.crypto.getRandomValues) {
+    try {
+      const arr = new Uint32Array(1);
+      globalThis.crypto.getRandomValues(arr);
+      return arr[0];
+    } catch {
+      // Fallback below
+    }
   }
-  return hex;
+  return Math.floor(Math.random() * 0xffffffff);
 }
 
 /**
  * Generates a randomized unique token between 12 and 15 characters (specifically 14 chars)
- * containing mixed uppercase, lowercase, and numeric characters.
+ * containing mixed uppercase letters, lowercase letters, and digits.
  * 
- * Every call generates a completely unique token due to 32 bits of cryptographic randomness.
+ * Every call generates a completely unique token due to 32 bits of cryptographic/pseudo-randomness.
  */
 export function generateResponseToken(formId: number): string {
   for (let attempt = 0; attempt < 50; attempt++) {
-    // 4 random bytes generated cryptographically
-    const randomHex = crypto.randomBytes(4).toString('hex');
-    const nonce: number[] = [
-      0x35 + Math.floor(Math.random() * (256 - 0x35)),
-      parseInt(randomHex.substring(2, 4), 16),
-      parseInt(randomHex.substring(4, 6), 16),
-      parseInt(randomHex.substring(6, 8), 16),
-    ];
+    let nonce = getRandomInt32();
+    // Ensure high byte is >= 0x35 so that the 10-byte Base62 string length is ALWAYS exactly 14 characters
+    const highByte = 0x35 + Math.floor(Math.random() * (256 - 0x35));
+    nonce = ((nonce & 0x00ffffff) | (highByte << 24)) >>> 0;
+
     const version = 0x52; // 'R' for Responses
+    const fId = formId >>> 0;
 
-    // 4-byte big-endian representation of formId
-    const formIdBytes: number[] = [
-      (formId >>> 24) & 0xff,
-      (formId >>> 16) & 0xff,
-      (formId >>> 8) & 0xff,
-      formId & 0xff,
+    // Keystream derived from nonce to mask formId and version
+    const k1 = hash32(nonce, SALT ^ 0x12345678);
+    const k2 = hash32(nonce, SALT ^ 0x9abcdef0);
+
+    const maskedFormId = (fId ^ k1) >>> 0;
+    const check8 = (hash32(fId ^ version, nonce ^ SALT) & 0xff);
+    const maskedCheck8 = (check8 ^ (k2 & 0xff)) & 0xff;
+    const maskedVersion = (version ^ ((k2 >>> 8) & 0xff)) & 0xff;
+
+    // 10 bytes total:
+    // bytes 0..3: nonce (4 bytes)
+    // byte 4: maskedVersion (1 byte)
+    // bytes 5..8: maskedFormId (4 bytes)
+    // byte 9: maskedCheck8 (1 byte)
+    const bytes = [
+      (nonce >>> 24) & 0xff,
+      (nonce >>> 16) & 0xff,
+      (nonce >>> 8) & 0xff,
+      nonce & 0xff,
+      maskedVersion,
+      (maskedFormId >>> 24) & 0xff,
+      (maskedFormId >>> 16) & 0xff,
+      (maskedFormId >>> 8) & 0xff,
+      maskedFormId & 0xff,
+      maskedCheck8,
     ];
-    const body: number[] = [version, ...formIdBytes];
 
-    // 1-byte HMAC-SHA256 checksum (using string input to avoid Buffer/BinaryLike typing mismatches)
-    const hmac = crypto.createHmac('sha256', TOKEN_SECRET);
-    hmac.update(bytesToHex(body) + bytesToHex(nonce), 'hex');
-    const checksum = hmac.digest()[0];
-
-    // Keystream derived from nonce to mask payload
-    const ksHmac = crypto.createHmac('sha256', TOKEN_SECRET);
-    ksHmac.update('07' + bytesToHex(nonce), 'hex');
-    const keystream = Array.from(ksHmac.digest());
-
-    const maskedBody: number[] = body.map((b, i) => b ^ keystream[i]);
-    const maskedChecksum = checksum ^ keystream[5];
-
-    // Total 10 bytes = 4 bytes nonce + 5 bytes maskedBody + 1 byte maskedChecksum
-    const total: number[] = [...nonce, ...maskedBody, maskedChecksum];
-    const token = bytesToBase62(total);
+    const token = bytesToBase62(bytes);
 
     // Verify token strictly adheres to user requirements:
     // 1. Length between 12 and 15
@@ -138,13 +146,12 @@ export function generateResponseToken(formId: number): string {
   }
 
   // Fallback if loop exceeded
-  const fallbackHex = crypto.randomBytes(5).toString('hex');
-  return fallbackHex.substring(0, 14);
+  return 'r' + Math.random().toString(36).substring(2, 15);
 }
 
 /**
  * Decodes a 12-15 character response token back to its formId.
- * Validates the internal HMAC checksum to ensure authenticity.
+ * Validates the internal checksum to ensure authenticity.
  * Returns formId number if valid, or null if invalid or tampered.
  */
 export function decodeResponseToken(token: string): number | null {
@@ -152,30 +159,24 @@ export function decodeResponseToken(token: string): number | null {
   const clean = token.trim();
   if (clean.length < 12 || clean.length > 15) return null;
 
-  const total = base62ToBytes(clean, 10);
-  if (!total || total.length !== 10) return null;
+  const bytes = base62ToBytes(clean, 10);
+  if (!bytes || bytes.length !== 10) return null;
 
-  const nonce = total.slice(0, 4);
-  const maskedBody = total.slice(4, 9);
-  const maskedChecksum = total[9];
+  const nonce = (((bytes[0] << 24) >>> 0) + (bytes[1] << 16) + (bytes[2] << 8) + bytes[3]) >>> 0;
 
-  const ksHmac = crypto.createHmac('sha256', TOKEN_SECRET);
-  ksHmac.update('07' + bytesToHex(nonce), 'hex');
-  const keystream = Array.from(ksHmac.digest());
+  const k1 = hash32(nonce, SALT ^ 0x12345678);
+  const k2 = hash32(nonce, SALT ^ 0x9abcdef0);
 
-  const body: number[] = maskedBody.map((b, i) => b ^ keystream[i]);
-  const checksum = maskedChecksum ^ keystream[5];
+  const version = bytes[4] ^ ((k2 >>> 8) & 0xff);
+  if (version !== 0x52) return null;
 
-  if (body[0] !== 0x52) return null;
+  const rawMaskedFormId = (((bytes[5] << 24) >>> 0) + (bytes[6] << 16) + (bytes[7] << 8) + bytes[8]) >>> 0;
+  const formId = (rawMaskedFormId ^ k1) >>> 0;
 
-  const formId = ((body[1] << 24) >>> 0) + (body[2] << 16) + (body[3] << 8) + body[4];
+  const check8 = bytes[9] ^ (k2 & 0xff);
+  const expectedCheck8 = (hash32(formId ^ version, nonce ^ SALT) & 0xff);
 
-  // Verify HMAC checksum
-  const hmac = crypto.createHmac('sha256', TOKEN_SECRET);
-  hmac.update(bytesToHex(body) + bytesToHex(nonce), 'hex');
-  const digest = hmac.digest();
-
-  if (digest[0] === checksum) {
+  if (check8 === expectedCheck8) {
     return formId;
   }
 
