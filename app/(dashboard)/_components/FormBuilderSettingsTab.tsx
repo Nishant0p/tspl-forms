@@ -102,6 +102,11 @@ export default function FormBuilderSettingsTab({
       existingTheme?.extraAttributes?.primaryColor ||
       '#ea580c'
   );
+  const [textureBlur, setTextureBlur] = useState<number>(
+    typeof existingTheme?.extraAttributes?.textureBlur === 'number'
+      ? existingTheme.extraAttributes.textureBlur
+      : 0
+  );
   const [previewDark, setPreviewDark] = useState<boolean>(false);
 
   // 3. Schedule & Availability
@@ -176,6 +181,7 @@ export default function FormBuilderSettingsTab({
           themeId: selectedThemeId,
           primaryColor,
           textureStyle: selectedThemeId,
+          textureBlur,
           customHex,
         };
 
@@ -256,6 +262,7 @@ export default function FormBuilderSettingsTab({
           themeId: selectedThemeId,
           primaryColor,
           textureStyle: selectedThemeId,
+          textureBlur,
           customHex,
         };
 
@@ -305,7 +312,7 @@ export default function FormBuilderSettingsTab({
   };
 
   const currentThemePreset = getThemeById(selectedThemeId);
-  const previewBgStyles = getFormBackgroundStyle(selectedThemeId, primaryColor);
+  const previewBgStyles = getFormBackgroundStyle(selectedThemeId, primaryColor, textureBlur);
 
   return (
     <div className="w-full max-w-3xl mx-auto py-6 px-4 space-y-6">
@@ -526,6 +533,63 @@ export default function FormBuilderSettingsTab({
               </div>
             </div>
 
+            {/* Background Texture Blur Controller */}
+            <div className="space-y-3 pt-3 border-t">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                    <span>Background Texture Blur Intensity</span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
+                      {textureBlur === 0 ? 'Sharp (0px)' : `${textureBlur}px Blur`}
+                    </span>
+                  </Label>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Controls how softly blurred or frosted the background texture appears to respondents.
+                  </p>
+                </div>
+
+                {/* Quick Blur Presets */}
+                <div className="flex items-center gap-1 shrink-0">
+                  {[
+                    { label: 'Sharp', val: 0 },
+                    { label: 'Subtle', val: 2 },
+                    { label: 'Soft', val: 4 },
+                    { label: 'Heavy', val: 8 },
+                    { label: 'Dreamy', val: 12 },
+                  ].map((p) => (
+                    <button
+                      key={p.val}
+                      type="button"
+                      onClick={() => setTextureBlur(p.val)}
+                      className={cn(
+                        'px-2 py-0.5 rounded text-[10px] font-semibold transition-all border cursor-pointer',
+                        textureBlur === p.val
+                          ? 'bg-orange-500 text-white border-orange-500 shadow-2xs'
+                          : 'bg-muted/60 text-muted-foreground hover:text-foreground border-border/70 hover:bg-muted'
+                      )}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Range Slider */}
+              <div className="flex items-center gap-3 pt-1">
+                <span className="text-[10px] font-medium text-muted-foreground shrink-0">0px (Sharp)</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={16}
+                  step={1}
+                  value={textureBlur}
+                  onChange={(e) => setTextureBlur(Number(e.target.value))}
+                  className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-orange-500"
+                />
+                <span className="text-[10px] font-medium text-muted-foreground shrink-0">16px (Heavy)</span>
+              </div>
+            </div>
+
             {/* REALISTIC LIVE PREVIEW IN SETTING TAB */}
             <div className="rounded-xl border border-border/80 bg-muted/20 p-4 space-y-3">
               <div className="flex items-center justify-between">
@@ -537,6 +601,11 @@ export default function FormBuilderSettingsTab({
                   <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-md border">
                     {currentThemePreset.name}
                   </span>
+                  {textureBlur > 0 && (
+                    <span className="text-[10px] text-orange-600 dark:text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20 font-mono">
+                      {textureBlur}px blur
+                    </span>
+                  )}
                 </div>
 
                 {/* Light / Dark Mode Mockup Preview Toggle */}
@@ -576,10 +645,21 @@ export default function FormBuilderSettingsTab({
                   'rounded-xl border overflow-hidden p-4 sm:p-6 transition-all relative min-h-[300px] flex items-center justify-center',
                   previewDark ? 'dark' : ''
                 )}
-                style={previewBgStyles.containerStyle}
               >
-                {/* Texture Tint Overlay if applicable */}
-                <div className={cn('absolute inset-0 pointer-events-none', previewBgStyles.overlayClass)} />
+                {/* Blurred Background Texture Layer */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                  <div
+                    className="absolute inset-0 transition-all duration-300"
+                    style={{
+                      ...previewBgStyles.containerStyle,
+                      filter: previewBgStyles.blurPx ? `blur(${previewBgStyles.blurPx}px)` : undefined,
+                      transform: previewBgStyles.blurPx ? 'scale(1.08)' : undefined,
+                    }}
+                  />
+                  {previewBgStyles.overlayClass && (
+                    <div className={cn('absolute inset-0', previewBgStyles.overlayClass)} />
+                  )}
+                </div>
 
                 {/* Form Card in Preview */}
                 <div className="relative z-10 w-full max-w-md bg-card text-card-foreground rounded-xl border border-border shadow-lg overflow-hidden space-y-3">

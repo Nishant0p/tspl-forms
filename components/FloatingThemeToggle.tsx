@@ -3,13 +3,24 @@
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 export default function FloatingThemeToggle() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
+
+  // Hide theme toggle for end users filling out forms or viewing shared responses
+  if (
+    pathname?.startsWith('/form/') ||
+    pathname?.startsWith('/submit/') ||
+    pathname?.startsWith('/responses/')
+  ) {
+    return null;
+  }
 
   const isDark = theme === 'dark';
 

@@ -32,8 +32,9 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
   const themeElement = content.find((el) => el.type === 'ThemeField');
   const themeId = themeElement?.extraAttributes?.themeId || 'orange-waves';
   const customPrimary = themeElement?.extraAttributes?.primaryColor;
+  const textureBlur = themeElement?.extraAttributes?.textureBlur ?? 0;
   const themePreset = getThemeById(themeId);
-  const bgStyles = getFormBackgroundStyle(themeId, customPrimary);
+  const bgStyles = getFormBackgroundStyle(themeId, customPrimary, textureBlur);
   const primaryColor = customPrimary || themePreset.primaryColor;
 
   // Extract BannerField to display at the very top above the form header card
@@ -172,12 +173,21 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
           'flex min-h-screen w-full items-start justify-center p-4 sm:p-8 google-form-container relative transition-colors',
           bgStyles.isDarkTheme ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-100 dark:bg-slate-950'
         )}
-        style={bgStyles.containerStyle}
       >
-        {/* Background Texture Overlay */}
-        {bgStyles.overlayClass && (
-          <div className={cn('fixed inset-0 pointer-events-none z-0', bgStyles.overlayClass)} />
-        )}
+        {/* Background Texture with isolated blur layer */}
+        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+          <div
+            className="absolute inset-0 transition-all duration-300"
+            style={{
+              ...bgStyles.containerStyle,
+              filter: bgStyles.blurPx ? `blur(${bgStyles.blurPx}px)` : undefined,
+              transform: bgStyles.blurPx ? 'scale(1.06)' : undefined,
+            }}
+          />
+          {bgStyles.overlayClass && (
+            <div className={cn('absolute inset-0', bgStyles.overlayClass)} />
+          )}
+        </div>
 
         <div
           key={renderKey}
@@ -266,12 +276,21 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
         'flex min-h-screen w-full items-start justify-center p-4 sm:p-8 google-form-container relative transition-colors',
         bgStyles.isDarkTheme ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-100 dark:bg-slate-950'
       )}
-      style={bgStyles.containerStyle}
     >
-      {/* Background Texture Overlay */}
-      {bgStyles.overlayClass && (
-        <div className={cn('fixed inset-0 pointer-events-none z-0', bgStyles.overlayClass)} />
-      )}
+      {/* Background Texture with isolated blur layer */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div
+          className="absolute inset-0 transition-all duration-300"
+          style={{
+            ...bgStyles.containerStyle,
+            filter: bgStyles.blurPx ? `blur(${bgStyles.blurPx}px)` : undefined,
+            transform: bgStyles.blurPx ? 'scale(1.06)' : undefined,
+          }}
+        />
+        {bgStyles.overlayClass && (
+          <div className={cn('absolute inset-0', bgStyles.overlayClass)} />
+        )}
+      </div>
 
       <div key={renderKey} className="relative z-10 flex w-full max-w-[640px] flex-col gap-4 py-2 sm:py-4">
         {/* Top Banner Card (Above Form Header) - 100% width on all phones */}

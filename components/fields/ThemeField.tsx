@@ -13,6 +13,7 @@ const extraAttributes = {
   themeId: 'orange-waves',
   primaryColor: '#ea580c',
   textureStyle: 'orange-waves',
+  textureBlur: 0,
   customHex: '',
 };
 

@@ -17,6 +17,7 @@ export interface FormThemeConfig {
   themeId: string;
   primaryColor: string;
   textureStyle?: string;
+  textureBlur?: number;
   customHex?: string;
 }
 
@@ -125,6 +126,7 @@ export const DEFAULT_FORM_THEME: FormThemeConfig = {
   themeId: 'orange-waves',
   primaryColor: '#ea580c',
   textureStyle: 'orange-waves',
+  textureBlur: 0,
 };
 
 export function getThemeById(themeId?: string): FormThemePreset {
@@ -136,17 +138,33 @@ export function getThemeById(themeId?: string): FormThemePreset {
 /**
  * Returns background styles (images, overlays, SVG wave ribbons) for the form submission view
  */
-export function getFormBackgroundStyle(themeId: string, customPrimary?: string): {
+export function getFormBackgroundStyle(
+  themeId: string,
+  customPrimary?: string,
+  textureBlur: number = 0
+): {
   containerStyle: React.CSSProperties;
   overlayStyle?: React.CSSProperties;
   overlayClass?: string;
   hasTextureImage?: boolean;
   textureImageUrl?: string;
   isDarkTheme?: boolean;
+  blurPx: number;
 } {
+  const blurPx = Math.max(0, Math.min(24, textureBlur || 0));
+
+  let res: {
+    containerStyle: React.CSSProperties;
+    overlayStyle?: React.CSSProperties;
+    overlayClass?: string;
+    hasTextureImage?: boolean;
+    textureImageUrl?: string;
+    isDarkTheme?: boolean;
+  };
+
   switch (themeId) {
     case 'orange-waves':
-      return {
+      res = {
         containerStyle: {
           backgroundImage: "url('/orange-wavey-lines-abstract-background-vector.jpg')",
           backgroundSize: 'cover',
@@ -158,9 +176,10 @@ export function getFormBackgroundStyle(themeId: string, customPrimary?: string):
         hasTextureImage: true,
         textureImageUrl: '/orange-wavey-lines-abstract-background-vector.jpg',
       };
+      break;
 
     case 'blue-curves':
-      return {
+      res = {
         containerStyle: {
           backgroundImage: "url('/pngtree-elegant-sinuous-blue-lines-flowing-on-a-black-background-with-a-picture-image_15293786.jpg.png')",
           backgroundSize: 'cover',
@@ -172,9 +191,10 @@ export function getFormBackgroundStyle(themeId: string, customPrimary?: string):
         hasTextureImage: true,
         textureImageUrl: '/pngtree-elegant-sinuous-blue-lines-flowing-on-a-black-background-with-a-picture-image_15293786.jpg.png',
       };
+      break;
 
     case 'sunset-curves':
-      return {
+      res = {
         containerStyle: {
           backgroundImage: `
             radial-gradient(ellipse at 15% 15%, rgba(234, 88, 12, 0.14) 0%, transparent 60%),
@@ -187,9 +207,10 @@ export function getFormBackgroundStyle(themeId: string, customPrimary?: string):
         },
         overlayClass: 'bg-transparent',
       };
+      break;
 
     case 'dark-blue-grid':
-      return {
+      res = {
         containerStyle: {
           backgroundColor: '#090d16',
           backgroundImage: `
@@ -203,9 +224,10 @@ export function getFormBackgroundStyle(themeId: string, customPrimary?: string):
         overlayClass: 'bg-transparent',
         isDarkTheme: true,
       };
+      break;
 
     case 'aurora-waves':
-      return {
+      res = {
         containerStyle: {
           backgroundImage: `
             radial-gradient(ellipse at 80% 10%, rgba(6, 182, 212, 0.14) 0%, transparent 55%),
@@ -218,9 +240,10 @@ export function getFormBackgroundStyle(themeId: string, customPrimary?: string):
         },
         overlayClass: 'bg-transparent',
       };
+      break;
 
     case 'amber-curves':
-      return {
+      res = {
         containerStyle: {
           backgroundImage: `
             radial-gradient(circle at 10% 20%, rgba(245, 158, 11, 0.15) 0%, transparent 50%),
@@ -233,12 +256,19 @@ export function getFormBackgroundStyle(themeId: string, customPrimary?: string):
         },
         overlayClass: 'bg-transparent',
       };
+      break;
 
     case 'minimal-clean':
     default:
-      return {
+      res = {
         containerStyle: {},
         overlayClass: '',
       };
+      break;
   }
+
+  return {
+    ...res,
+    blurPx,
+  };
 }
