@@ -3,6 +3,7 @@ import { Toaster } from '@/components/ui/toaster';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import NextTopLoader from 'nextjs-toploader';
+import FloatingThemeToggle from '@/components/FloatingThemeToggle';
 
 import './globals.css';
 import { cn } from '@/lib/utils';
@@ -43,6 +44,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange>
           {children}
+          <FloatingThemeToggle />
           <Toaster />
         </ThemeProvider>
       </body>

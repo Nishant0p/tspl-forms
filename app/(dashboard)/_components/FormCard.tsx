@@ -30,8 +30,13 @@ function FormMiniPreview({ contentJson, formName }: { contentJson: string; formN
 
   // Filter banner if present to show at very top of mini sheet
   const bannerEl = elements.find((el) => el.type === 'BannerField');
-  const normalElements = elements.filter((el) => el.type !== 'BannerField' && el.type !== 'ThankYouField');
+  const themeEl = elements.find((el) => el.type === 'ThemeField');
+  const normalElements = elements.filter(
+    (el) => el.type !== 'BannerField' && el.type !== 'ThankYouField' && el.type !== 'ThemeField'
+  );
   const previewElements = normalElements.slice(0, 4); // Show up to 4 fields in mini scaled preview
+
+  const primaryColor = themeEl?.extraAttributes?.primaryColor;
 
   return (
     <div className="relative h-[115px] sm:h-[132px] w-full bg-gradient-to-br from-primary/10 via-muted/40 to-orange-500/10 border-b p-2 sm:p-2.5 flex flex-col justify-start gap-1 overflow-hidden group-hover:border-primary/30 transition-colors">
@@ -42,7 +47,7 @@ function FormMiniPreview({ contentJson, formName }: { contentJson: string; formN
           Mini Preview
         </span>
         <span className="text-[9px] text-muted-foreground font-mono font-medium bg-background/70 px-1.5 py-0.5 rounded-full border border-border/40">
-          {elements.length} {elements.length === 1 ? 'field' : 'fields'}
+          {normalElements.length} {normalElements.length === 1 ? 'field' : 'fields'}
         </span>
       </div>
 
@@ -56,6 +61,11 @@ function FormMiniPreview({ contentJson, formName }: { contentJson: string; formN
               src={bannerEl.extraAttributes.imageUrl}
               alt="Banner"
               className="h-3 w-full object-cover shrink-0"
+            />
+          ) : primaryColor ? (
+            <div
+              style={{ backgroundColor: primaryColor }}
+              className="h-1.5 w-full shrink-0"
             />
           ) : (
             <div className="h-1 w-full bg-gradient-to-r from-primary via-blue-500 to-orange-500 shrink-0" />
@@ -180,7 +190,7 @@ function FormMiniPreview({ contentJson, formName }: { contentJson: string; formN
   );
 }
 
-export default function FormCard({ form }: { form: Form }) {
+export default function FormCard({ form, isAdmin = false }: { form: Form; isAdmin?: boolean }) {
   const userName = (form as any).user?.name || (form as any).createdByName || (form as any).userId || 'User';
 
   return (
@@ -256,7 +266,7 @@ export default function FormCard({ form }: { form: Form }) {
                 </span>
               </div>
               <div className="flex w-full items-center justify-end gap-1.5">
-                <FormCollaboratorsModal formId={form.id} formName={form.name} shareUrl={form.shareUrl} iconOnly />
+                {isAdmin && <FormCollaboratorsModal formId={form.id} formName={form.name} shareUrl={form.shareUrl} iconOnly />}
                 <DeleteFormBtn formId={form.id} formName={form.name} iconOnly />
               </div>
             </div>
@@ -277,7 +287,7 @@ export default function FormCard({ form }: { form: Form }) {
                   Edit Form <Edit className="h-4 w-4" />
                 </Link>
               </Button>
-              <FormCollaboratorsModal formId={form.id} formName={form.name} shareUrl={form.shareUrl} iconOnly />
+              {isAdmin && <FormCollaboratorsModal formId={form.id} formName={form.name} shareUrl={form.shareUrl} iconOnly />}
               <DeleteFormBtn formId={form.id} formName={form.name} iconOnly />
             </div>
           </div>
@@ -286,4 +296,3 @@ export default function FormCard({ form }: { form: Form }) {
     </Card>
   );
 }
-

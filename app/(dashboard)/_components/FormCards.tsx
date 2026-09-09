@@ -1,10 +1,14 @@
 import { GetForm } from '@/app/actions/form';
+import { getCurrentUser, isSuperAdmin as checkSuperAdmin } from '@/lib/auth';
 import React from 'react';
 import FormCard from './FormCard';
 
 export default async function FormCards() {
   try {
     const formsList = await GetForm();
+    const user = await getCurrentUser();
+    const superAdmin = await checkSuperAdmin();
+    const isAdmin = user?.role === 'ADMIN' || superAdmin;
 
     if (!formsList || formsList.length === 0) {
       return (
@@ -26,6 +30,7 @@ export default async function FormCards() {
           <FormCard
             key={f.id}
             form={f}
+            isAdmin={isAdmin}
           />
         ))}
       </>

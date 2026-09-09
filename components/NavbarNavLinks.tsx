@@ -37,8 +37,8 @@ export default function NavbarNavLinks({
     cn(
       'flex items-center gap-3 rounded-lg px-3.5 py-3 text-sm font-medium transition-colors',
       isActive
-        ? 'bg-primary/10 font-semibold text-primary dark:bg-primary/20'
-        : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+        ? 'bg-white/20 font-semibold text-white'
+        : 'text-white/70 hover:bg-white/10 hover:text-white'
     );
 
   return (
@@ -50,8 +50,8 @@ export default function NavbarNavLinks({
         className={cn(
           'group relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-sm sm:text-base font-medium transition-all duration-200 rounded-md',
           isDashboardActive
-            ? 'text-primary font-semibold bg-primary/10 dark:bg-primary/20'
-            : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+            ? 'text-white font-semibold bg-white/20'
+            : 'text-white/80 hover:text-white hover:bg-white/10'
         )}
       >
         <LayoutDashboard className="h-4 w-4 shrink-0" />
@@ -66,18 +66,18 @@ export default function NavbarNavLinks({
         />
       </Link>
 
-      {!isFormViewer && (
+      {isAdmin && (
         <Link
           href="/employees"
           className={cn(
             'group relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-sm sm:text-base font-medium transition-all duration-200 rounded-md',
             isEmployeesActive
-              ? 'text-primary font-semibold bg-primary/10 dark:bg-primary/20'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+              ? 'text-white font-semibold bg-white/20'
+              : 'text-white/80 hover:text-white hover:bg-white/10'
           )}
         >
           <Users className="h-4 w-4 shrink-0" />
-          <span className="hidden sm:inline">User</span>
+          <span className="hidden sm:inline">Users</span>
           <span
             className={cn(
               'absolute bottom-0 left-2 right-2 h-[2.5px] rounded-full transition-all duration-300',
@@ -89,14 +89,14 @@ export default function NavbarNavLinks({
         </Link>
       )}
 
-      {/* Requests (Available to everyone) */}
+      {/* Requests */}
       <Link
         href="/form-requests"
         className={cn(
           'group relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-sm sm:text-base font-medium transition-all duration-200 rounded-md',
           isRequestsActive
-            ? 'text-primary font-semibold bg-primary/10 dark:bg-primary/20'
-            : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+            ? 'text-white font-semibold bg-white/20'
+            : 'text-white/80 hover:text-white hover:bg-white/10'
         )}
       >
         <FileText className="h-4 w-4 shrink-0" />
@@ -118,8 +118,8 @@ export default function NavbarNavLinks({
           className={cn(
             'group relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-sm sm:text-base font-bold transition-all duration-200 rounded-md',
             isAdminActive
-              ? 'text-blue-600 dark:text-blue-400 bg-blue-500/15 dark:bg-blue-500/25'
-              : 'text-blue-600/80 dark:text-blue-400/80 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-500/10'
+              ? 'text-sky-300 bg-sky-400/20'
+              : 'text-sky-300/80 hover:text-sky-300 hover:bg-sky-400/10'
           )}
         >
           <ShieldCheck className="h-4 w-4 shrink-0" />
@@ -142,8 +142,8 @@ export default function NavbarNavLinks({
           className={cn(
             'group relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-sm sm:text-base font-bold transition-all duration-200 rounded-md',
             isSuperAdminActive
-              ? 'text-purple-600 dark:text-purple-400 bg-purple-500/15 dark:bg-purple-500/25'
-              : 'text-purple-600/80 dark:text-purple-400/80 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-500/10'
+              ? 'text-purple-300 bg-purple-400/20'
+              : 'text-purple-300/80 hover:text-purple-300 hover:bg-purple-400/10'
           )}
         >
           <ShieldCheck className="h-4 w-4 shrink-0" />
@@ -183,14 +183,14 @@ export default function NavbarNavLinks({
             {isFormViewer ? 'My Form' : 'Dashboard'}
           </Link>
 
-          {!isFormViewer && (
+          {isAdmin && (
             <Link
               href="/employees"
               className={mobileLinkClass(isEmployeesActive)}
               onClick={() => setIsMobileMenuOpen(false)}
             >
               <Users className="h-4 w-4 shrink-0" />
-              User
+              Users
             </Link>
           )}
 

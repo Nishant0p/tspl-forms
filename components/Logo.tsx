@@ -7,9 +7,9 @@ export default function Logo() {
       <Image
         src="/image.png"
         alt="TSPL Group"
-        width={160}
-        height={64}
-        className="h-9 sm:h-12 w-auto object-contain"
+        width={200}
+        height={80}
+        className="h-11 sm:h-16 w-auto object-contain drop-shadow-sm"
         priority
       />
     </Link>

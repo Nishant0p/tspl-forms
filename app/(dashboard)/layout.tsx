@@ -10,7 +10,7 @@ export default async function DashboardLayout({ children }: PropsWithChildren) {
   return (
     <>
       <Navbar />
-      <div className="flex min-h-[calc(100vh-64px)] w-full max-w-full flex-col bg-background overflow-x-hidden">
+      <div className="flex min-h-[calc(100vh-64px)] w-full max-w-full flex-col overflow-x-hidden relative z-[1]">
         <main className="flex w-full grow">{children}</main>
       </div>
     </>

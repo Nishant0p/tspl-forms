@@ -88,6 +88,76 @@ export async function GetFormStats() {
   };
 }
 
+/**
+ * Returns real per-day counts for the last N days (default 7) for sparklines.
+ * submissionsPerDay  — from FormSubmissions.submittedAt
+ * visitsPerDay       — estimated: total visits spread weighted by submission activity
+ * conversionPerDay   — submissions / estimated visits * 100
+ * bouncePerDay       — 100 - conversionPerDay
+ */
+export async function GetDashboardSparklineData(days = 7) {
+  const user = await getCurrentUser();
+  if (!user) return null;
+
+  // Build an array of the last `days` date strings "YYYY-MM-DD"
+  const dateLabels: string[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    dateLabels.push(d.toISOString().slice(0, 10));
+  }
+
+  const since = new Date();
+  since.setDate(since.getDate() - (days - 1));
+  since.setHours(0, 0, 0, 0);
+
+  // Real submission counts grouped by day
+  const rawSubmissions = await prisma.formSubmissions.findMany({
+    where: { submittedAt: { gte: since } },
+    select: { submittedAt: true },
+  });
+
+  const submissionMap: Record<string, number> = {};
+  for (const s of rawSubmissions) {
+    const key = s.submittedAt.toISOString().slice(0, 10);
+    submissionMap[key] = (submissionMap[key] || 0) + 1;
+  }
+
+  // Total visits & submissions for ratio
+  const totals = await prisma.form.aggregate({
+    _sum: { visits: true, submissions: true },
+  });
+  const totalVisits = totals._sum.visits || 0;
+  const totalSubs = totals._sum.submissions || 0;
+  const globalRatio = totalSubs > 0 && totalVisits > 0 ? totalVisits / totalSubs : 2;
+
+  const submissionsPerDay: number[] = [];
+  const visitsPerDay: number[] = [];
+  const conversionPerDay: number[] = [];
+  const bouncePerDay: number[] = [];
+
+  for (const label of dateLabels) {
+    const subs = submissionMap[label] || 0;
+    // Estimate visits = subs * global visit/submission ratio (floored to integer)
+    const visits = Math.round(subs * globalRatio);
+    const conversion = visits > 0 ? parseFloat(((subs / visits) * 100).toFixed(1)) : 0;
+    const bounce = parseFloat((100 - conversion).toFixed(1));
+
+    submissionsPerDay.push(subs);
+    visitsPerDay.push(visits);
+    conversionPerDay.push(conversion);
+    bouncePerDay.push(bounce);
+  }
+
+  return {
+    labels: dateLabels,
+    submissionsPerDay,
+    visitsPerDay,
+    conversionPerDay,
+    bouncePerDay,
+  };
+}
+
 export async function GetActiveBranches() {
   return await prisma.branch.findMany({
     where: { active: true },
