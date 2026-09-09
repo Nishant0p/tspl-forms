@@ -26,8 +26,9 @@ export default function PreviewDialogBtn({
 
   const themeId = themeElement?.extraAttributes?.themeId || 'orange-waves';
   const customPrimary = themeElement?.extraAttributes?.primaryColor;
+  const textureBlur = themeElement?.extraAttributes?.textureBlur ?? 0;
   const themePreset = getThemeById(themeId);
-  const bgStyles = getFormBackgroundStyle(themeId, customPrimary);
+  const bgStyles = getFormBackgroundStyle(themeId, customPrimary, textureBlur);
   const primaryColor = customPrimary || themePreset.primaryColor;
 
   const questionsContent = elements.filter(
@@ -74,12 +75,21 @@ export default function PreviewDialogBtn({
             'w-full grow overflow-y-auto google-form-container p-4 sm:p-8 relative transition-colors',
             bgStyles.isDarkTheme ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-100 dark:bg-slate-950'
           )}
-          style={bgStyles.containerStyle}
         >
-          {/* Background Texture Overlay */}
-          {bgStyles.overlayClass && (
-            <div className={cn('fixed inset-0 pointer-events-none z-0', bgStyles.overlayClass)} />
-          )}
+          {/* Background Texture with isolated blur layer */}
+          <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+            <div
+              className="absolute inset-0 transition-all duration-300"
+              style={{
+                ...bgStyles.containerStyle,
+                filter: bgStyles.blurPx ? `blur(${bgStyles.blurPx}px)` : undefined,
+                transform: bgStyles.blurPx ? 'scale(1.06)' : undefined,
+              }}
+            />
+            {bgStyles.overlayClass && (
+              <div className={cn('absolute inset-0', bgStyles.overlayClass)} />
+            )}
+          </div>
 
           <div className="mx-auto relative z-10 flex w-full max-w-[640px] flex-col gap-4 pb-12">
             
