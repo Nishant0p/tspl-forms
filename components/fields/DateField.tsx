@@ -200,13 +200,15 @@ function DesignerComponent({
         {label}
         {required && <span className="ml-2 text-red-500 font-bold">*</span>}
       </Label>
-      <Button
-        variant={'outline'}
-        className="w-full justify-start text-left font-normal h-11 px-3.5 border-border rounded-xl pointer-events-none bg-background shadow-xs"
-      >
-        <CalendarIcon className="mr-2.5 h-4 w-4 text-foreground/70 shrink-0" />
-        <span className="text-muted-foreground">Select date (Calendar & Year Picker)</span>
-      </Button>
+      <div className="relative flex items-center w-full">
+        <Button
+          variant={'outline'}
+          className="w-full justify-start text-left font-normal h-11 pl-3.5 pr-10 border-border rounded-xl pointer-events-none bg-background shadow-xs text-sm"
+        >
+          <CalendarIcon className="mr-2.5 h-4 w-4 text-foreground/70 shrink-0" />
+          <span className="text-muted-foreground truncate">Select date (DD/MM/YYYY)</span>
+        </Button>
+      </div>
       {helperText && (
         <p className="text-[.8rem] text-muted-foreground">{helperText}</p>
       )}
@@ -297,6 +299,7 @@ function FormComponent({
 
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     setDate(undefined);
     const valid = DateFieldFormElement.validate(element, '');
     setError(!valid);
@@ -311,13 +314,13 @@ function FormComponent({
       </Label>
 
       <Popover open={open} onOpenChange={setOpen}>
-        <div className="flex items-center gap-2">
+        <div className="relative flex items-center w-full">
           <PopoverTrigger asChild>
             <Button
               type="button"
               variant="outline"
               className={cn(
-                "w-full justify-start text-left font-normal h-11 px-3.5 border-border rounded-xl bg-background transition-all shadow-xs",
+                "w-full justify-start text-left font-normal h-11 pl-3.5 pr-10 border-border rounded-xl bg-background transition-all shadow-xs overflow-hidden",
                 !date && "text-muted-foreground",
                 error && "border-red-500 ring-1 ring-red-500",
                 open && "border-foreground ring-1 ring-foreground/20"
@@ -325,31 +328,32 @@ function FormComponent({
             >
               <CalendarIcon className="mr-2.5 h-4 w-4 text-foreground/70 shrink-0" />
               {date ? (
-                <span className="font-semibold text-foreground truncate">
-                  {format(date, "dd/MM/yyyy")} &mdash; {format(date, "EEE, MMM d, yyyy")}
+                <span className="font-semibold text-foreground truncate text-sm">
+                  {format(date, "dd/MM/yyyy")}
+                  <span className="text-muted-foreground font-normal hidden sm:inline"> &mdash; </span>
+                  <span className="font-medium hidden sm:inline">{format(date, "EEE, MMM d, yyyy")}</span>
                 </span>
               ) : (
-                <span>Pick a date (Click to open calendar)</span>
+                <span className="truncate text-sm">Pick a date</span>
               )}
             </Button>
           </PopoverTrigger>
 
           {date && (
-            <Button
+            <button
               type="button"
-              variant="ghost"
-              size="sm"
               onClick={handleClear}
-              className="h-10 px-2 text-xs text-muted-foreground hover:text-red-500 shrink-0"
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-muted/80 active:scale-95 transition-all z-10 cursor-pointer"
               title="Clear date"
+              aria-label="Clear date"
             >
               <X className="h-4 w-4" />
-            </Button>
+            </button>
           )}
         </div>
 
         <PopoverContent
-          className="w-auto p-3 z-50 bg-card text-card-foreground border border-border shadow-2xl rounded-2xl"
+          className="w-auto max-w-[calc(100vw-32px)] p-3 z-50 bg-card text-card-foreground border border-border shadow-2xl rounded-2xl"
           align="start"
         >
           {/* Year & Month Choose Option Header */}
@@ -359,7 +363,7 @@ function FormComponent({
               value={String(currentMonth.getMonth())}
               onValueChange={handleMonthChange}
             >
-              <SelectTrigger className="h-8 text-xs font-semibold flex-1 min-w-[110px] rounded-lg">
+              <SelectTrigger className="h-8 text-xs font-semibold flex-1 min-w-[90px] rounded-lg">
                 <SelectValue placeholder="Month" />
               </SelectTrigger>
               <SelectContent className="max-h-56 z-50">
@@ -421,6 +425,12 @@ function FormComponent({
           </div>
         </PopoverContent>
       </Popover>
+
+      {helperText && (
+        <p className={cn("text-[.8rem] text-muted-foreground", error && "text-red-500")}>
+          {helperText}
+        </p>
+      )}
     </div>
   );
 }
