@@ -83,6 +83,8 @@ function FormMiniPreview({ contentJson }: { contentJson: string }) {
 }
 
 export default function FormCard({ form }: { form: Form }) {
+  const userName = (form as any).user?.name || (form as any).createdByName || (form as any).userId || 'User';
+
   return (
     <Card className="min-h-[260px] flex flex-col justify-between overflow-hidden group hover:shadow-md transition-shadow rounded-xl">
       <div>
@@ -148,9 +150,14 @@ export default function FormCard({ form }: { form: Form }) {
                 </Link>
               </Button>
             </div>
-            <div className="flex w-full items-center justify-between gap-2 pt-2 border-t border-border/60">
-              <span className="text-[11px] text-muted-foreground font-medium">Actions</span>
-              <div className="flex items-center gap-1.5">
+            <div className="flex flex-col w-full gap-1.5 pt-2 border-t border-border/60">
+              <div className="flex w-full items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                <span className="text-[11px] font-medium text-muted-foreground">Actions</span>
+                <span className="text-[11px] text-muted-foreground truncate text-right max-w-[190px]" title={`created by ${userName}`}>
+                  created by <span className="font-semibold text-foreground/90">{userName}</span>
+                </span>
+              </div>
+              <div className="flex w-full items-center justify-end gap-1.5">
                 <FormCollaboratorsModal formId={form.id} formName={form.name} iconOnly />
                 <DeleteFormBtn formId={form.id} formName={form.name} iconOnly />
               </div>
@@ -158,16 +165,23 @@ export default function FormCard({ form }: { form: Form }) {
           </>
         )}
         {!form.published && (
-          <div className="flex w-full items-center gap-2">
-            <Button
-              asChild
-              className="flex-1 min-h-[38px] gap-2 text-xs sm:text-sm font-semibold text-zinc-50">
-              <Link href={`/builder/${form.id}`}>
-                Edit Form <Edit className="h-4 w-4" />
-              </Link>
-            </Button>
-            <FormCollaboratorsModal formId={form.id} formName={form.name} iconOnly />
-            <DeleteFormBtn formId={form.id} formName={form.name} iconOnly />
+          <div className="flex flex-col w-full gap-1.5">
+            <div className="flex w-full items-center justify-end text-[11px] text-muted-foreground">
+              <span className="truncate text-right max-w-[200px]" title={`created by ${userName}`}>
+                created by <span className="font-semibold text-foreground/90">{userName}</span>
+              </span>
+            </div>
+            <div className="flex w-full items-center gap-2">
+              <Button
+                asChild
+                className="flex-1 min-h-[38px] gap-2 text-xs sm:text-sm font-semibold text-zinc-50">
+                <Link href={`/builder/${form.id}`}>
+                  Edit Form <Edit className="h-4 w-4" />
+                </Link>
+              </Button>
+              <FormCollaboratorsModal formId={form.id} formName={form.name} iconOnly />
+              <DeleteFormBtn formId={form.id} formName={form.name} iconOnly />
+            </div>
           </div>
         )}
       </CardFooter>
