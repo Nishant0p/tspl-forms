@@ -17,7 +17,7 @@ import { Textarea } from '../ui/textarea';
 import { cn } from '@/lib/utils';
 
 const type: ElementsType = 'RatingField';
-const extraAttributes = { label: 'Rating Field', helperText: 'Helper Text', required: false, maxRating: 5 };
+const extraAttributes = { label: 'Rating Field', helperText: '', required: false, maxRating: 5 };
 const propertiesSchema = z.object({ label: z.string().min(2).max(50), helperText: z.string().max(200), required: z.boolean().default(false), maxRating: z.number().min(3).max(10) });
 
 export const RatingFieldFormElement: FormElement = {
@@ -54,5 +54,5 @@ function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValu
   const [error, setError] = useState(false);
   useEffect(() => { setError(isInvalid === true); }, [isInvalid]);
   const { label, helperText, required, maxRating } = element.extraAttributes;
-  return <div className="flex w-full flex-col gap-2"><Label className={cn('mr-2 text-foreground', error && 'text-red-500')}>{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><div className="flex gap-2">{Array.from({ length: maxRating }).map((_, index) => { const ratingValue = String(index + 1); return <Button key={ratingValue} type="button" variant={Number(value) >= index + 1 ? 'default' : 'outline'} className="h-10 w-10 p-0" onClick={() => { setValue(ratingValue); if (!submitFunction) return; const valid = RatingFieldFormElement.validate(element, ratingValue); setError(!valid); submitFunction(element.id, ratingValue); }}><Star className="h-4 w-4" /></Button>; })}</div>{helperText && <p className={cn('text-[.8rem] text-muted-foreground', error && 'text-rose-500')}>{helperText}</p>}</div>;
+  return <div className="flex w-full flex-col gap-2"><Label className={cn('mr-2 text-foreground', error && 'text-red-500')}>{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><div className="flex gap-2">{Array.from({ length: maxRating }).map((_, index) => { const ratingValue = String(index + 1); return <Button key={ratingValue} type="button" variant={Number(value) >= index + 1 ? 'default' : 'outline'} className="h-10 w-10 p-0" onClick={() => { setValue(ratingValue); if (!submitFunction) return; const valid = RatingFieldFormElement.validate(element, ratingValue); setError(!valid); submitFunction(element.id, ratingValue); }}><Star className="h-4 w-4" /></Button>; })}</div></div>;
 }

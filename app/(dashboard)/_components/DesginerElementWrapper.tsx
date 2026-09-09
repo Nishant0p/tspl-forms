@@ -689,32 +689,36 @@ export default function DesginerElementWrapper({
               <Trash2 className="h-4 w-4" />
             </Button>
 
-            <div className="h-5 w-[1px] bg-border mx-1.5" />
+            {element.type !== 'TitleField' && 'required' in (element.extraAttributes || {}) && (
+              <>
+                <div className="h-5 w-[1px] bg-border mx-1.5" />
 
-            <div className="inline-flex items-center gap-2.5">
-              <Label
-                htmlFor={`req-${element.id}`}
-                className="cursor-pointer text-xs font-medium text-foreground select-none leading-none inline-flex items-center m-0 p-0"
-              >
-                Required
-              </Label>
-              <Switch
-                id={`req-${element.id}`}
-                checked={Boolean(element.extraAttributes?.required)}
-                className="data-[state=checked]:bg-foreground data-[state=checked]:text-background scale-90 my-auto"
-                onCheckedChange={(checked) => {
-                  const updated = {
-                    ...element,
-                    extraAttributes: {
-                      ...element.extraAttributes,
-                      required: checked,
-                    },
-                  };
-                  updateElement(element.id, updated);
-                  setSelectedElement(updated);
-                }}
-              />
-            </div>
+                <div className="inline-flex items-center gap-2.5">
+                  <Label
+                    htmlFor={`req-${element.id}`}
+                    className="cursor-pointer text-xs font-medium text-foreground select-none leading-none inline-flex items-center m-0 p-0"
+                  >
+                    Required
+                  </Label>
+                  <Switch
+                    id={`req-${element.id}`}
+                    checked={Boolean(element.extraAttributes?.required)}
+                    className="data-[state=checked]:bg-foreground data-[state=checked]:text-background scale-90 my-auto"
+                    onCheckedChange={(checked) => {
+                      const updated = {
+                        ...element,
+                        extraAttributes: {
+                          ...element.extraAttributes,
+                          required: checked,
+                        },
+                      };
+                      updateElement(element.id, updated);
+                      setSelectedElement(updated);
+                    }}
+                  />
+                </div>
+              </>
+            )}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

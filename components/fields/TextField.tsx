@@ -31,7 +31,7 @@ const type: ElementsType = 'TextField';
 
 const extraAttributes = {
   label: 'Text Field',
-  helperText: 'Helper Text',
+  helperText: '',
   required: false,
   placeholder: 'Placeholder',
 };
@@ -250,9 +250,6 @@ function FormComponent({
           submitFunction(element.id, e.target.value)
         }}
       />
-      {helperText && (
-        <p className={cn("text-[.8rem] text-muted-foreground", error && ("text-rose-500"))}>{helperText}</p>
-      )}
     </div>
   );
 }

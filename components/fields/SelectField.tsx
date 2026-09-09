@@ -35,7 +35,7 @@ const type: ElementsType = 'SelectField';
 
 const extraAttributes = {
   label: 'Select Field',
-  helperText: 'Helper Text',
+  helperText: '',
   required: false,
   placeholder: 'Placeholder',
   options: [],
@@ -329,9 +329,6 @@ function FormComponent({
           ))}
         </SelectContent>
       </Select>
-      {helperText && (
-        <p className={cn("text-[.8rem] text-muted-foreground", error && ("text-rose-500"))}>{helperText}</p>
-      )}
     </div>
   );
 }
