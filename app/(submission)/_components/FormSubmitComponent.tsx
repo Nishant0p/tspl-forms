@@ -1,5 +1,3 @@
-'use client';
-
 import {
   FormElementInstance,
   FormElements,
@@ -10,6 +8,7 @@ import { toast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import { Loader, AlertCircle, CheckCircle2, PartyPopper, ExternalLink, Sparkles, ShieldAlert } from 'lucide-react';
 import { useRef, useState, useTransition, useEffect } from 'react';
+import { getThemeById, getFormBackgroundStyle } from '@/lib/form-themes';
 
 interface Props {
   formUrl: string;
@@ -27,11 +26,19 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
   const [pending, startTransition] = useTransition();
   const [answeredCount, setAnsweredCount] = useState<number>(0);
 
+  // Extract ThemeField if configured
+  const themeElement = content.find((el) => el.type === 'ThemeField');
+  const themeId = themeElement?.extraAttributes?.themeId || 'orange-waves';
+  const customPrimary = themeElement?.extraAttributes?.primaryColor;
+  const themePreset = getThemeById(themeId);
+  const bgStyles = getFormBackgroundStyle(themeId, customPrimary);
+  const primaryColor = customPrimary || themePreset.primaryColor;
+
   // Extract BannerField to display at the very top above the form header card
   const bannerElement = content.find((el) => el.type === 'BannerField');
   // Filter out layout/special elements during validation and question rendering
   const questionsContent = content.filter(
-    (el) => el.type !== 'ThankYouField' && el.type !== 'BannerField'
+    (el) => el.type !== 'ThankYouField' && el.type !== 'BannerField' && el.type !== 'ThemeField'
   );
 
   // Input questions only (exclude layout text / dividers)
@@ -158,11 +165,28 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
     const showBtn = extra.showRedirectButton ?? true;
 
     return (
-      <div className="flex min-h-screen w-full items-start justify-center p-4 sm:p-8 google-form-container bg-slate-100 dark:bg-slate-950">
+      <div
+        className={cn(
+          'flex min-h-screen w-full items-start justify-center p-4 sm:p-8 google-form-container relative transition-colors',
+          bgStyles.isDarkTheme ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-100 dark:bg-slate-950'
+        )}
+        style={bgStyles.containerStyle}
+      >
+        {/* Background Texture Overlay */}
+        {bgStyles.overlayClass && (
+          <div className={cn('fixed inset-0 pointer-events-none z-0', bgStyles.overlayClass)} />
+        )}
+
         <div
           key={renderKey}
-          className="flex w-full max-w-[640px] flex-col gap-6 google-form-header-card bg-card text-card-foreground p-0 rounded-2xl shadow-xl border border-border mt-6 sm:mt-10 overflow-hidden"
+          className="relative z-10 flex w-full max-w-[640px] flex-col gap-6 google-form-header-card bg-card text-card-foreground p-0 rounded-2xl shadow-xl border border-border mt-6 sm:mt-10 overflow-hidden"
         >
+          {/* Top Theme Accent Strip */}
+          <div
+            style={{ backgroundColor: primaryColor }}
+            className={cn('h-2.5 w-full bg-gradient-to-r', themePreset.gradientHeader)}
+          />
+
           <div className="p-6 sm:p-8 flex flex-col gap-6">
             {/* Custom Banner / Image if configured */}
             {customImageUrl && (
@@ -177,7 +201,10 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
             )}
 
             <div className="flex items-center gap-4 border-b border-border/80 pb-5">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted border border-border text-foreground shrink-0 shadow-xs">
+              <div
+                style={{ borderColor: `${primaryColor}40` }}
+                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted border text-foreground shrink-0 shadow-xs"
+              >
                 {customThankYou ? <PartyPopper className="h-6 w-6" /> : <CheckCircle2 className="h-6 w-6" />}
               </div>
               <div>
@@ -199,7 +226,11 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
                     href={customBtnUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-xl bg-foreground text-background hover:bg-foreground/90 px-6 py-2.5 text-sm font-semibold shadow-md transition-all"
+                    style={{ backgroundColor: primaryColor }}
+                    className={cn(
+                      'inline-flex items-center gap-2 rounded-xl text-white px-6 py-2.5 text-sm font-semibold shadow-md transition-all hover:opacity-90',
+                      themePreset.buttonClass
+                    )}
                   >
                     <span>{customBtnText}</span>
                     <ExternalLink className="h-4 w-4" />
@@ -228,8 +259,19 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
   }
 
   return (
-    <div className="flex min-h-screen w-full items-start justify-center p-4 sm:p-8 google-form-container bg-slate-100 dark:bg-slate-950">
-      <div key={renderKey} className="flex w-full max-w-[640px] flex-col gap-4 py-2 sm:py-4">
+    <div
+      className={cn(
+        'flex min-h-screen w-full items-start justify-center p-4 sm:p-8 google-form-container relative transition-colors',
+        bgStyles.isDarkTheme ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-100 dark:bg-slate-950'
+      )}
+      style={bgStyles.containerStyle}
+    >
+      {/* Background Texture Overlay */}
+      {bgStyles.overlayClass && (
+        <div className={cn('fixed inset-0 pointer-events-none z-0', bgStyles.overlayClass)} />
+      )}
+
+      <div key={renderKey} className="relative z-10 flex w-full max-w-[640px] flex-col gap-4 py-2 sm:py-4">
         {/* Top Banner Card (Above Form Header) - 100% width on all phones */}
         {bannerElement && (
           <div className="w-full overflow-hidden rounded-xl shadow-md border border-border/60">
@@ -242,6 +284,14 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
 
         {/* Google Form Header Card */}
         <div className="w-full bg-card text-card-foreground rounded-2xl border border-border shadow-md overflow-hidden google-form-header-card relative">
+          {/* Top Theme Accent Bar if no banner */}
+          {!bannerElement && (
+            <div
+              style={{ backgroundColor: primaryColor }}
+              className={cn('h-2.5 w-full bg-gradient-to-r', themePreset.gradientHeader)}
+            />
+          )}
+
           <div className="p-5 sm:p-7 flex flex-col gap-3">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3.5 pb-1 min-w-0 w-full">
               {/* Logo badge */}
@@ -265,19 +315,25 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
             <hr className="border-border my-1" />
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold text-red-500 dark:text-red-400">* Required</p>
-              <span className="text-[11px] font-medium text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full border border-border">
+              <span
+                style={{ borderColor: `${primaryColor}40` }}
+                className="text-[11px] font-semibold text-muted-foreground bg-muted/60 px-2.5 py-0.5 rounded-full border"
+              >
                 TSPL Form
               </span>
             </div>
           </div>
         </div>
 
-        {/* Dynamic Monochrome Progress Bar */}
+        {/* Dynamic Progress Bar */}
         {totalQuestions > 0 && (
           <div className="w-full bg-card p-3.5 sm:p-4 rounded-xl border border-border shadow-xs flex flex-col gap-2">
             <div className="flex items-center justify-between text-xs font-semibold">
               <span className="flex items-center gap-1.5 text-foreground">
-                <span className="h-2 w-2 rounded-full bg-foreground" />
+                <span
+                  style={{ backgroundColor: primaryColor }}
+                  className="h-2 w-2 rounded-full"
+                />
                 Progress
               </span>
               <span className="text-muted-foreground font-medium">
@@ -286,8 +342,11 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
             </div>
             <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
               <div
-                className="h-full bg-foreground transition-all duration-300 rounded-full"
-                style={{ width: `${progressPercentage}%` }}
+                className="h-full transition-all duration-300 rounded-full"
+                style={{
+                  width: `${progressPercentage}%`,
+                  backgroundColor: primaryColor,
+                }}
               />
             </div>
           </div>
@@ -311,7 +370,8 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
             <div
               key={element.id}
               className={cn(
-                'w-full bg-card text-card-foreground p-5 sm:p-6 rounded-xl border border-border shadow-xs transition-all duration-200 focus-within:border-foreground/40',
+                'w-full bg-card text-card-foreground p-5 sm:p-6 rounded-xl border border-border shadow-xs transition-all duration-200 focus-within:ring-2 focus-within:ring-offset-1',
+                themePreset.accentBorder,
                 isInvalid && 'border-red-500 border-l-[4px] border-l-red-500 focus-within:border-l-red-500',
                 element.type === 'BannerField' &&
                   'p-0 border-none shadow-none bg-transparent w-full overflow-hidden rounded-xl'
@@ -336,7 +396,11 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
         {/* Submit Actions */}
         <div className="flex items-center justify-between mt-4 px-1">
           <Button
-            className="bg-foreground text-background hover:bg-foreground/90 font-bold text-sm px-8 py-2.5 h-11 rounded-xl shadow-md active:scale-[0.98] transition-all flex items-center gap-2"
+            style={{ backgroundColor: primaryColor }}
+            className={cn(
+              'text-white font-bold text-sm px-8 py-2.5 h-11 rounded-xl shadow-md active:scale-[0.98] transition-all flex items-center gap-2 hover:opacity-90',
+              themePreset.buttonClass
+            )}
             onClick={() => {
               startTransition(submitForm);
             }}

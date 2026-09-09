@@ -22,6 +22,7 @@ import { TimeFieldFormElement } from '@/components/fields/TimeField';
 import { VideoFieldFormElement } from '@/components/fields/VideoField';
 import { BannerFieldFormElement } from '@/components/fields/BannerField';
 import { ThankYouFieldFormElement } from '@/components/fields/ThankYouField';
+import { ThemeFieldFormElement } from '@/components/fields/ThemeField';
 
 export type ElementsType =
   'TextField'
@@ -47,7 +48,8 @@ export type ElementsType =
   | 'VideoField'
   | 'SectionHeaderField'
   | 'BannerField'
-  | 'ThankYouField';
+  | 'ThankYouField'
+  | 'ThemeField';
 
 export type SubmitFunction = (key: string, value: string) => void;
 
@@ -112,4 +114,5 @@ export const FormElements: FormElementsType = {
   SectionHeaderField: SectionHeaderFieldFormElement,
   BannerField: BannerFieldFormElement,
   ThankYouField: ThankYouFieldFormElement,
+  ThemeField: ThemeFieldFormElement,
 };

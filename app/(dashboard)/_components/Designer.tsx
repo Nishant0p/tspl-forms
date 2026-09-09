@@ -250,35 +250,42 @@ export default function Designer({ formId, initialContent }: { formId: number; i
           }}
           className="w-full max-w-[760px] flex flex-col items-center justify-start overflow-visible transition-all relative"
         >
-          {!droppable.isOver && elements.length === 0 && (
-            <div className="relative w-full my-8">
-              <div className="flex flex-col items-center justify-center text-center p-12 border-2 border-dashed border-border/80 rounded-2xl bg-card/60 backdrop-blur-xs w-full">
-                <p className="text-xl font-bold text-foreground">Untitled Form</p>
-                <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-                  Click the <strong>+</strong> button on the right bar or drag elements from the sidebar to add questions.
-                </p>
-              </div>
-              <div className="hidden sm:flex absolute left-[calc(100%+12px)] top-2 z-30 pointer-events-auto">
-                <FloatingRightCapsuleToolbar />
-              </div>
-            </div>
-          )}
-          {droppable.isOver && elements.length === 0 && (
-            <div className="w-full p-4 sm:p-6">
-              <div className="h-[120px] rounded-md bg-foreground/10 animate-pulse"></div>
-            </div>
-          )}
-          {elements.length > 0 && (
-            <div className="flex w-full flex-col gap-3 py-2">
-              {elements.map((element) => (
-                <DesginerElementWrapper
-                  key={element.id}
-                  element={element}
-                  formId={formId}
-                />
-              ))}
-            </div>
-          )}
+          {(() => {
+            const canvasElements = elements.filter((el) => el.type !== 'ThemeField');
+            return (
+              <>
+                {!droppable.isOver && canvasElements.length === 0 && (
+                  <div className="relative w-full my-8">
+                    <div className="flex flex-col items-center justify-center text-center p-12 border-2 border-dashed border-border/80 rounded-2xl bg-card/60 backdrop-blur-xs w-full">
+                      <p className="text-xl font-bold text-foreground">Untitled Form</p>
+                      <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+                        Click the <strong>+</strong> button on the right bar or drag elements from the sidebar to add questions.
+                      </p>
+                    </div>
+                    <div className="hidden sm:flex absolute left-[calc(100%+12px)] top-2 z-30 pointer-events-auto">
+                      <FloatingRightCapsuleToolbar />
+                    </div>
+                  </div>
+                )}
+                {droppable.isOver && canvasElements.length === 0 && (
+                  <div className="w-full p-4 sm:p-6">
+                    <div className="h-[120px] rounded-md bg-foreground/10 animate-pulse"></div>
+                  </div>
+                )}
+                {canvasElements.length > 0 && (
+                  <div className="flex w-full flex-col gap-3 py-2">
+                    {canvasElements.map((element) => (
+                      <DesginerElementWrapper
+                        key={element.id}
+                        element={element}
+                        formId={formId}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         {/* Mobile Floating Quick Actions Toolbar */}

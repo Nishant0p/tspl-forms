@@ -5,6 +5,7 @@ import { EyeIcon, PartyPopper, ExternalLink, ArrowLeft } from 'lucide-react';
 import React from 'react';
 import { FormElements } from './FormElements';
 import { cn } from '@/lib/utils';
+import { getThemeById, getFormBackgroundStyle } from '@/lib/form-themes';
 
 interface PreviewDialogBtnProps {
   formName?: string;
@@ -21,8 +22,16 @@ export default function PreviewDialogBtn({
 
   const thankYouElement = elements.find((el) => el.type === 'ThankYouField');
   const bannerElement = elements.find((el) => el.type === 'BannerField');
+  const themeElement = elements.find((el) => el.type === 'ThemeField');
+
+  const themeId = themeElement?.extraAttributes?.themeId || 'orange-waves';
+  const customPrimary = themeElement?.extraAttributes?.primaryColor;
+  const themePreset = getThemeById(themeId);
+  const bgStyles = getFormBackgroundStyle(themeId, customPrimary);
+  const primaryColor = customPrimary || themePreset.primaryColor;
+
   const questionsContent = elements.filter(
-    (el) => el.type !== 'ThankYouField' && el.type !== 'BannerField'
+    (el) => el.type !== 'ThankYouField' && el.type !== 'BannerField' && el.type !== 'ThemeField'
   );
 
   return (
@@ -60,8 +69,19 @@ export default function PreviewDialogBtn({
         </div>
 
         {/* Scrollable Form Content */}
-        <div className="w-full grow overflow-y-auto bg-slate-100 dark:bg-slate-950 google-form-container p-4 sm:p-8">
-          <div className="mx-auto flex w-full max-w-[640px] flex-col gap-4 pb-12">
+        <div
+          className={cn(
+            'w-full grow overflow-y-auto google-form-container p-4 sm:p-8 relative transition-colors',
+            bgStyles.isDarkTheme ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-100 dark:bg-slate-950'
+          )}
+          style={bgStyles.containerStyle}
+        >
+          {/* Background Texture Overlay */}
+          {bgStyles.overlayClass && (
+            <div className={cn('fixed inset-0 pointer-events-none z-0', bgStyles.overlayClass)} />
+          )}
+
+          <div className="mx-auto relative z-10 flex w-full max-w-[640px] flex-col gap-4 pb-12">
             
             {/* Top Banner Card (Above Form Header) */}
             {bannerElement && (
@@ -75,6 +95,13 @@ export default function PreviewDialogBtn({
 
             {/* Header Card Preview */}
             <div className="w-full bg-card text-card-foreground rounded-2xl border border-border shadow-md overflow-hidden google-form-header-card relative">
+              {/* Top Theme Accent Bar if no banner */}
+              {!bannerElement && (
+                <div
+                  style={{ backgroundColor: primaryColor }}
+                  className={cn('h-2.5 w-full bg-gradient-to-r', themePreset.gradientHeader)}
+                />
+              )}
               <div className="p-5 sm:p-7 flex flex-col gap-3">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3.5 pb-1 min-w-0 w-full">
                   {/* Logo badge */}
@@ -110,7 +137,8 @@ export default function PreviewDialogBtn({
                 <div
                   key={element.id}
                   className={cn(
-                    "w-full bg-card text-card-foreground p-5 sm:p-6 rounded-xl border border-border shadow-xs hover:border-foreground/20 transition-all",
+                    "w-full bg-card text-card-foreground p-5 sm:p-6 rounded-xl border border-border shadow-xs transition-all",
+                    themePreset.accentBorder,
                     element.type === 'BannerField' && "p-0 border-none shadow-none bg-transparent w-full overflow-hidden rounded-xl"
                   )}
                 >
