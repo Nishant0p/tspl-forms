@@ -72,7 +72,7 @@ export default function PreviewDialogBtn({
         {/* Scrollable Form Content */}
         <div
           className={cn(
-            'w-full grow overflow-y-auto google-form-container p-4 sm:p-8 relative transition-colors',
+            'w-full grow overflow-y-auto google-form-container p-3 sm:p-8 relative transition-colors',
             bgStyles.isDarkTheme ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-100 dark:bg-slate-950'
           )}
         >
@@ -112,8 +112,8 @@ export default function PreviewDialogBtn({
                   className={cn('h-2.5 w-full bg-gradient-to-r', themePreset.gradientHeader)}
                 />
               )}
-              <div className="p-5 sm:p-7 flex flex-col gap-3">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3.5 pb-1 min-w-0 w-full">
+              <div className="p-4 sm:p-7 flex flex-col gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-1 min-w-0 w-full">
                   {/* Logo badge */}
                   <div className="p-1.5 bg-white dark:bg-zinc-900 rounded-lg border border-border/60 shadow-xs shrink-0 self-start sm:self-auto">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -123,7 +123,7 @@ export default function PreviewDialogBtn({
                       className="h-8 sm:h-10 w-auto object-contain"
                     />
                   </div>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words w-full leading-tight">
+                  <h1 className="text-xl sm:text-3xl font-bold text-foreground break-words w-full leading-tight">
                     {formName || 'Form Title Preview'}
                   </h1>
                 </div>
@@ -147,7 +147,7 @@ export default function PreviewDialogBtn({
                 <div
                   key={element.id}
                   className={cn(
-                    "w-full bg-card text-card-foreground p-5 sm:p-6 rounded-xl border border-border shadow-xs transition-all",
+                    "w-full bg-card text-card-foreground p-4 sm:p-6 rounded-xl border border-border shadow-xs transition-all",
                     themePreset.accentBorder,
                     element.type === 'BannerField' && "p-0 border-none shadow-none bg-transparent w-full overflow-hidden rounded-xl"
                   )}
