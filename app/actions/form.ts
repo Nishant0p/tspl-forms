@@ -637,67 +637,72 @@ export async function GetFormContentByUrl(formUrl: string) {
   });
 }
 
-export async function SubmitForm(formUrl: string, content: string) {
-  const user = await getCurrentUser();
+export type SubmitFormResult = {
+  success: boolean;
+  error?: string;
+  submissionId?: number;
+};
 
-  const form = await prisma.form.findUnique({
-    where: {
-      shareUrl: formUrl,
-    },
-    include: {
-      allowedRoles: true,
-      allowedDepartments: true,
-      allowedBranches: true,
-      allowedEmployees: true,
-    },
-  });
-
-  if (!form) {
-    throw new Error('Form not found');
-  }
-
-  const access = await canAccessForm(mapFormAccessRecord(form), user ? { id: user.id } : null);
-
-  if (!access.allowed) {
-    if (access.reason === 'login-required') {
-      throw new AuthRequiredError();
-    }
-
-    throw new FormAccessBlockedError(access.reason, getFormAccessErrorMessage(access.reason));
-  }
-
-  const employee = user ? await getCurrentEmployee() : null;
-  let validEmployeeId: number | null = null;
-
-  if (employee && typeof employee.id === 'number') {
-    const existingEmp = await prisma.employee.findUnique({
-      where: { id: employee.id },
-      select: { id: true },
-    });
-    if (existingEmp) {
-      validEmployeeId = existingEmp.id;
-    }
-  }
-
-  if (form.oneResponsePerUser && validEmployeeId) {
-    const duplicate = await prisma.formSubmissions.findFirst({
-      where: {
-        formId: form.id,
-        employeeId: validEmployeeId,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (duplicate) {
-      throw new ForbiddenError('You have already submitted this form');
-    }
-  }
-
+export async function SubmitForm(formUrl: string, content: string): Promise<SubmitFormResult> {
   try {
-    return await prisma.$transaction(async (tx: any) => {
-      const updatedForm = await tx.form.update({
+    const user = await getCurrentUser();
+
+    const form = await prisma.form.findUnique({
+      where: {
+        shareUrl: formUrl,
+      },
+      include: {
+        allowedRoles: true,
+        allowedDepartments: true,
+        allowedBranches: true,
+        allowedEmployees: true,
+      },
+    });
+
+    if (!form) {
+      return { success: false, error: 'Form not found.' };
+    }
+
+    const access = await canAccessForm(mapFormAccessRecord(form), user ? { id: user.id } : null);
+
+    if (!access.allowed) {
+      if (access.reason === 'login-required') {
+        return { success: false, error: 'Authentication is required to submit this form. Please sign in.' };
+      }
+      return { success: false, error: getFormAccessErrorMessage(access.reason) };
+    }
+
+    const employee = user ? await getCurrentEmployee() : null;
+    let validEmployeeId: number | null = null;
+
+    if (employee && typeof employee.id === 'number') {
+      const existingEmp = await prisma.employee.findUnique({
+        where: { id: employee.id },
+        select: { id: true },
+      });
+      if (existingEmp) {
+        validEmployeeId = existingEmp.id;
+      }
+    }
+
+    if (form.oneResponsePerUser && validEmployeeId) {
+      const duplicate = await prisma.formSubmissions.findFirst({
+        where: {
+          formId: form.id,
+          employeeId: validEmployeeId,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (duplicate) {
+        return { success: false, error: 'You have already submitted this form.' };
+      }
+    }
+
+    const submission = await prisma.$transaction(async (tx: any) => {
+      await tx.form.update({
         where: {
           id: form.id,
         },
@@ -708,26 +713,54 @@ export async function SubmitForm(formUrl: string, content: string) {
         },
       });
 
-      const submission = await tx.formSubmissions.create({
-        data: {
-          formId: form.id,
-          employeeId: validEmployeeId,
-          clerkUserId: user?.id ?? null,
-          content,
-        },
-      });
+      let sub;
+      try {
+        sub = await tx.formSubmissions.create({
+          data: {
+            formId: form.id,
+            employeeId: validEmployeeId,
+            clerkUserId: user?.id ?? null,
+            content,
+          },
+          select: {
+            id: true,
+          },
+        });
+      } catch (insertError: any) {
+        // If DB has unique constraint on (formId, employeeId) but form permits multiple submissions:
+        if (insertError?.code === 'P2002' && !form.oneResponsePerUser) {
+          sub = await tx.formSubmissions.create({
+            data: {
+              formId: form.id,
+              employeeId: null,
+              clerkUserId: user?.id ?? null,
+              content,
+            },
+            select: {
+              id: true,
+            },
+          });
+        } else {
+          throw insertError;
+        }
+      }
 
-      return {
-        form: updatedForm,
-        submission,
-      };
+      return sub;
     });
+
+    return {
+      success: true,
+      submissionId: submission.id,
+    };
   } catch (error: any) {
+    console.error('[SubmitForm Error]:', error);
+
     if (error?.code === 'P2002') {
-      throw new ForbiddenError('Duplicate submission');
+      return { success: false, error: 'You have already submitted a response for this form.' };
     }
 
-    throw error;
+    const message = error instanceof Error ? error.message : 'Something went wrong while submitting the form. Please try again.';
+    return { success: false, error: message };
   }
 }
 

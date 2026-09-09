@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import { Loader, AlertCircle, CheckCircle2, PartyPopper, ExternalLink, Sparkles, ShieldAlert } from 'lucide-react';
-import { useRef, useState, useTransition, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { getThemeById, getFormBackgroundStyle } from '@/lib/form-themes';
 
 interface Props {
@@ -25,7 +25,7 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
   const [renderKey, setRenderKey] = useState(new Date().getTime());
 
   const [submitted, setSubmitted] = useState(false);
-  const [pending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [answeredCount, setAnsweredCount] = useState<number>(0);
 
   // Extract ThemeField if configured
@@ -139,8 +139,19 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
     }
 
     try {
+      setIsSubmitting(true);
       const jsonContent = JSON.stringify(formValues.current);
-      await SubmitForm(formUrl, jsonContent);
+      const res = await SubmitForm(formUrl, jsonContent);
+
+      if (!res.success) {
+        toast({
+          title: 'Submission Failed',
+          description: res.error || 'Something went wrong, please try again later.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       try {
         localStorage.removeItem('tspl_draft_' + formUrl);
       } catch {}
@@ -152,6 +163,8 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
           error instanceof Error ? error.message : 'Something went wrong, please try again later',
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -233,10 +246,16 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
 
             {showBtn && (
               <div className="mt-2 pt-2">
-                {customBtnUrl ? (
+                {customBtnUrl && customBtnUrl.trim() !== '' ? (
                   <a
-                    href={customBtnUrl}
-                    target="_blank"
+                    href={
+                      customBtnUrl.trim().startsWith('http://') ||
+                      customBtnUrl.trim().startsWith('https://') ||
+                      customBtnUrl.trim().startsWith('/')
+                        ? customBtnUrl.trim()
+                        : `https://${customBtnUrl.trim()}`
+                    }
+                    target={customBtnUrl.trim().startsWith('/') ? '_self' : '_blank'}
                     rel="noopener noreferrer"
                     style={{ backgroundColor: primaryColor }}
                     className={cn(
@@ -431,13 +450,11 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
               'text-white font-bold text-sm px-6 sm:px-8 py-2.5 h-11 rounded-xl shadow-md active:scale-[0.98] transition-all flex items-center gap-2 hover:opacity-90',
               themePreset.buttonClass
             )}
-            onClick={() => {
-              startTransition(submitForm);
-            }}
-            disabled={pending}
+            onClick={submitForm}
+            disabled={isSubmitting}
           >
-            {pending && <Loader className="h-4 w-4 animate-spin" />}
-            <span>Submit</span>
+            {isSubmitting && <Loader className="h-4 w-4 animate-spin" />}
+            <span>{isSubmitting ? 'Submitting...' : 'Submit'}</span>
           </Button>
 
           <button
