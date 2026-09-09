@@ -685,19 +685,26 @@ export async function SubmitForm(formUrl: string, content: string): Promise<Subm
       }
     }
 
-    if (form.oneResponsePerUser && validEmployeeId) {
-      const duplicate = await prisma.formSubmissions.findFirst({
+    let targetEmployeeId = validEmployeeId;
+
+    if (targetEmployeeId) {
+      const existing = await prisma.formSubmissions.findFirst({
         where: {
           formId: form.id,
-          employeeId: validEmployeeId,
+          employeeId: targetEmployeeId,
         },
         select: {
           id: true,
         },
       });
 
-      if (duplicate) {
-        return { success: false, error: 'You have already submitted this form.' };
+      if (existing) {
+        if (form.oneResponsePerUser) {
+          return { success: false, error: 'You have already submitted this form.' };
+        }
+        // Form permits multiple submissions, but DB has a unique constraint on (formId, employeeId):
+        // Set employeeId to null so subsequent submissions are accepted without colliding with the unique index
+        targetEmployeeId = null;
       }
     }
 
@@ -713,39 +720,17 @@ export async function SubmitForm(formUrl: string, content: string): Promise<Subm
         },
       });
 
-      let sub;
-      try {
-        sub = await tx.formSubmissions.create({
-          data: {
-            formId: form.id,
-            employeeId: validEmployeeId,
-            clerkUserId: user?.id ?? null,
-            content,
-          },
-          select: {
-            id: true,
-          },
-        });
-      } catch (insertError: any) {
-        // If DB has unique constraint on (formId, employeeId) but form permits multiple submissions:
-        if (insertError?.code === 'P2002' && !form.oneResponsePerUser) {
-          sub = await tx.formSubmissions.create({
-            data: {
-              formId: form.id,
-              employeeId: null,
-              clerkUserId: user?.id ?? null,
-              content,
-            },
-            select: {
-              id: true,
-            },
-          });
-        } else {
-          throw insertError;
-        }
-      }
-
-      return sub;
+      return await tx.formSubmissions.create({
+        data: {
+          formId: form.id,
+          employeeId: targetEmployeeId,
+          clerkUserId: user?.id ?? null,
+          content,
+        },
+        select: {
+          id: true,
+        },
+      });
     });
 
     return {
