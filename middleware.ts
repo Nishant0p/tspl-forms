@@ -53,18 +53,6 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  // Ensure CSRF Cookie exists on all incoming requests
-  const csrfCookie = req.cookies.get(CSRF_COOKIE_NAME)?.value;
-  if (!csrfCookie || csrfCookie.length < 32) {
-    const newToken = generateCsrfToken();
-    response.cookies.set(CSRF_COOKIE_NAME, newToken, {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24, // 24 hours
-    });
-  }
 
   return response;
 }

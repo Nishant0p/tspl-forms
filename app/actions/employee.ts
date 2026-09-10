@@ -14,16 +14,9 @@ export type LoginResult = {
 
 export async function loginUser(
   emailOrEmpId: string,
-  password: string,
-  csrfToken?: string
+  password: string
 ): Promise<LoginResult> {
   try {
-    // Validate CSRF token safely
-    const csrfCheck = await verifyCsrfToken(csrfToken);
-    if (!csrfCheck.valid) {
-      return { success: false, error: csrfCheck.error || 'Invalid or missing security token. Please refresh the page.' };
-    }
-
     const idpConfig = getSuperAdminIdpConfig();
     const inputClean = emailOrEmpId.trim().toLowerCase();
 

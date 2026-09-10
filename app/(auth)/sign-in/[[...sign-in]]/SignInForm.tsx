@@ -11,21 +11,15 @@ import {
   LogIn,
   Eye,
   EyeOff,
-  ShieldCheck,
   Lock,
   User,
   Sparkles,
   ArrowRight,
-  Shield,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-interface SignInFormProps {
-  csrfToken: string;
-}
-
-export default function SignInForm({ csrfToken }: SignInFormProps) {
+export default function SignInForm() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,25 +31,16 @@ export default function SignInForm({ csrfToken }: SignInFormProps) {
     e.preventDefault();
     setError('');
 
-    // Fallback: Read csrf_token from cookie if prop was blank on initial render
-    let effectiveToken = csrfToken;
-    if ((!effectiveToken || effectiveToken.length < 32) && typeof document !== 'undefined') {
-      const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
-      if (match && match[1]) {
-        effectiveToken = decodeURIComponent(match[1]);
-      }
-    }
-
     startTransition(async () => {
       try {
-        const result = await loginUser(email, password, effectiveToken);
+        const result = await loginUser(email, password);
         if (!result?.success) {
           setError(result?.error || 'Invalid email/Employee ID or password');
           return;
         }
 
-        router.push('/dashboard');
-        router.refresh();
+        // Direct browser navigation to ensure cookies are committed and active immediately
+        window.location.href = '/dashboard';
       } catch (err: any) {
         setError(err?.message || 'Unable to sign in. Please try again.');
       }
@@ -125,9 +110,6 @@ export default function SignInForm({ csrfToken }: SignInFormProps) {
         {/* Sign In Card */}
         <div className="rounded-3xl border border-border/80 bg-card/70 p-6 sm:p-8 shadow-2xl backdrop-blur-xl text-left space-y-5">
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Hidden CSRF Token Field */}
-            <input type="hidden" name="csrfToken" value={csrfToken} />
-
             {/* Username / Email field */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -204,15 +186,7 @@ export default function SignInForm({ csrfToken }: SignInFormProps) {
           </form>
 
           {/* Secure Note Box */}
-          <div className="rounded-xl border border-border/60 bg-muted/40 p-3 flex items-center gap-3 text-xs text-muted-foreground">
-            <ShieldCheck className="h-5 w-5 text-emerald-500 shrink-0" />
-            <div>
-              <strong className="flex items-center gap-1 text-foreground font-semibold">
-                <Shield className="h-3.5 w-3.5 text-blue-500 inline" /> CSRF Protected Sign-In
-              </strong>
-              <span>Anti-CSRF token verified. Internal Employee Access Only.</span>
-            </div>
-          </div>
+
         </div>
 
         {/* Footer */}
