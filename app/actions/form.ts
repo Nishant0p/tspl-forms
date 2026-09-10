@@ -688,6 +688,17 @@ export async function SubmitForm(formUrl: string, content: string): Promise<Subm
     let targetEmployeeId = validEmployeeId;
 
     if (targetEmployeeId) {
+      // Ensure targetEmployeeId actually exists in database to prevent Foreign Key constraint errors
+      const empExists = await prisma.employee.findUnique({
+        where: { id: targetEmployeeId },
+        select: { id: true },
+      });
+      if (!empExists) {
+        targetEmployeeId = null;
+      }
+    }
+
+    if (targetEmployeeId) {
       const existing = await prisma.formSubmissions.findFirst({
         where: {
           formId: form.id,
@@ -708,8 +719,22 @@ export async function SubmitForm(formUrl: string, content: string): Promise<Subm
       }
     }
 
-    const submission = await prisma.$transaction(async (tx: any) => {
-      await tx.form.update({
+    // Create submission directly without multi-query transaction block to avoid Postgres 25P02 aborts
+    const submission = await prisma.formSubmissions.create({
+      data: {
+        formId: form.id,
+        employeeId: targetEmployeeId,
+        clerkUserId: user?.id ?? null,
+        content,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    // Increment submissions count safely (non-fatal if count update fails)
+    try {
+      await prisma.form.update({
         where: {
           id: form.id,
         },
@@ -719,19 +744,9 @@ export async function SubmitForm(formUrl: string, content: string): Promise<Subm
           },
         },
       });
-
-      return await tx.formSubmissions.create({
-        data: {
-          formId: form.id,
-          employeeId: targetEmployeeId,
-          clerkUserId: user?.id ?? null,
-          content,
-        },
-        select: {
-          id: true,
-        },
-      });
-    });
+    } catch (countErr) {
+      console.warn('[SubmitForm] Non-fatal: Failed to increment submissions count:', countErr);
+    }
 
     return {
       success: true,

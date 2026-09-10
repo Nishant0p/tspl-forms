@@ -3,7 +3,7 @@ import { GetFormContentByUrl } from '@/app/actions/form';
 import FormSubmitComponent from '../../_components/FormSubmitComponent';
 import { AuthRequiredError, ForbiddenError } from '@/lib/auth';
 import { FormAccessBlockedError } from '@/lib/form-access';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 export default async function FormPage({
   params,
@@ -16,7 +16,11 @@ export default async function FormPage({
 
   try {
     form = await GetFormContentByUrl(formUrl);
-  } catch (error) {
+  } catch (error: any) {
+    if (error instanceof Error && error.message === 'Form not found') {
+      notFound();
+    }
+
     if (error instanceof AuthRequiredError) {
       redirect(`/sign-in?redirect_url=${encodeURIComponent(`/form/${formUrl}`)}`);
     }
@@ -53,7 +57,7 @@ export default async function FormPage({
   }
 
   if (!form) {
-    throw new Error('Form not found');
+    notFound();
   }
 
   const formContent = JSON.parse(form.content) as FormElementInstance[];

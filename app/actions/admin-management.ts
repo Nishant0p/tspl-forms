@@ -367,7 +367,7 @@ export async function deleteAdminManagedUser(userId: number) {
     const adminDbId = adminDb?.id;
     const adminBranchId = adminDb?.branchId || caller.branchId;
 
-    const isCreatedByAdmin = adminDbId && userToDelete.createdById === adminDbId;
+    const isCreatedByAdmin = adminDbId && (userToDelete as any).createdById === adminDbId;
     const isSameBranch = adminBranchId && userToDelete.branchId === adminBranchId;
 
     if (!isCreatedByAdmin && !isSameBranch) {

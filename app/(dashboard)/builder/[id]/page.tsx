@@ -1,6 +1,7 @@
 import FormBuilder from '@/app/(dashboard)/_components/FormBuilder';
 import { GetFormById } from '@/app/actions/form';
 import prisma from '@/lib/prisma';
+import { notFound } from 'next/navigation';
 import React from 'react';
 
 export default async function BuilderPage({
@@ -30,7 +31,7 @@ export default async function BuilderPage({
   ]);
 
   if (!form) {
-    throw new Error('Form not found');
+    notFound();
   }
 
   return (

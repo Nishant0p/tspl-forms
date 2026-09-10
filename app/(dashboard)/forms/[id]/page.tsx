@@ -20,6 +20,7 @@ import ExportXlsxBtn from '../../_components/ExportXlsxBtn';
 import { buildFormSubmitUrl } from '@/lib/url';
 import { headers } from 'next/headers';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
 import FormViewerManager from '../../_components/FormViewerManager';
@@ -52,7 +53,7 @@ export default async function FormDetailsPage({
   const protocol = headerList.get('x-forwarded-proto') ?? 'http';
 
   if (!form) {
-    throw new Error('Form not found');
+    notFound();
   }
 
   const { visits, submissions } = form;
@@ -228,7 +229,7 @@ async function SubMissionTable({ id }: { id: number }) {
   const form = await GetFormSubmissions(Number(id));
 
   if (!form) {
-    throw new Error('Form not found');
+    notFound();
   }
 
   const formElements = JSON.parse(form.content) as FormElementInstance[];

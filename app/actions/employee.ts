@@ -7,111 +7,139 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-export async function loginUser(emailOrEmpId: string, password: string, csrfToken?: string) {
-  // Validate CSRF token before performing authentication
-  await verifyCsrfToken(csrfToken);
+export type LoginResult = {
+  success: boolean;
+  error?: string;
+};
 
-  const idpConfig = getSuperAdminIdpConfig();
-  const inputClean = emailOrEmpId.trim().toLowerCase();
-
-  // 1. Check Super Admin IDP credentials (from .env or hardcoded)
-  const isSuperAdminMatch =
-    (inputClean === idpConfig.email ||
-      inputClean === idpConfig.idp.toLowerCase() ||
-      inputClean === 'nishant@brandboosters.marketing' ||
-      inputClean === 'tspl000' ||
-      inputClean === 'emp000') &&
-    (password === idpConfig.password || password === 'Nishant@Atharva');
-
-  if (isSuperAdminMatch) {
-    const adminSession = getHardcodedAdminSession();
-    if (adminSession) {
-      // Ensure database record exists for Super Admin
-      try {
-        await (prisma as any).employee.upsert({
-          where: { employeeId: adminSession.employeeId },
-          create: {
-            clerkUserId: adminSession.clerkUserId,
-            employeeId: adminSession.employeeId,
-            firstName: adminSession.firstName,
-            lastName: adminSession.lastName,
-            email: adminSession.email,
-            password: 'Nishant@Atharva',
-            role: 'SUPER_ADMIN',
-            status: 'ACTIVE',
-          },
-          update: {
-            role: 'SUPER_ADMIN',
-            status: 'ACTIVE',
-            email: adminSession.email,
-            password: 'Nishant@Atharva',
-          },
-        });
-      } catch (e) {
-        // Ignore if DB upsert has minor constraint issue
-      }
-
-      const sessionData = JSON.stringify({
-        id: adminSession.employeeId,
-        employeeId: adminSession.employeeId,
-        firstName: adminSession.firstName,
-        lastName: adminSession.lastName,
-        email: adminSession.email,
-        role: adminSession.role,
-        status: adminSession.status,
-        imageUrl: adminSession.imageUrl,
-      });
-
-      cookies().set('session_user', sessionData, {
-        httpOnly: true,
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-      });
-      return { success: true };
+export async function loginUser(
+  emailOrEmpId: string,
+  password: string,
+  csrfToken?: string
+): Promise<LoginResult> {
+  try {
+    // Validate CSRF token safely
+    const csrfCheck = await verifyCsrfToken(csrfToken);
+    if (!csrfCheck.valid) {
+      return { success: false, error: csrfCheck.error || 'Invalid or missing security token. Please refresh the page.' };
     }
+
+    const idpConfig = getSuperAdminIdpConfig();
+    const inputClean = emailOrEmpId.trim().toLowerCase();
+
+    // 1. Check Super Admin IDP credentials (from .env or hardcoded)
+    const isSuperAdminMatch =
+      (inputClean === idpConfig.email ||
+        inputClean === idpConfig.idp.toLowerCase() ||
+        inputClean === 'nishant@brandboosters.marketing' ||
+        inputClean === 'tspl000' ||
+        inputClean === 'emp000') &&
+      (password === idpConfig.password || password === 'Nishant@Atharva');
+
+    if (isSuperAdminMatch) {
+      const adminSession = getHardcodedAdminSession();
+      if (adminSession) {
+        // Ensure database record exists for Super Admin (safe upsert)
+        try {
+          await (prisma as any).employee.upsert({
+            where: { employeeId: adminSession.employeeId },
+            create: {
+              clerkUserId: adminSession.clerkUserId,
+              employeeId: adminSession.employeeId,
+              firstName: adminSession.firstName,
+              lastName: adminSession.lastName,
+              email: adminSession.email,
+              password: 'Nishant@Atharva',
+              role: 'SUPER_ADMIN',
+              status: 'ACTIVE',
+            },
+            update: {
+              role: 'SUPER_ADMIN',
+              status: 'ACTIVE',
+              email: adminSession.email,
+              password: 'Nishant@Atharva',
+            },
+          });
+        } catch (e) {
+          // Ignore if DB upsert has minor constraint issue or DB is temporarily busy
+          console.warn('[loginUser] Super admin upsert non-fatal warning:', e);
+        }
+
+        const sessionData = JSON.stringify({
+          id: adminSession.employeeId,
+          employeeId: adminSession.employeeId,
+          firstName: adminSession.firstName,
+          lastName: adminSession.lastName,
+          email: adminSession.email,
+          role: adminSession.role,
+          status: adminSession.status,
+          imageUrl: adminSession.imageUrl,
+        });
+
+        cookies().set('session_user', sessionData, {
+          httpOnly: true,
+          path: '/',
+          maxAge: 60 * 60 * 24 * 7, // 7 days
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+        });
+        return { success: true };
+      }
+    }
+
+    // 2. Lookup in database by email or employeeId
+    const db = prisma as any;
+    let employee = null;
+    try {
+      employee = await db.employee.findFirst({
+        where: {
+          OR: [
+            { email: inputClean },
+            { employeeId: emailOrEmpId.trim() },
+          ],
+        },
+      });
+    } catch (dbErr: any) {
+      console.error('[loginUser] Database lookup error:', dbErr);
+      return { success: false, error: 'Database service is temporarily unavailable. Please try again later.' };
+    }
+
+    if (!employee) {
+      return { success: false, error: 'Invalid email/Employee ID or password' };
+    }
+
+    if (employee.status !== 'ACTIVE') {
+      return { success: false, error: 'Your account is inactive or suspended' };
+    }
+
+    if (employee.password && employee.password !== password) {
+      return { success: false, error: 'Invalid email/Employee ID or password' };
+    }
+
+    const sessionData = JSON.stringify({
+      id: employee.clerkUserId || employee.employeeId,
+      employeeId: employee.employeeId,
+      firstName: employee.firstName,
+      lastName: employee.lastName,
+      email: employee.email,
+      role: employee.role,
+      status: employee.status,
+      imageUrl: employee.imageUrl,
+    });
+
+    cookies().set('session_user', sessionData, {
+      httpOnly: true,
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('[loginUser] Unexpected error in sign-in action:', err);
+    return { success: false, error: err?.message || 'Authentication error occurred' };
   }
-
-  // 2. Lookup in database by email or employeeId
-  const db = prisma as any;
-  const employee = await db.employee.findFirst({
-    where: {
-      OR: [
-        { email: inputClean },
-        { employeeId: emailOrEmpId.trim() },
-      ],
-    },
-  });
-
-  if (!employee) {
-    throw new Error('Invalid credentials');
-  }
-
-  if (employee.status !== 'ACTIVE') {
-    throw new Error('Your account is inactive or suspended');
-  }
-
-  if (employee.password && employee.password !== password) {
-    throw new Error('Invalid credentials');
-  }
-
-  const sessionData = JSON.stringify({
-    id: employee.clerkUserId || employee.employeeId,
-    employeeId: employee.employeeId,
-    firstName: employee.firstName,
-    lastName: employee.lastName,
-    email: employee.email,
-    role: employee.role,
-    status: employee.status,
-    imageUrl: employee.imageUrl,
-  });
-
-  cookies().set('session_user', sessionData, {
-    httpOnly: true,
-    path: '/',
-    maxAge: 60 * 60 * 24 * 7, // 7 days
-  });
-
-  return { success: true };
 }
 
 export async function logoutUser() {

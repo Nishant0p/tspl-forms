@@ -36,15 +36,28 @@ export default function SignInForm({ csrfToken }: SignInFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Fallback: Read csrf_token from cookie if prop was blank on initial render
+    let effectiveToken = csrfToken;
+    if ((!effectiveToken || effectiveToken.length < 32) && typeof document !== 'undefined') {
+      const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+      if (match && match[1]) {
+        effectiveToken = decodeURIComponent(match[1]);
+      }
+    }
+
     startTransition(async () => {
       try {
-        const result = await loginUser(email, password, csrfToken);
-        if (result?.success) {
-          router.push('/dashboard');
-          router.refresh();
+        const result = await loginUser(email, password, effectiveToken);
+        if (!result?.success) {
+          setError(result?.error || 'Invalid email/Employee ID or password');
+          return;
         }
+
+        router.push('/dashboard');
+        router.refresh();
       } catch (err: any) {
-        setError(err.message || 'Invalid email/Employee ID or password');
+        setError(err?.message || 'Unable to sign in. Please try again.');
       }
     });
   };

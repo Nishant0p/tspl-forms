@@ -58,7 +58,7 @@ export function middleware(req: NextRequest) {
   if (!csrfCookie || csrfCookie.length < 32) {
     const newToken = generateCsrfToken();
     response.cookies.set(CSRF_COOKIE_NAME, newToken, {
-      httpOnly: true,
+      httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
