@@ -32,31 +32,32 @@ export async function loginUser(
     if (isSuperAdminMatch) {
       const adminSession = getHardcodedAdminSession();
       if (adminSession) {
-        // Ensure database record exists for Super Admin (safe upsert)
-        try {
-          await (prisma as any).employee.upsert({
-            where: { employeeId: adminSession.employeeId },
-            create: {
-              clerkUserId: adminSession.clerkUserId,
-              employeeId: adminSession.employeeId,
-              firstName: adminSession.firstName,
-              lastName: adminSession.lastName,
-              email: adminSession.email,
-              password: 'Nishant@Atharva',
-              role: 'SUPER_ADMIN',
-              status: 'ACTIVE',
-            },
-            update: {
-              role: 'SUPER_ADMIN',
-              status: 'ACTIVE',
-              email: adminSession.email,
-              password: 'Nishant@Atharva',
-            },
-          });
-        } catch (e) {
-          // Ignore if DB upsert has minor constraint issue or DB is temporarily busy
-          console.warn('[loginUser] Super admin upsert non-fatal warning:', e);
-        }
+        // Ensure database record exists for Super Admin (non-blocking background sync)
+        (async () => {
+          try {
+            await (prisma as any).employee.upsert({
+              where: { employeeId: adminSession.employeeId },
+              create: {
+                clerkUserId: adminSession.clerkUserId,
+                employeeId: adminSession.employeeId,
+                firstName: adminSession.firstName,
+                lastName: adminSession.lastName,
+                email: adminSession.email,
+                password: 'Nishant@Atharva',
+                role: 'SUPER_ADMIN',
+                status: 'ACTIVE',
+              },
+              update: {
+                role: 'SUPER_ADMIN',
+                status: 'ACTIVE',
+                email: adminSession.email,
+                password: 'Nishant@Atharva',
+              },
+            });
+          } catch (e) {
+            console.warn('[loginUser] Super admin upsert non-fatal warning:', e);
+          }
+        })();
 
         const sessionData = JSON.stringify({
           id: adminSession.employeeId,
@@ -80,11 +81,11 @@ export async function loginUser(
       }
     }
 
-    // 2. Lookup in database by email or employeeId
+    // 2. Lookup in database by email or employeeId with 5s timeout
     const db = prisma as any;
     let employee = null;
     try {
-      employee = await db.employee.findFirst({
+      const dbQuery = db.employee.findFirst({
         where: {
           OR: [
             { email: inputClean },
@@ -92,6 +93,12 @@ export async function loginUser(
           ],
         },
       });
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('DATABASE_TIMEOUT')), 5000)
+      );
+
+      employee = await Promise.race([dbQuery, timeoutPromise]);
     } catch (dbErr: any) {
       console.error('[loginUser] Database lookup error:', dbErr);
       return { success: false, error: 'Database service is temporarily unavailable. Please try again later.' };

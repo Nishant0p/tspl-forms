@@ -33,8 +33,17 @@ export default function SignInForm() {
 
     startTransition(async () => {
       try {
-        const result = await loginUser(email, password);
-        if (!result?.success) {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ emailOrEmpId: email, password }),
+        });
+
+        const result = await res.json();
+
+        if (!res.ok || !result?.success) {
           setError(result?.error || 'Invalid email/Employee ID or password');
           return;
         }
