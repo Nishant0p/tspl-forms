@@ -1,7 +1,7 @@
 'use server';
 
 import prisma from '@/lib/prisma';
-import { requireEmployee, ForbiddenError, getSuperAdminIdpConfig, getHardcodedAdminSession, EmployeeStatus } from '@/lib/auth';
+import { requireEmployee, ForbiddenError, getSuperAdminIdpConfig, getHardcodedAdminSession, EmployeeStatus, authenticateCredentials } from '@/lib/auth';
 import { verifyCsrfToken } from '@/lib/csrf';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
@@ -17,115 +17,16 @@ export async function loginUser(
   password: string
 ): Promise<LoginResult> {
   try {
-    const idpConfig = getSuperAdminIdpConfig();
-    const inputClean = emailOrEmpId.trim().toLowerCase();
+    const authResult = await authenticateCredentials(emailOrEmpId, password);
 
-    // 1. Check Super Admin IDP credentials (from .env or hardcoded)
-    const isSuperAdminMatch =
-      (inputClean === idpConfig.email ||
-        inputClean === idpConfig.idp.toLowerCase() ||
-        inputClean === 'nishant@brandboosters.marketing' ||
-        inputClean === 'tspl000' ||
-        inputClean === 'emp000') &&
-      (password === idpConfig.password || password === 'Nishant@Atharva');
-
-    if (isSuperAdminMatch) {
-      const adminSession = getHardcodedAdminSession();
-      if (adminSession) {
-        // Ensure database record exists for Super Admin (non-blocking background sync)
-        (async () => {
-          try {
-            await (prisma as any).employee.upsert({
-              where: { employeeId: adminSession.employeeId },
-              create: {
-                clerkUserId: adminSession.clerkUserId,
-                employeeId: adminSession.employeeId,
-                firstName: adminSession.firstName,
-                lastName: adminSession.lastName,
-                email: adminSession.email,
-                password: 'Nishant@Atharva',
-                role: 'SUPER_ADMIN',
-                status: 'ACTIVE',
-              },
-              update: {
-                role: 'SUPER_ADMIN',
-                status: 'ACTIVE',
-                email: adminSession.email,
-                password: 'Nishant@Atharva',
-              },
-            });
-          } catch (e) {
-            console.warn('[loginUser] Super admin upsert non-fatal warning:', e);
-          }
-        })();
-
-        const sessionData = JSON.stringify({
-          id: adminSession.employeeId,
-          employeeId: adminSession.employeeId,
-          firstName: adminSession.firstName,
-          lastName: adminSession.lastName,
-          email: adminSession.email,
-          role: adminSession.role,
-          status: adminSession.status,
-          imageUrl: adminSession.imageUrl,
-        });
-
-        cookies().set('session_user', sessionData, {
-          httpOnly: true,
-          path: '/',
-          maxAge: 60 * 60 * 24 * 7, // 7 days
-          sameSite: 'lax',
-          secure: process.env.NODE_ENV === 'production',
-        });
-        return { success: true };
-      }
+    if (!authResult.success || !authResult.sessionData) {
+      return {
+        success: false,
+        error: authResult.error || 'Invalid email/Employee ID or password',
+      };
     }
 
-    // 2. Lookup in database by email or employeeId with 5s timeout
-    const db = prisma as any;
-    let employee = null;
-    try {
-      const dbQuery = db.employee.findFirst({
-        where: {
-          OR: [
-            { email: inputClean },
-            { employeeId: emailOrEmpId.trim() },
-          ],
-        },
-      });
-
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('DATABASE_TIMEOUT')), 5000)
-      );
-
-      employee = await Promise.race([dbQuery, timeoutPromise]);
-    } catch (dbErr: any) {
-      console.error('[loginUser] Database lookup error:', dbErr);
-      return { success: false, error: 'Database service is temporarily unavailable. Please try again later.' };
-    }
-
-    if (!employee) {
-      return { success: false, error: 'Invalid email/Employee ID or password' };
-    }
-
-    if (employee.status !== 'ACTIVE') {
-      return { success: false, error: 'Your account is inactive or suspended' };
-    }
-
-    if (employee.password && employee.password !== password) {
-      return { success: false, error: 'Invalid email/Employee ID or password' };
-    }
-
-    const sessionData = JSON.stringify({
-      id: employee.clerkUserId || employee.employeeId,
-      employeeId: employee.employeeId,
-      firstName: employee.firstName,
-      lastName: employee.lastName,
-      email: employee.email,
-      role: employee.role,
-      status: employee.status,
-      imageUrl: employee.imageUrl,
-    });
+    const sessionData = JSON.stringify(authResult.sessionData);
 
     cookies().set('session_user', sessionData, {
       httpOnly: true,

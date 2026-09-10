@@ -41,6 +41,17 @@ export default function SignInForm() {
           body: JSON.stringify({ emailOrEmpId: email, password }),
         });
 
+        if (res.status === 404) {
+          const actionResult = await loginUser(email, password);
+          if (actionResult?.success) {
+            window.location.href = '/dashboard';
+            return;
+          } else {
+            setError(actionResult?.error || 'Invalid email/Employee ID or password');
+            return;
+          }
+        }
+
         const result = await res.json();
 
         if (!res.ok || !result?.success) {
