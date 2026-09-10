@@ -50,8 +50,8 @@ export default async function ResponsesPage({
             </p>
           </div>
           <Button asChild variant="outline" className="text-xs">
-            <Link href="/dashboard" className="gap-2">
-              <ArrowLeft className="h-3.5 w-3.5" /> Return to Dashboard
+            <Link href="/" className="gap-2">
+              <ArrowLeft className="h-3.5 w-3.5" /> Return to Home
             </Link>
           </Button>
         </div>

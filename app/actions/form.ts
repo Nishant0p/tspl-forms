@@ -829,7 +829,7 @@ export async function GetFormSubmissionsByShareUrl(shareUrl: string) {
     throw new Error('Share URL is required');
   }
 
-  const cleanShareUrl = shareUrl.trim().replace(/^\/+/, '');
+  const cleanShareUrl = decodeURIComponent(shareUrl).trim().replace(/^\/+/, '').replace(/\/+$/, '');
 
   // Check if token is a randomized response token (12 to 15 chars)
   let formIdFromToken: number | null = null;
@@ -871,6 +871,30 @@ export async function GetFormSubmissionsByShareUrl(shareUrl: string) {
     form = await prisma.form.findUnique({
       where: {
         shareUrl: cleanShareUrl,
+      },
+      include: {
+        FormSubmissions: {
+          include: {
+            employee: {
+              include: {
+                department: true,
+                branch: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
+      },
+    });
+  }
+
+  // Fallback to lookup by direct numeric ID if provided (e.g. /responses/5)
+  if (!form && /^\d+$/.test(cleanShareUrl)) {
+    form = await prisma.form.findUnique({
+      where: {
+        id: parseInt(cleanShareUrl, 10),
       },
       include: {
         FormSubmissions: {

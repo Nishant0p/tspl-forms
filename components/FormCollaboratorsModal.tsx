@@ -50,6 +50,7 @@ import {
   FormCollaboratorUser,
 } from '@/app/actions/formViewer';
 import { generateResponseToken } from '@/lib/response-token';
+import { getAppBaseUrl } from '@/lib/url';
 
 type FormCollaboratorsModalProps = {
   formId: number;
@@ -57,6 +58,7 @@ type FormCollaboratorsModalProps = {
   shareUrl?: string;
   trigger?: React.ReactNode;
   iconOnly?: boolean;
+  defaultTab?: 'existing' | 'responses-link';
 };
 
 export default function FormCollaboratorsModal({
@@ -65,8 +67,10 @@ export default function FormCollaboratorsModal({
   shareUrl,
   trigger,
   iconOnly,
+  defaultTab = 'existing',
 }: FormCollaboratorsModalProps) {
   const [open, setOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'existing' | 'responses-link'>(defaultTab);
   const [pending, startTransition] = useTransition();
 
   const [editors, setEditors] = useState<FormCollaboratorUser[]>([]);
@@ -113,11 +117,12 @@ export default function FormCollaboratorsModal({
 
   useEffect(() => {
     if (open) {
+      setActiveTab(defaultTab);
       loadData();
       // Generate a fresh unique token every time the modal is opened
       handleGenerateNewToken(false);
     }
-  }, [open, formId]);
+  }, [open, formId, defaultTab]);
 
   const handleAssignExisting = (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,7 +155,9 @@ export default function FormCollaboratorsModal({
     });
   };
 
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://forms.tsplgroup.in';
+  const origin = typeof window !== 'undefined' && window.location.origin
+    ? window.location.origin
+    : getAppBaseUrl();
   const responseLink = `${origin}/responses/${responseToken}`;
 
   const handleCopyLink = () => {
@@ -159,7 +166,7 @@ export default function FormCollaboratorsModal({
     setCopied(true);
     toast({
       title: 'Responses Link Copied',
-      description: 'Anyone with this link can view form responses only (no changes allowed).',
+      description: 'Anyone with this link can view form responses directly without signing in.',
     });
     setTimeout(() => setCopied(false), 2500);
   };
@@ -235,7 +242,7 @@ export default function FormCollaboratorsModal({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="existing" className="w-full mt-2">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'existing' | 'responses-link')} className="w-full mt-2">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="existing" className="text-xs font-semibold gap-1.5">
               <Users className="h-3.5 w-3.5" /> Select Teammate
@@ -376,7 +383,7 @@ export default function FormCollaboratorsModal({
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Anyone with this link can view form responses, real-time submission statistics, and export records to Excel. Each generated link uses a unique 12–15 character randomized secure token. They have <strong>no access</strong> to edit questions, modify settings, or delete anything.
+                  Anyone with this link can view form responses, real-time submission statistics, and export records to Excel directly <strong>without signing in</strong>. Each generated link uses a unique 12–15 character randomized secure token. They have <strong>no access</strong> to edit questions, modify settings, or delete anything.
                 </p>
               </div>
 
@@ -440,7 +447,7 @@ export default function FormCollaboratorsModal({
                     <CheckCircle2 className="h-3.5 w-3.5" /> What Viewers CAN Do
                   </div>
                   <ul className="space-y-1 text-[11px] text-muted-foreground list-disc list-inside">
-                    <li>View all submissions in real-time</li>
+                    <li>View all submissions directly (no sign-in required)</li>
                     <li>Export responses to Excel (.xlsx)</li>
                     <li>Inspect submitted files & signatures</li>
                     <li>Search & filter response records</li>

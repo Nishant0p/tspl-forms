@@ -20,7 +20,10 @@ import {
   FileSpreadsheet,
   Loader2,
   Calendar,
+  Share2,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import FormCollaboratorsModal from '@/components/FormCollaboratorsModal';
 import ExportXlsxBtn from './ExportXlsxBtn';
 import FileViewerModal from '@/components/FileViewerModal';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -142,7 +145,22 @@ export default function FormBuilderResponsesTab({ formId }: { formId: number }) 
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <FormCollaboratorsModal
+            formId={formId}
+            formName={formData.name}
+            shareUrl={formData.shareUrl}
+            defaultTab="responses-link"
+            trigger={
+              <Button
+                variant="outline"
+                className="flex items-center gap-2 border-blue-500/30 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800 dark:border-blue-500/30 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/60 text-xs font-medium h-9"
+              >
+                <Share2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <span>Share Responses Link</span>
+              </Button>
+            }
+          />
           <ExportXlsxBtn formTitle={formData.name} columns={columns} rows={rows} />
         </div>
       </div>
