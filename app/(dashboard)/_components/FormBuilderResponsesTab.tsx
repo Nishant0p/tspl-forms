@@ -96,6 +96,12 @@ export default function FormBuilderResponsesTab({ formId }: { formId: number }) 
       case 'SignatureField':
       case 'ImageField':
       case 'VideoField':
+      case 'TsplEmailField':
+      case 'TsplMobileField':
+      case 'TsplCurrentDateTimeField':
+      case 'TsplDobAgeField':
+      case 'TsplRangeDropdownField':
+      case 'TsplEducationField':
         columns.push({
           id: element.id,
           label: element.extraAttributes?.label || element.extraAttributes?.title || element.type,

@@ -188,6 +188,12 @@ export default function FloatingRightCapsuleToolbar({
                     { type: 'SignatureField', label: 'Signature' },
                     { type: 'BannerField', label: 'Banner' },
                     { type: 'TitleField', label: 'Title & Text' },
+                    { type: 'TsplEmailField', label: 'TSPL Email' },
+                    { type: 'TsplMobileField', label: 'TSPL Mobile' },
+                    { type: 'TsplCurrentDateTimeField', label: 'Current Date/Time' },
+                    { type: 'TsplDobAgeField', label: 'DOB → Age' },
+                    { type: 'TsplRangeDropdownField', label: 'Range Dropdown' },
+                    { type: 'TsplEducationField', label: 'Education' },
                   ] as Array<{ type: ElementsType; label: string }>
                 ).map((item) => (
                   <Button

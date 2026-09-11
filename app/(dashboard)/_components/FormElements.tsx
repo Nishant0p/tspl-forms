@@ -23,6 +23,12 @@ import { VideoFieldFormElement } from '@/components/fields/VideoField';
 import { BannerFieldFormElement } from '@/components/fields/BannerField';
 import { ThankYouFieldFormElement } from '@/components/fields/ThankYouField';
 import { ThemeFieldFormElement } from '@/components/fields/ThemeField';
+import { TsplEmailFieldFormElement } from '@/components/fields/TsplEmailField';
+import { TsplMobileFieldFormElement } from '@/components/fields/TsplMobileField';
+import { TsplCurrentDateTimeFieldFormElement } from '@/components/fields/TsplCurrentDateTimeField';
+import { TsplDobAgeFieldFormElement } from '@/components/fields/TsplDobAgeField';
+import { TsplRangeDropdownFieldFormElement } from '@/components/fields/TsplRangeDropdownField';
+import { TsplEducationFieldFormElement } from '@/components/fields/TsplEducationField';
 
 export type ElementsType =
   'TextField'
@@ -49,7 +55,13 @@ export type ElementsType =
   | 'SectionHeaderField'
   | 'BannerField'
   | 'ThankYouField'
-  | 'ThemeField';
+  | 'ThemeField'
+  | 'TsplEmailField'
+  | 'TsplMobileField'
+  | 'TsplCurrentDateTimeField'
+  | 'TsplDobAgeField'
+  | 'TsplRangeDropdownField'
+  | 'TsplEducationField';
 
 export type SubmitFunction = (key: string, value: string) => void;
 
@@ -115,4 +127,10 @@ export const FormElements: FormElementsType = {
   BannerField: BannerFieldFormElement,
   ThankYouField: ThankYouFieldFormElement,
   ThemeField: ThemeFieldFormElement,
+  TsplEmailField: TsplEmailFieldFormElement,
+  TsplMobileField: TsplMobileFieldFormElement,
+  TsplCurrentDateTimeField: TsplCurrentDateTimeFieldFormElement,
+  TsplDobAgeField: TsplDobAgeFieldFormElement,
+  TsplRangeDropdownField: TsplRangeDropdownFieldFormElement,
+  TsplEducationField: TsplEducationFieldFormElement,
 };

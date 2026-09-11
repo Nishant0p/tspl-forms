@@ -34,6 +34,9 @@ import {
   SplitSquareVertical,
   HardDrive,
   Check,
+  Sparkles,
+  ListFilter,
+  GraduationCap,
 } from 'lucide-react';
 import {
   Select,
@@ -75,6 +78,13 @@ const QUESTION_TYPE_OPTIONS: Array<{
   { type: 'BannerField', label: 'Image / Banner', icon: <ImageIcon className="h-4 w-4" /> },
   { type: 'TitleField', label: 'Title & Description', icon: <Type className="h-4 w-4" /> },
   { type: 'SectionHeaderField', label: 'Section Header', icon: <SplitSquareVertical className="h-4 w-4" /> },
+  // TSPL Custom Elements
+  { type: 'TsplEmailField', label: 'TSPL Email (Strict)', icon: <Mail className="h-4 w-4 text-primary" /> },
+  { type: 'TsplMobileField', label: 'TSPL Mobile (10-Digit)', icon: <Phone className="h-4 w-4 text-primary" /> },
+  { type: 'TsplCurrentDateTimeField', label: 'Current Date & Time', icon: <Clock className="h-4 w-4 text-primary" /> },
+  { type: 'TsplDobAgeField', label: 'DOB → Age', icon: <Sparkles className="h-4 w-4 text-primary" /> },
+  { type: 'TsplRangeDropdownField', label: 'Range Dropdown', icon: <ListFilter className="h-4 w-4 text-primary" /> },
+  { type: 'TsplEducationField', label: 'Education (Readymade)', icon: <GraduationCap className="h-4 w-4 text-primary" /> },
 ];
 
 export default function DesginerElementWrapper({

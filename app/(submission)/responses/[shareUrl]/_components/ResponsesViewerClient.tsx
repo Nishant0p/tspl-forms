@@ -89,6 +89,12 @@ export default function ResponsesViewerClient({ form }: ResponsesViewerClientPro
         case 'SignatureField':
         case 'ImageField':
         case 'VideoField':
+        case 'TsplEmailField':
+        case 'TsplMobileField':
+        case 'TsplCurrentDateTimeField':
+        case 'TsplDobAgeField':
+        case 'TsplRangeDropdownField':
+        case 'TsplEducationField':
           cols.push({
             id: el.id,
             label: el.extraAttributes?.label || el.extraAttributes?.title || el.type,

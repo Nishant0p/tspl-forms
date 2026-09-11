@@ -3,12 +3,22 @@
 import React, { useState } from 'react';
 import SidebarBtnElement from './SidebarBtnElement';
 import { FormElements } from './FormElements';
-import { LayoutGrid, FormInput, ChevronDown, ChevronUp } from 'lucide-react';
+import { LayoutGrid, FormInput, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export default function FormElementsSidebar() {
+  const [tsplCustomOpen, setTsplCustomOpen] = useState(true);
   const [layoutOpen, setLayoutOpen] = useState(true);
   const [formOpen, setFormOpen] = useState(true);
+
+  const tsplElements = [
+    FormElements.TsplEmailField,
+    FormElements.TsplMobileField,
+    FormElements.TsplCurrentDateTimeField,
+    FormElements.TsplDobAgeField,
+    FormElements.TsplRangeDropdownField,
+    FormElements.TsplEducationField,
+  ];
 
   const layoutElements = [
     FormElements.BannerField,
@@ -42,6 +52,40 @@ export default function FormElementsSidebar() {
 
   return (
     <div className="w-full space-y-3 pt-1 pb-4">
+      {/* TSPL Custom Elements Section */}
+      <div className="rounded-xl border border-primary/30 bg-card p-2.5 shadow-xs transition-all ring-1 ring-primary/10">
+        <button
+          type="button"
+          onClick={() => setTsplCustomOpen((prev) => !prev)}
+          className="w-full flex items-center justify-between py-1 px-1 text-xs font-semibold text-foreground hover:text-foreground/80 cursor-pointer select-none transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center h-6 w-6 rounded-md bg-primary/15 text-primary">
+              <Sparkles className="h-3.5 w-3.5" />
+            </div>
+            <span className="font-bold text-xs text-foreground">TSPL custom elements</span>
+            <Badge className="ml-1 text-[10px] px-1.5 py-0 h-4 font-bold bg-primary text-primary-foreground border-transparent">
+              {tsplElements.length}
+            </Badge>
+          </div>
+          {tsplCustomOpen ? (
+            <ChevronUp className="h-4 w-4 text-muted-foreground transition-transform" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform" />
+          )}
+        </button>
+
+        {tsplCustomOpen && (
+          <div className="pt-2.5">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {tsplElements.map((element) => (
+                <SidebarBtnElement key={element.type} formElement={element} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Layout Elements Section */}
       <div className="rounded-xl border border-border/80 bg-card p-2.5 shadow-xs transition-all">
         <button

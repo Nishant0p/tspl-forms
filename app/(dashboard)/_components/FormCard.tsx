@@ -159,9 +159,9 @@ function FormMiniPreview({ contentJson, formName }: { contentJson: string; formN
                     <div className="text-[10px] font-bold text-primary truncate">
                       {el.extraAttributes?.title || label}
                     </div>
-                  ) : el.type === 'SelectField' ? (
+                  ) : ['SelectField', 'TsplRangeDropdownField', 'TsplEducationField'].includes(el.type) ? (
                     <div className="h-4 w-full rounded border border-border/60 bg-background/80 px-1.5 text-[9px] text-muted-foreground flex items-center justify-between">
-                      <span className="truncate">{placeholder}</span>
+                      <span className="truncate">{placeholder || 'Select option...'}</span>
                       <span className="text-[8px] opacity-60">▼</span>
                     </div>
                   ) : el.type === 'TextAreaField' ? (
