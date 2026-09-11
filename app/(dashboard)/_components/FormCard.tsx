@@ -164,6 +164,11 @@ function FormMiniPreview({ contentJson, formName }: { contentJson: string; formN
                       <span className="truncate">{placeholder || 'Select option...'}</span>
                       <span className="text-[8px] opacity-60">▼</span>
                     </div>
+                  ) : el.type === 'TsplConsentField' ? (
+                    <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground pt-0.5">
+                      <div className="h-2.5 w-2.5 rounded border border-primary/50 bg-primary/10 shrink-0" />
+                      <span className="truncate">{el.extraAttributes?.agreementLabel || 'I agree and accept'}</span>
+                    </div>
                   ) : el.type === 'TextAreaField' ? (
                     <div className="h-6 w-full rounded border border-border/60 bg-background/80 p-1 text-[8px] text-muted-foreground flex flex-col justify-start">
                       <span className="truncate opacity-70">{placeholder}</span>

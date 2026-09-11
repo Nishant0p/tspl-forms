@@ -29,6 +29,8 @@ import { TsplCurrentDateTimeFieldFormElement } from '@/components/fields/TsplCur
 import { TsplDobAgeFieldFormElement } from '@/components/fields/TsplDobAgeField';
 import { TsplRangeDropdownFieldFormElement } from '@/components/fields/TsplRangeDropdownField';
 import { TsplEducationFieldFormElement } from '@/components/fields/TsplEducationField';
+import { TsplFullNameFieldFormElement } from '@/components/fields/TsplFullNameField';
+import { TsplConsentFieldFormElement } from '@/components/fields/TsplConsentField';
 
 export type ElementsType =
   'TextField'
@@ -61,7 +63,9 @@ export type ElementsType =
   | 'TsplCurrentDateTimeField'
   | 'TsplDobAgeField'
   | 'TsplRangeDropdownField'
-  | 'TsplEducationField';
+  | 'TsplEducationField'
+  | 'TsplFullNameField'
+  | 'TsplConsentField';
 
 export type SubmitFunction = (key: string, value: string) => void;
 
@@ -133,4 +137,6 @@ export const FormElements: FormElementsType = {
   TsplDobAgeField: TsplDobAgeFieldFormElement,
   TsplRangeDropdownField: TsplRangeDropdownFieldFormElement,
   TsplEducationField: TsplEducationFieldFormElement,
+  TsplFullNameField: TsplFullNameFieldFormElement,
+  TsplConsentField: TsplConsentFieldFormElement,
 };

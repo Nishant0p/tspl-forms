@@ -102,6 +102,8 @@ export default function FormBuilderResponsesTab({ formId }: { formId: number }) 
       case 'TsplDobAgeField':
       case 'TsplRangeDropdownField':
       case 'TsplEducationField':
+      case 'TsplFullNameField':
+      case 'TsplConsentField':
         columns.push({
           id: element.id,
           label: element.extraAttributes?.label || element.extraAttributes?.title || element.type,

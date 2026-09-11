@@ -12,12 +12,14 @@ export default function FormElementsSidebar() {
   const [formOpen, setFormOpen] = useState(true);
 
   const tsplElements = [
+    FormElements.TsplFullNameField,
     FormElements.TsplEmailField,
     FormElements.TsplMobileField,
     FormElements.TsplCurrentDateTimeField,
     FormElements.TsplDobAgeField,
     FormElements.TsplRangeDropdownField,
     FormElements.TsplEducationField,
+    FormElements.TsplConsentField,
   ];
 
   const layoutElements = [
