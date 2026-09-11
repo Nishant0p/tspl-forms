@@ -84,95 +84,39 @@ export async function sendTsplWebhookNotification({
     const rangeValue = findValue('TsplRangeDropdownField', /range|year/i);
     const consent = findValue('TsplConsentField', /consent|declaration|agree/i);
 
-    // Build the clean JSON payload specifically highlighting the requested TSPL elements
+    // Build the direct JSON payload with the requested TSPL elements
     const tsplPayload = {
+      name: fullName || null,
+      email: email || null,
+      phone: phoneNumber || null,
+      dateOfBirth: dateOfBirth || null,
+      education: education || null,
+      ...(currentDateTime && { currentDateTime }),
+      ...(rangeValue && { rangeValue }),
+      ...(consent && { consent }),
       formName,
       formUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://forms.tsplgroup.in'}/form/${formUrl}`,
       submissionId,
       submittedAt: new Date().toISOString(),
-      elements: {
-        fullName: fullName || null,
-        email: email || null,
-        phoneNumber: phoneNumber || null,
-        dateOfBirth: dateOfBirth || null,
-        education: education || null,
-        ...(currentDateTime && { currentDateTime }),
-        ...(rangeValue && { rangeValue }),
-        ...(consent && { consent }),
-      },
     };
 
-    // Construct Discord webhook payload with both raw JSON codeblock and rich Embed
-    const discordPayload = {
-      username: 'TSPL Forms Webhook',
-      avatar_url: 'https://forms.tsplgroup.in/tspl-icon-mark.png',
-      content: `### 📋 **New TSPL Form Submission**\n**Form:** ${formName}\n**Submission ID:** #${submissionId}\n\n\`\`\`json\n${JSON.stringify(tsplPayload.elements, null, 2)}\n\`\`\``,
-      embeds: [
-        {
-          title: `📋 ${formName}`,
-          url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://forms.tsplgroup.in'}/form/${formUrl}`,
-          color: 16418826, // TSPL Vibrant Orange (#FA5F0A)
-          description: 'A new submission containing TSPL elements has been recorded.',
-          fields: [
-            {
-              name: '👤 Full Name',
-              value: fullName || '*Not provided*',
-              inline: true,
-            },
-            {
-              name: '✉️ Email ID',
-              value: email || '*Not provided*',
-              inline: true,
-            },
-            {
-              name: '📱 Phone Number',
-              value: phoneNumber ? (phoneNumber.startsWith('+91') ? phoneNumber : `+91 ${phoneNumber}`) : '*Not provided*',
-              inline: true,
-            },
-            {
-              name: '🎂 Date of Birth / Age',
-              value: dateOfBirth || '*Not provided*',
-              inline: true,
-            },
-            {
-              name: '🎓 Education',
-              value: education || '*Not provided*',
-              inline: true,
-            },
-            ...(rangeValue
-              ? [
-                  {
-                    name: '📊 Range Value',
-                    value: rangeValue,
-                    inline: true,
-                  },
-                ]
-              : []),
-            ...(consent
-              ? [
-                  {
-                    name: '🛡️ Consent / Declaration',
-                    value: consent,
-                    inline: true,
-                  },
-                ]
-              : []),
-          ],
-          footer: {
-            text: `TSPL Forms & Workflow Platform • ID #${submissionId}`,
-            icon_url: 'https://forms.tsplgroup.in/tspl-icon-mark.png',
-          },
-          timestamp: new Date().toISOString(),
-        },
-      ],
-    };
+    const jsonString = JSON.stringify(tsplPayload, null, 2);
+    const isDiscord = webhookUrl.includes('discord.com');
+
+    // Discord requires { content: string } to send a message without embeds.
+    // Non-Discord endpoints receive the raw JSON body directly.
+    const requestBody = isDiscord
+      ? JSON.stringify({
+          content: `\`\`\`json\n${jsonString}\n\`\`\``,
+        })
+      : jsonString;
 
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(discordPayload),
+      body: requestBody,
     });
 
     if (!response.ok) {
