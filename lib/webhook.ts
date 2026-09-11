@@ -80,24 +80,14 @@ export async function sendTsplWebhookNotification({
     const phoneNumber = findValue('TsplMobileField', /mobile|phone|contact/i, 'PhoneField');
     const dateOfBirth = findValue('TsplDobAgeField', /dob|birth/i, 'DateField');
     const education = findValue('TsplEducationField', /education|qualification|degree/i, 'SelectField');
-    const currentDateTime = findValue('TsplCurrentDateTimeField', /timestamp|date\s*time/i);
-    const rangeValue = findValue('TsplRangeDropdownField', /range|year/i);
-    const consent = findValue('TsplConsentField', /consent|declaration|agree/i);
 
-    // Build the direct JSON payload with the requested TSPL elements
+    // Build the direct JSON payload containing strictly the 5 requested fields
     const tsplPayload = {
-      name: fullName || null,
-      email: email || null,
-      phone: phoneNumber || null,
-      dateOfBirth: dateOfBirth || null,
-      education: education || null,
-      ...(currentDateTime && { currentDateTime }),
-      ...(rangeValue && { rangeValue }),
-      ...(consent && { consent }),
-      formName,
-      formUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://forms.tsplgroup.in'}/form/${formUrl}`,
-      submissionId,
-      submittedAt: new Date().toISOString(),
+      name: fullName || '',
+      email: email || '',
+      phone: phoneNumber || '',
+      dateOfBirth: dateOfBirth || '',
+      education: education || '',
     };
 
     const jsonString = JSON.stringify(tsplPayload, null, 2);
