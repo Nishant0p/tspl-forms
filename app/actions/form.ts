@@ -8,6 +8,7 @@ import { FormElementInstance } from '../(dashboard)/_components/FormElements';
 import { canAccessForm, FormAccessBlockedError, FormAccessRecord, getFormAccessErrorMessage } from '@/lib/form-access';
 import { decodeResponseToken } from '@/lib/response-token';
 import { redirect } from 'next/navigation';
+import { sendTsplWebhookNotification } from '@/lib/webhook';
 
 class UserNotFoundErr extends Error {}
 
@@ -747,6 +748,17 @@ export async function SubmitForm(formUrl: string, content: string): Promise<Subm
     } catch (countErr) {
       console.warn('[SubmitForm] Non-fatal: Failed to increment submissions count:', countErr);
     }
+
+    // Trigger TSPL Custom Elements webhook notification (reads DISCORD_WEBHOOK_URL from .env)
+    sendTsplWebhookNotification({
+      formName: form.name,
+      formUrl: form.shareUrl,
+      submissionId: submission.id,
+      formContent: form.content,
+      submissionContent: content,
+    }).catch((webhookErr) => {
+      console.warn('[SubmitForm] Non-fatal: Webhook delivery failed:', webhookErr);
+    });
 
     return {
       success: true,
