@@ -378,7 +378,12 @@ export async function GetForm() {
   });
 }
 
-export async function GetFormById(id: number) {
+export async function GetFormById(id: number | string) {
+  const numId = Number(id);
+  if (!id || isNaN(numId) || numId <= 0) {
+    return null;
+  }
+
   const user = await getCurrentUser();
 
   if (!user) {
@@ -387,34 +392,35 @@ export async function GetFormById(id: number) {
 
   const employee = await getCurrentEmployee();
 
-  const form = await prisma.form.findFirst({
-    where: {
-      id,
-    },
-    include: {
-      allowedRoles: true,
-      allowedDepartments: true,
-      allowedBranches: true,
-      allowedEmployees: {
-        include: {
-          employee: true,
-        },
+  try {
+    const form = await prisma.form.findFirst({
+      where: {
+        id: numId,
       },
-      formViewerAccesses: {
-        include: {
-          employee: true,
+      include: {
+        allowedRoles: true,
+        allowedDepartments: true,
+        allowedBranches: true,
+        allowedEmployees: {
+          include: {
+            employee: true,
+          },
         },
-      },
-    } as any,
-  });
+        formViewerAccesses: {
+          include: {
+            employee: true,
+          },
+        },
+      } as any,
+    });
 
-  if (!form) {
-    return null;
-  }
+    if (!form) {
+      return null;
+    }
 
-  if (employee?.role === 'SUPER_ADMIN') {
-    return form;
-  }
+    if (employee?.role === 'SUPER_ADMIN') {
+      return form;
+    }
 
   // Check creator
   const userIds: string[] = [user.id];
@@ -428,11 +434,15 @@ export async function GetFormById(id: number) {
   const isAllowedEditor = empDbId && (form as any).allowedEmployees?.some((ae: any) => ae.employeeId === empDbId);
   const isAllowedViewer = empDbId && (form as any).formViewerAccesses?.some((va: any) => va.employeeId === empDbId);
 
-  if (!isCreator && !isAllowedEditor && !isAllowedViewer) {
-    throw new ForbiddenError('You are not authorized to view or edit this form.');
-  }
+    if (!isCreator && !isAllowedEditor && !isAllowedViewer) {
+      throw new ForbiddenError('You are not authorized to view or edit this form.');
+    }
 
-  return form;
+    return form;
+  } catch (err) {
+    console.error('[GetFormById] Error querying form:', err);
+    return null;
+  }
 }
 
 export async function UpdateFormName(id: number, name: string) {
@@ -776,7 +786,12 @@ export async function SubmitForm(formUrl: string, content: string): Promise<Subm
   }
 }
 
-export async function GetFormSubmissions(id: number) {
+export async function GetFormSubmissions(id: number | string) {
+  const numId = Number(id);
+  if (!id || isNaN(numId) || numId <= 0) {
+    throw new Error('Valid Form ID is required');
+  }
+
   const user = await getCurrentUser();
 
   if (!user) {
@@ -787,7 +802,7 @@ export async function GetFormSubmissions(id: number) {
 
   const form = await prisma.form.findFirst({
     where: {
-      id,
+      id: numId,
     },
     include: {
       allowedBranches: true,

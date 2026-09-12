@@ -7,10 +7,15 @@ import { updateEmployeeStatus } from '@/app/actions/employee';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-export default async function EmployeeDetailPage({ params }: { params: { id: string } }) {
+export default async function EmployeeDetailPage({
+  params,
+}: {
+  params: { id: string } | Promise<{ id: string }>;
+}) {
   await requireRole(['SUPER_ADMIN', 'ADMIN', 'HR']);
   const caller = await requireEmployee();
-  const employeeId = Number(params.id);
+  const resolvedParams = await Promise.resolve(params);
+  const employeeId = Number(resolvedParams?.id);
 
   if (!Number.isInteger(employeeId) || employeeId <= 0) {
     notFound();

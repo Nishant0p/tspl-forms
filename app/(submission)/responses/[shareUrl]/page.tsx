@@ -10,10 +10,11 @@ export const dynamic = 'force-dynamic';
 export async function generateMetadata({
   params,
 }: {
-  params: { shareUrl: string };
+  params: { shareUrl: string } | Promise<{ shareUrl: string }>;
 }): Promise<Metadata> {
   try {
-    const form = await GetFormSubmissionsByShareUrl(params.shareUrl);
+    const resolvedParams = await Promise.resolve(params);
+    const form = await GetFormSubmissionsByShareUrl(resolvedParams.shareUrl);
     return {
       title: `${form.name} — Responses Viewer | TSPL Forms`,
       description: `View submitted responses and statistics for ${form.name}.`,
@@ -28,9 +29,10 @@ export async function generateMetadata({
 export default async function ResponsesPage({
   params,
 }: {
-  params: { shareUrl: string };
+  params: { shareUrl: string } | Promise<{ shareUrl: string }>;
 }) {
-  const { shareUrl } = params;
+  const resolvedParams = await Promise.resolve(params);
+  const shareUrl = resolvedParams?.shareUrl;
 
   let form: any = null;
 

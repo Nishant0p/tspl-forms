@@ -7,11 +7,17 @@ import React from 'react';
 export default async function BuilderPage({
   params,
 }: {
-  params: { id: string };
+  params: { id: string } | Promise<{ id: string }>;
 }) {
-  const { id } = params;
+  const resolvedParams = await Promise.resolve(params);
+  const id = resolvedParams?.id;
+  const numId = Number(id);
 
-  const form = await GetFormById(Number(id));
+  if (!id || isNaN(numId) || numId <= 0) {
+    notFound();
+  }
+
+  const form = await GetFormById(numId);
   const db = prisma as any;
 
   const [departments, branches, employees] = await Promise.all([

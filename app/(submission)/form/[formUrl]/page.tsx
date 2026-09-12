@@ -8,9 +8,14 @@ import { notFound, redirect } from 'next/navigation';
 export default async function FormPage({
   params,
 }: {
-  params: { formUrl: string };
+  params: { formUrl: string } | Promise<{ formUrl: string }>;
 }) {
-  const { formUrl } = params;
+  const resolvedParams = await Promise.resolve(params);
+  const formUrl = resolvedParams?.formUrl;
+
+  if (!formUrl) {
+    notFound();
+  }
 
   let form;
 

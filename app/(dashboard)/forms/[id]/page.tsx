@@ -39,15 +39,21 @@ import {
 export default async function FormDetailsPage({
   params,
 }: {
-  params: { id: string };
+  params: { id: string } | Promise<{ id: string }>;
 }) {
-  const { id } = params;
+  const resolvedParams = await Promise.resolve(params);
+  const id = resolvedParams?.id;
+  const numId = Number(id);
 
-  const form = await GetFormById(Number(id));
+  if (!id || isNaN(numId) || numId <= 0) {
+    notFound();
+  }
+
+  const form = await GetFormById(numId);
   const currentEmployee = await getCurrentEmployee();
   const isManagerOrAdmin = currentEmployee && ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'HR'].includes(currentEmployee.role);
 
-  const headerList = headers()
+  const headerList = headers();
 
   const host = headerList.get('host');
   const protocol = headerList.get('x-forwarded-proto') ?? 'http';
