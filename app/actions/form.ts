@@ -1,6 +1,6 @@
 'use server';
 
-import { getCurrentUser, AuthRequiredError, ForbiddenError, getCurrentEmployee, getSuperAdminIdpConfig, getHardcodedAdminSession } from '@/lib/auth';
+import { getCurrentUser, AuthRequiredError, ForbiddenError, getCurrentEmployee, getSuperAdminIdpConfig, getHardcodedAdminSession, isSuperAdmin } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { generateCustomSlug } from '@/lib/url';
 import { FormSchema, formSchema } from '@/schemas/form';
@@ -304,21 +304,46 @@ export async function GetForm() {
   }
 
   const employee = await getCurrentEmployee();
+  const superAdmin = (await isSuperAdmin()) || Boolean(
+    employee?.role === 'SUPER_ADMIN' ||
+    user?.role === 'SUPER_ADMIN' ||
+    user?.id === 'EMP000' ||
+    user?.id === 'TSPL000' ||
+    employee?.employeeId === 'EMP000' ||
+    employee?.employeeId === 'TSPL000' ||
+    user?.primaryEmailAddress?.emailAddress?.toLowerCase() === 'nishant@brandboosters.marketing' ||
+    (user as any)?.email?.toLowerCase() === 'nishant@brandboosters.marketing'
+  );
+  const isAdmin = superAdmin || ['ADMIN', 'HR', 'EDITOR', 'MANAGER'].includes(String(employee?.role || user?.role));
 
   let forms: any[] = [];
 
-  // Super Admin can view all forms
-  if (employee?.role === 'SUPER_ADMIN') {
-    forms = await (prisma as any).form.findMany({
-      include: {
-        branch: true,
-        allowedEmployees: { include: { employee: true } },
-        formViewerAccesses: { include: { employee: true } },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+  // Super Admin and Admin/HR/Editor/Manager can view all forms
+  if (superAdmin || isAdmin) {
+    try {
+      forms = await (prisma as any).form.findMany({
+        include: {
+          branch: true,
+          allowedEmployees: { include: { employee: true } },
+          formViewerAccesses: { include: { employee: true } },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+    } catch (e) {
+      console.warn('[GetForm] Admin full query error, attempting basic query:', e);
+      try {
+        forms = await (prisma as any).form.findMany({
+          orderBy: {
+            createdAt: 'desc',
+          },
+        });
+      } catch (e2) {
+        console.error('[GetForm] Failed to fetch forms from database:', e2);
+        forms = [];
+      }
+    }
   } else {
     // Collect all possible caller identifiers for matching creator
     const userIds: string[] = [user.id];
@@ -329,27 +354,48 @@ export async function GetForm() {
 
     const empDbId = typeof employee?.id === 'number' && employee.id < 1000000 ? employee.id : null;
 
-    forms = await (prisma as any).form.findMany({
-      where: {
-        OR: [
-          { userId: { in: userIds } },
-          ...(empDbId
-            ? [
-                { allowedEmployees: { some: { employeeId: empDbId } } },
-                { formViewerAccesses: { some: { employeeId: empDbId } } },
-              ]
-            : []),
-        ],
-      },
-      include: {
-        branch: true,
-        allowedEmployees: { include: { employee: true } },
-        formViewerAccesses: { include: { employee: true } },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    try {
+      forms = await (prisma as any).form.findMany({
+        where: {
+          OR: [
+            { published: true },
+            { userId: { in: userIds } },
+            ...(empDbId
+              ? [
+                  { allowedEmployees: { some: { employeeId: empDbId } } },
+                  { formViewerAccesses: { some: { employeeId: empDbId } } },
+                ]
+              : []),
+          ],
+        },
+        include: {
+          branch: true,
+          allowedEmployees: { include: { employee: true } },
+          formViewerAccesses: { include: { employee: true } },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+    } catch (e) {
+      console.warn('[GetForm] User forms query error, falling back to basic query:', e);
+      try {
+        forms = await (prisma as any).form.findMany({
+          where: {
+            OR: [
+              { published: true },
+              { userId: { in: userIds } },
+            ],
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        });
+      } catch (e2) {
+        console.error('[GetForm] Failed user fallback query:', e2);
+        forms = [];
+      }
+    }
   }
 
   const userIdsInForms = Array.from(new Set(forms.map((f: any) => f.userId).filter(Boolean)));

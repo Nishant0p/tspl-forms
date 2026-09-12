@@ -35,7 +35,6 @@ import {
   Send,
 } from 'lucide-react';
 import Link from 'next/link';
-import Confetti from 'react-confetti';
 import { buildFormSubmitUrl } from '@/lib/url';
 import FormAccessSettings from './FormAccessSettings';
 import FormShareDialog from './FormShareDialog';
