@@ -4,15 +4,26 @@ const PUBLIC_ROUTES = ['/', '/platform', '/sign-in', '/access-denied'];
 
 function parseSessionCookie(raw: string | undefined): any | null {
   if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    try {
-      return JSON.parse(decodeURIComponent(raw));
-    } catch {
-      return null;
-    }
+  let str = raw;
+  if (typeof str === 'string' && str.startsWith('"') && str.endsWith('"')) {
+    str = str.slice(1, -1);
   }
+  try {
+    const val = JSON.parse(str);
+    if (typeof val === 'object' && val !== null) return val;
+    str = val;
+  } catch {}
+  try {
+    const decoded = decodeURIComponent(str);
+    const val = JSON.parse(decoded);
+    if (typeof val === 'object' && val !== null) return val;
+  } catch {}
+  try {
+    const decoded = decodeURIComponent(decodeURIComponent(str));
+    const val = JSON.parse(decoded);
+    if (typeof val === 'object' && val !== null) return val;
+  } catch {}
+  return null;
 }
 
 function hasValidSessionCookie(raw: string | undefined): boolean {
@@ -49,14 +60,6 @@ export function middleware(req: NextRequest) {
   const session = req.cookies.get('session_user')?.value;
   const isAuthenticated = hasValidSessionCookie(session);
 
-  // If authenticated user visits /sign-in, redirect straight to /dashboard
-  if (pathname === '/sign-in' && isAuthenticated) {
-    const dashboard = req.nextUrl.clone();
-    dashboard.pathname = '/dashboard';
-    dashboard.search = '';
-    return NextResponse.redirect(dashboard);
-  }
-
   if (isPublic(pathname)) {
     return NextResponse.next();
   }
@@ -69,7 +72,7 @@ export function middleware(req: NextRequest) {
       signIn.searchParams.set('redirect', pathname);
     }
     const response = NextResponse.redirect(signIn);
-    response.cookies.delete('session_user');
+    response.cookies.set('session_user', '', { path: '/', maxAge: 0 });
     return response;
   }
 
