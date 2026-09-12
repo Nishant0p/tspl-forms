@@ -196,6 +196,7 @@ export default function FloatingRightCapsuleToolbar({
                     { type: 'TsplRangeDropdownField', label: 'Range Dropdown' },
                     { type: 'TsplEducationField', label: 'Education' },
                     { type: 'TsplConsentField', label: 'Consent / Declaration' },
+                    { type: 'ConditionField', label: 'Condition (If/Else)' },
                   ] as Array<{ type: ElementsType; label: string }>
                 ).map((item) => (
                   <Button

@@ -34,6 +34,7 @@ export default function FormElementsSidebar() {
   ];
 
   const formElements = [
+    FormElements.ConditionField,
     FormElements.TextField,
     FormElements.EmailField,
     FormElements.PhoneField,

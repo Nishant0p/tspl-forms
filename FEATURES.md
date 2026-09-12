@@ -35,7 +35,8 @@ The builder supports the following fields:
 - **Image Field**: Visual image presentation block.
 - **Video Field**: Embedded video display block.
 
-#### Advanced Capabilities
+#### Advanced Capabilities & Logic
+- **Condition Field (If/Else Decision & Option Visibility)**: Interactive or background conditional logic block that controls which questions are shown or hidden based on decisions, and dynamically changes/filters visible options in dropdowns and radio fields.
 - **File Upload Field**: Attachment upload widget.
 - **Signature Field**: Canvas-based digital signature widget.
 

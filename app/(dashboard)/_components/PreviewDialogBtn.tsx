@@ -2,10 +2,11 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { useDesginerStore } from '@/store/store';
 import { EyeIcon, PartyPopper, ExternalLink, ArrowLeft } from 'lucide-react';
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { FormElements } from './FormElements';
 import { cn } from '@/lib/utils';
 import { getThemeById, getFormBackgroundStyle } from '@/lib/form-themes';
+import { evaluateFormConditions } from '@/lib/condition-evaluator';
 
 interface PreviewDialogBtnProps {
   formName?: string;
@@ -19,6 +20,15 @@ export default function PreviewDialogBtn({
   trigger,
 }: PreviewDialogBtnProps) {
   const { elements } = useDesginerStore();
+  const [previewValues, setPreviewValues] = useState<Record<string, string>>({});
+
+  const { hiddenFieldIds, fieldOptionOverrides } = useMemo(() => {
+    return evaluateFormConditions(elements, previewValues);
+  }, [elements, previewValues]);
+
+  const handlePreviewSubmit = (key: string, value: string) => {
+    setPreviewValues((prev) => ({ ...prev, [key]: value }));
+  };
 
   const thankYouElement = elements.find((el) => el.type === 'ThankYouField');
   const bannerElement = elements.find((el) => el.type === 'BannerField');
@@ -156,18 +166,36 @@ export default function PreviewDialogBtn({
 
             {/* Questions Preview */}
             {questionsContent.map((element) => {
-              const FormComponent = FormElements[element.type].formComponent;
+              if (hiddenFieldIds.has(element.id)) {
+                return null;
+              }
+
+              // Apply dynamic option visibility overrides if present
+              let effectiveElement = element;
+              if (fieldOptionOverrides.has(element.id)) {
+                effectiveElement = {
+                  ...element,
+                  extraAttributes: {
+                    ...element.extraAttributes,
+                    options: fieldOptionOverrides.get(element.id),
+                  },
+                };
+              }
+
+              const FormComponent = FormElements[effectiveElement.type].formComponent;
               return (
                 <div
                   key={element.id}
                   className={cn(
-                    "w-full bg-card text-card-foreground p-4 sm:p-6 rounded-xl border border-border shadow-xs transition-all",
+                    "w-full bg-card text-card-foreground p-4 sm:p-6 rounded-xl border border-border shadow-xs transition-all animate-in fade-in slide-in-from-top-1",
                     themePreset.accentBorder,
                     element.type === 'BannerField' && "p-0 border-none shadow-none bg-transparent w-full overflow-hidden rounded-xl"
                   )}
                 >
                   <FormComponent
-                    elementInstance={element}
+                    elementInstance={effectiveElement}
+                    submitFunction={handlePreviewSubmit}
+                    defaultValues={previewValues[element.id]}
                   />
                 </div>
               );

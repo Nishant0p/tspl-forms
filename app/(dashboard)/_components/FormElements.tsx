@@ -31,6 +31,7 @@ import { TsplRangeDropdownFieldFormElement } from '@/components/fields/TsplRange
 import { TsplEducationFieldFormElement } from '@/components/fields/TsplEducationField';
 import { TsplFullNameFieldFormElement } from '@/components/fields/TsplFullNameField';
 import { TsplConsentFieldFormElement } from '@/components/fields/TsplConsentField';
+import { ConditionFieldFormElement } from '@/components/fields/ConditionField';
 
 export type ElementsType =
   'TextField'
@@ -65,7 +66,8 @@ export type ElementsType =
   | 'TsplRangeDropdownField'
   | 'TsplEducationField'
   | 'TsplFullNameField'
-  | 'TsplConsentField';
+  | 'TsplConsentField'
+  | 'ConditionField';
 
 export type SubmitFunction = (key: string, value: string) => void;
 
@@ -139,4 +141,5 @@ export const FormElements: FormElementsType = {
   TsplEducationField: TsplEducationFieldFormElement,
   TsplFullNameField: TsplFullNameFieldFormElement,
   TsplConsentField: TsplConsentFieldFormElement,
+  ConditionField: ConditionFieldFormElement,
 };

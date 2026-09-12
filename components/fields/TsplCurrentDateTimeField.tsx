@@ -9,8 +9,8 @@ import {
 import { useDesginerStore } from '@/store/store';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Label } from '@radix-ui/react-label';
-import { Clock, Calendar, ShieldCheck, Sparkles } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Clock, ShieldCheck } from 'lucide-react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import {
@@ -194,7 +194,6 @@ function DesignerComponent({
 function FormComponent({
   elementInstance,
   submitFunction,
-  defaultValues,
 }: {
   elementInstance: FormElementInstance;
   submitFunction?: SubmitFunction;
@@ -202,60 +201,17 @@ function FormComponent({
   defaultValues?: string;
 }) {
   const element = elementInstance as CustomInstance;
-  const { label, helperText } = element.extraAttributes;
 
-  const [currentTime, setCurrentTime] = useState<Date>(new Date());
-  const formattedString = format(currentTime, 'dd MMMM yyyy, hh:mm:ss a');
-
-  // Auto-record submission time automatically on render/mount
+  // Silently auto-record the current timestamp into form values on mount.
+  // No UI is rendered — the field is invisible to the user.
   useEffect(() => {
-    const now = new Date();
-    setCurrentTime(now);
-    const stamped = format(now, 'yyyy-MM-dd HH:mm:ss');
+    const stamp = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
     if (submitFunction) {
-      submitFunction(element.id, stamped);
+      submitFunction(element.id, stamp);
     }
-    // Update live clock tick every second for crisp feedback
-    const interval = setInterval(() => {
-      const liveNow = new Date();
-      setCurrentTime(liveNow);
-      if (submitFunction) {
-        submitFunction(element.id, format(liveNow, 'yyyy-MM-dd HH:mm:ss'));
-      }
-    }, 1000);
+  // Only run once on mount — we capture the time the form is first opened.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    return () => clearInterval(interval);
-  }, [element.id, submitFunction]);
-
-  return (
-    <div className="flex w-full flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <Label className="font-semibold text-sm text-foreground flex items-center gap-1.5">
-          <Clock className="h-4 w-4 text-muted-foreground" />
-          <span>{label}</span>
-        </Label>
-        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-          <ShieldCheck className="h-3 w-3" /> Auto Recorded
-        </span>
-      </div>
-
-      <div className="flex items-center justify-between p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 transition-all">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-            <Clock className="h-4 w-4 animate-pulse" />
-          </div>
-          <div>
-            <p className="text-xs sm:text-sm font-semibold text-foreground font-mono">
-              {formattedString}
-            </p>
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-              <span>Timestamp will be securely saved with response</span>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
-    </div>
-  );
+  return null;
 }

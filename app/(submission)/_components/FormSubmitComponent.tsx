@@ -9,8 +9,9 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import { Loader, AlertCircle, CheckCircle2, PartyPopper, ExternalLink, Sparkles, ShieldAlert } from 'lucide-react';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { getThemeById, getFormBackgroundStyle } from '@/lib/form-themes';
+import { evaluateFormConditions } from '@/lib/condition-evaluator';
 
 interface Props {
   formUrl: string;
@@ -27,6 +28,12 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [answeredCount, setAnsweredCount] = useState<number>(0);
+  const [formValuesState, setFormValuesState] = useState<{ [key: string]: string }>({});
+
+  // Dynamic conditional logic evaluation (If/Else Decisions & Visible Options)
+  const { hiddenFieldIds, fieldOptionOverrides } = useMemo(() => {
+    return evaluateFormConditions(content, formValuesState);
+  }, [content, formValuesState]);
 
   // Extract ThemeField if configured
   const themeElement = content.find((el) => el.type === 'ThemeField');
@@ -44,9 +51,10 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
     (el) => el.type !== 'ThankYouField' && el.type !== 'BannerField' && el.type !== 'ThemeField'
   );
 
-  // Input questions only (exclude layout text / dividers)
+  // Input questions only (exclude layout text / dividers / auto-capture fields / hidden fields)
   const inputQuestions = questionsContent.filter(
     (el) =>
+      !hiddenFieldIds.has(el.id) &&
       ![
         'TitleField',
         'SubTitleField',
@@ -55,6 +63,7 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
         'SpacerField',
         'SectionHeaderField',
         'BannerField',
+        'TsplCurrentDateTimeField',
       ].includes(el.type)
   );
 
@@ -77,6 +86,7 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
           }
         }
         setAnsweredCount(count);
+        setFormValuesState(parsed);
         setRenderKey(Date.now());
       }
     } catch {
@@ -86,6 +96,11 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
 
   const validateForm: () => boolean = () => {
     for (const field of questionsContent) {
+      // Skip fields hidden by conditional logic from validation
+      if (hiddenFieldIds.has(field.id)) {
+        continue;
+      }
+
       const actualValue = formValues.current[field.id] || '';
       const valid = FormElements[field.type].validate(field, actualValue);
 
@@ -103,6 +118,7 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
 
   const submitValues = (key: string, value: string) => {
     formValues.current[key] = value;
+    setFormValuesState((prev) => ({ ...prev, [key]: value }));
 
     // Recalculate answered fields
     let count = 0;
@@ -140,7 +156,23 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
 
     try {
       setIsSubmitting(true);
-      const jsonContent = JSON.stringify(formValues.current);
+
+      // Auto-inject submission timestamp for all TsplCurrentDateTimeField elements
+      const { format } = await import('date-fns');
+      const submissionStamp = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
+      for (const el of content) {
+        if (el.type === 'TsplCurrentDateTimeField') {
+          formValues.current[el.id] = submissionStamp;
+        }
+      }
+
+      // Exclude hidden field values from the final submission
+      const sanitizedValues = { ...formValues.current };
+      for (const hiddenId of hiddenFieldIds) {
+        delete sanitizedValues[hiddenId];
+      }
+
+      const jsonContent = JSON.stringify(sanitizedValues);
       const res = await SubmitForm(formUrl, jsonContent);
 
       if (!res.success) {
@@ -403,7 +435,37 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
 
         {/* Form Question Cards */}
         {questionsContent.map((element) => {
-          const FormElement = FormElements[element.type].formComponent;
+          // If field is hidden by conditional logic, do not render it
+          if (hiddenFieldIds.has(element.id)) {
+            return null;
+          }
+
+          // TsplCurrentDateTimeField is invisible — it only auto-records the
+          // submission timestamp silently via its FormComponent (returns null).
+          if (element.type === 'TsplCurrentDateTimeField') {
+            const FormElement = FormElements[element.type].formComponent;
+            return (
+              <FormElement
+                key={element.id}
+                elementInstance={element}
+                submitFunction={submitValues}
+              />
+            );
+          }
+
+          // Apply dynamic option visibility overrides if present
+          let effectiveElement = element;
+          if (fieldOptionOverrides.has(element.id)) {
+            effectiveElement = {
+              ...element,
+              extraAttributes: {
+                ...element.extraAttributes,
+                options: fieldOptionOverrides.get(element.id),
+              },
+            };
+          }
+
+          const FormElement = FormElements[effectiveElement.type].formComponent;
           const isInvalid = formErrors.current[element.id];
           const isLayout = [
             'TitleField',
@@ -419,7 +481,7 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
             <div
               key={element.id}
               className={cn(
-                'w-full bg-card text-card-foreground p-4 sm:p-6 rounded-xl border border-border shadow-xs transition-all duration-200 focus-within:ring-2 focus-within:ring-offset-1',
+                'w-full bg-card text-card-foreground p-4 sm:p-6 rounded-xl border border-border shadow-xs transition-all duration-200 focus-within:ring-2 focus-within:ring-offset-1 animate-in fade-in slide-in-from-top-1',
                 themePreset.accentBorder,
                 isInvalid && 'border-red-500 border-l-[4px] border-l-red-500 focus-within:border-l-red-500',
                 element.type === 'BannerField' &&
@@ -427,7 +489,7 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
               )}
             >
               <FormElement
-                elementInstance={element}
+                elementInstance={effectiveElement}
                 submitFunction={submitValues}
                 isInvalid={isInvalid}
                 defaultValues={formValues.current[element.id]}
@@ -463,6 +525,7 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
               formValues.current = {};
               formErrors.current = {};
               setAnsweredCount(0);
+              setFormValuesState({});
               try {
                 localStorage.removeItem('tspl_draft_' + formUrl);
               } catch {}

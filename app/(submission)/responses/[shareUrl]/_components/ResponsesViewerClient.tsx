@@ -97,6 +97,7 @@ export default function ResponsesViewerClient({ form }: ResponsesViewerClientPro
         case 'TsplEducationField':
         case 'TsplFullNameField':
         case 'TsplConsentField':
+        case 'ConditionField':
           cols.push({
             id: el.id,
             label: el.extraAttributes?.label || el.extraAttributes?.title || el.type,

@@ -39,6 +39,7 @@ import {
   GraduationCap,
   User,
   ShieldCheck,
+  GitBranch,
 } from 'lucide-react';
 import {
   Select,
@@ -89,6 +90,7 @@ const QUESTION_TYPE_OPTIONS: Array<{
   { type: 'TsplRangeDropdownField', label: 'Range Dropdown', icon: <ListFilter className="h-4 w-4 text-primary" /> },
   { type: 'TsplEducationField', label: 'Education (Readymade)', icon: <GraduationCap className="h-4 w-4 text-primary" /> },
   { type: 'TsplConsentField', label: 'Consent / Declaration', icon: <ShieldCheck className="h-4 w-4 text-primary" /> },
+  { type: 'ConditionField', label: 'Condition (If/Else)', icon: <GitBranch className="h-4 w-4 text-emerald-500" /> },
 ];
 
 export default function DesginerElementWrapper({
