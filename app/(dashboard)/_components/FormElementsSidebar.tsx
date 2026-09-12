@@ -17,6 +17,8 @@ export default function FormElementsSidebar() {
     FormElements.TsplMobileField,
     FormElements.TsplCurrentDateTimeField,
     FormElements.TsplDobAgeField,
+    FormElements.TsplGenderField,
+    FormElements.TsplLocationField,
     FormElements.TsplRangeDropdownField,
     FormElements.TsplEducationField,
     FormElements.TsplConsentField,

@@ -38,6 +38,8 @@ import {
   ListFilter,
   GraduationCap,
   User,
+  Users,
+  MapPin,
   ShieldCheck,
   GitBranch,
 } from 'lucide-react';
@@ -87,6 +89,8 @@ const QUESTION_TYPE_OPTIONS: Array<{
   { type: 'TsplMobileField', label: 'TSPL Mobile (10-Digit)', icon: <Phone className="h-4 w-4 text-primary" /> },
   { type: 'TsplCurrentDateTimeField', label: 'Current Date & Time', icon: <Clock className="h-4 w-4 text-primary" /> },
   { type: 'TsplDobAgeField', label: 'DOB → Age', icon: <Sparkles className="h-4 w-4 text-primary" /> },
+  { type: 'TsplGenderField', label: 'Gender', icon: <Users className="h-4 w-4 text-primary" /> },
+  { type: 'TsplLocationField', label: 'Location (Pincode)', icon: <MapPin className="h-4 w-4 text-primary" /> },
   { type: 'TsplRangeDropdownField', label: 'Range Dropdown', icon: <ListFilter className="h-4 w-4 text-primary" /> },
   { type: 'TsplEducationField', label: 'Education (Readymade)', icon: <GraduationCap className="h-4 w-4 text-primary" /> },
   { type: 'TsplConsentField', label: 'Consent / Declaration', icon: <ShieldCheck className="h-4 w-4 text-primary" /> },

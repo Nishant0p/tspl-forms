@@ -21,6 +21,7 @@ import {
   Loader2,
   Calendar,
   Share2,
+  MapPin,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FormCollaboratorsModal from '@/components/FormCollaboratorsModal';
@@ -104,6 +105,8 @@ export default function FormBuilderResponsesTab({ formId }: { formId: number }) 
       case 'TsplEducationField':
       case 'TsplFullNameField':
       case 'TsplConsentField':
+      case 'TsplGenderField':
+      case 'TsplLocationField':
         columns.push({
           id: element.id,
           label: element.extraAttributes?.label || element.extraAttributes?.title || element.type,
@@ -348,6 +351,24 @@ function renderCellValue(type: ElementsType, value: any) {
         // Raw string
       }
       return <span className="truncate max-w-[140px] inline-block">{String(value)}</span>;
+
+    case 'TsplLocationField':
+      try {
+        const parsed = JSON.parse(value);
+        return (
+          <span className="inline-flex items-center gap-1 font-medium text-foreground truncate max-w-[240px]" title={parsed.formatted || value}>
+            <MapPin className="h-3 w-3 text-primary shrink-0" />
+            <span className="truncate">{parsed.formatted || value}</span>
+          </span>
+        );
+      } catch {
+        return (
+          <span className="inline-flex items-center gap-1 font-medium text-foreground truncate max-w-[240px]" title={String(value)}>
+            <MapPin className="h-3 w-3 text-primary shrink-0" />
+            <span className="truncate">{String(value)}</span>
+          </span>
+        );
+      }
 
     default:
       return <span className="truncate max-w-[160px] inline-block">{String(value)}</span>;

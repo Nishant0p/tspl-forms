@@ -185,6 +185,8 @@ function getElementDisplayName(el: FormElementInstance): string {
   if (el.type === 'TitleField') return 'Title Field';
   if (el.type === 'TsplRangeDropdownField') return 'Range Dropdown (Years / Numbers)';
   if (el.type === 'TsplCurrentDateTimeField') return 'Submission Date & Time';
+  if (el.type === 'TsplGenderField') return 'Gender';
+  if (el.type === 'TsplLocationField') return 'Location (Pincode)';
   return el.type;
 }
 
@@ -206,7 +208,7 @@ function PropertiesComponent({
   // Option-based fields (SelectField, RadioField, CheckboxField) for option visibility control
   const optionBasedElements = useMemo(() => {
     return otherElements.filter((el) =>
-      ['SelectField', 'RadioField', 'CheckboxField', 'TsplRangeDropdownField'].includes(el.type)
+      ['SelectField', 'RadioField', 'CheckboxField', 'TsplRangeDropdownField', 'TsplEducationField', 'TsplGenderField'].includes(el.type)
     );
   }, [otherElements]);
 
@@ -893,6 +895,16 @@ function PropertiesComponent({
                                 {el.type === 'TsplRangeDropdownField' && (
                                   <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">
                                     Range Dropdown
+                                  </Badge>
+                                )}
+                                {el.type === 'TsplGenderField' && (
+                                  <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">
+                                    Gender
+                                  </Badge>
+                                )}
+                                {el.type === 'TsplLocationField' && (
+                                  <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">
+                                    Location
                                   </Badge>
                                 )}
                               </div>

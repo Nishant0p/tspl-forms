@@ -273,6 +273,8 @@ async function SubMissionTable({ id }: { id: number }) {
       case "TsplEducationField":
       case "TsplFullNameField":
       case "TsplConsentField":
+      case "TsplGenderField":
+      case "TsplLocationField":
         columns.push({
           id: element.id,
           label: element.extraAttributes?.label || element.extraAttributes?.title || element.type,

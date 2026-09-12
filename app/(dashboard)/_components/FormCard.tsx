@@ -169,6 +169,27 @@ function FormMiniPreview({ contentJson, formName }: { contentJson: string; formN
                       <div className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
                       <span className="truncate">{el.extraAttributes?.label || 'Condition Decision'}</span>
                     </div>
+                  ) : el.type === 'TsplGenderField' ? (
+                    <div className="flex items-center gap-1.5 pt-0.5">
+                      {(el.extraAttributes?.options?.slice(0, 3) || ['Male', 'Female', 'Other']).map((g: string, idx: number) => (
+                        <div
+                          key={g}
+                          className={cn(
+                            'rounded px-1.5 py-0.5 text-[8px] font-medium border flex items-center gap-1',
+                            idx === 0
+                              ? 'border-primary/40 bg-primary/10 text-primary'
+                              : 'border-border/60 bg-muted/40 text-muted-foreground'
+                          )}
+                        >
+                          <span>{g}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : el.type === 'TsplLocationField' ? (
+                    <div className="h-4 w-full rounded border border-primary/30 bg-primary/5 px-1.5 text-[9px] text-primary flex items-center gap-1 truncate">
+                      <span className="text-[9px]">📍</span>
+                      <span className="truncate">{el.extraAttributes?.placeholder || 'PIN Code Location'}</span>
+                    </div>
                   ) : el.type === 'TsplConsentField' ? (
                     <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground pt-0.5">
                       <div className="h-2.5 w-2.5 rounded border border-primary/50 bg-primary/10 shrink-0" />

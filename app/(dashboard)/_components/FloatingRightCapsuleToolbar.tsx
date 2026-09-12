@@ -193,6 +193,8 @@ export default function FloatingRightCapsuleToolbar({
                     { type: 'TsplMobileField', label: 'TSPL Mobile' },
                     { type: 'TsplCurrentDateTimeField', label: 'Current Date/Time' },
                     { type: 'TsplDobAgeField', label: 'DOB → Age' },
+                    { type: 'TsplGenderField', label: 'Gender' },
+                    { type: 'TsplLocationField', label: 'Location (Pincode)' },
                     { type: 'TsplRangeDropdownField', label: 'Range Dropdown' },
                     { type: 'TsplEducationField', label: 'Education' },
                     { type: 'TsplConsentField', label: 'Consent / Declaration' },

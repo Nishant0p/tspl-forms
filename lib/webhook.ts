@@ -9,7 +9,7 @@ export type SendWebhookParams = {
 };
 
 /**
- * Sends a webhook notification with TSPL custom elements (Name, Email, Phone, DOB, Education)
+ * Sends a webhook notification with TSPL custom elements (Name, Email, Phone, DOB, Education, Gender, Location)
  * in JSON format to the Discord webhook configured in .env (DISCORD_WEBHOOK_URL).
  * The URL is stored securely in .env and never hardcoded.
  */
@@ -80,14 +80,27 @@ export async function sendTsplWebhookNotification({
     const phoneNumber = findValue('TsplMobileField', /mobile|phone|contact/i, 'PhoneField');
     const dateOfBirth = findValue('TsplDobAgeField', /dob|birth/i, 'DateField');
     const education = findValue('TsplEducationField', /education|qualification|degree/i, 'SelectField');
+    const gender = findValue('TsplGenderField', /gender|sex/i, 'RadioField');
+    const rawLocation = findValue('TsplLocationField', /location|pincode|address/i, 'TextField');
+    let location = rawLocation || '';
+    if (rawLocation) {
+      try {
+        const parsed = JSON.parse(rawLocation);
+        location = parsed.formatted || rawLocation;
+      } catch {
+        location = rawLocation;
+      }
+    }
 
-    // Build the direct JSON payload containing strictly the 5 requested fields
+    // Build the direct JSON payload containing strictly the TSPL fields
     const tsplPayload = {
       name: fullName || '',
       email: email || '',
       phone: phoneNumber || '',
       dateOfBirth: dateOfBirth || '',
       education: education || '',
+      gender: gender || '',
+      location: location || '',
     };
 
     const jsonString = JSON.stringify(tsplPayload, null, 2);
