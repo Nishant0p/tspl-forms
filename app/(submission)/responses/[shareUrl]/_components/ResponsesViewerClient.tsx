@@ -97,6 +97,13 @@ export default function ResponsesViewerClient({ form }: ResponsesViewerClientPro
         case 'TsplEducationField':
         case 'TsplFullNameField':
         case 'TsplConsentField':
+          cols.push({
+            id: el.id,
+            label: el.extraAttributes?.label || el.extraAttributes?.title || el.type,
+            type: el.type,
+            required: Boolean(el.extraAttributes?.required),
+          });
+          break;
         case 'ConditionField':
           cols.push({
             id: el.id,
@@ -104,6 +111,33 @@ export default function ResponsesViewerClient({ form }: ResponsesViewerClientPro
             type: el.type,
             required: Boolean(el.extraAttributes?.required),
           });
+          if (el.extraAttributes?.optionQuestions) {
+            const oq = el.extraAttributes.optionQuestions as Record<string, any[]>;
+            Object.entries(oq).forEach(([optVal, qList]) => {
+              if (Array.isArray(qList)) {
+                qList.forEach((q) => {
+                  if (q && q.id) {
+                    cols.push({
+                      id: `${el.id}_${q.id}`,
+                      label: `[${optVal}] ${q.label || 'Question'}`,
+                      required: Boolean(q.required),
+                      type: (q.type === 'textarea'
+                        ? 'TextAreaField'
+                        : q.type === 'number'
+                        ? 'NumberField'
+                        : q.type === 'select'
+                        ? 'SelectField'
+                        : q.type === 'radio'
+                        ? 'RadioField'
+                        : q.type === 'date'
+                        ? 'DateField'
+                        : 'TextField') as ElementsType,
+                    });
+                  }
+                });
+              }
+            });
+          }
           break;
         default:
           break;

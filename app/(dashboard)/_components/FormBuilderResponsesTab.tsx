@@ -104,6 +104,13 @@ export default function FormBuilderResponsesTab({ formId }: { formId: number }) 
       case 'TsplEducationField':
       case 'TsplFullNameField':
       case 'TsplConsentField':
+        columns.push({
+          id: element.id,
+          label: element.extraAttributes?.label || element.extraAttributes?.title || element.type,
+          required: Boolean(element.extraAttributes?.required),
+          type: element.type,
+        });
+        break;
       case 'ConditionField':
         columns.push({
           id: element.id,
@@ -111,6 +118,33 @@ export default function FormBuilderResponsesTab({ formId }: { formId: number }) 
           required: Boolean(element.extraAttributes?.required),
           type: element.type,
         });
+        if (element.extraAttributes?.optionQuestions) {
+          const oq = element.extraAttributes.optionQuestions as Record<string, any[]>;
+          Object.entries(oq).forEach(([optVal, qList]) => {
+            if (Array.isArray(qList)) {
+              qList.forEach((q) => {
+                if (q && q.id) {
+                  columns.push({
+                    id: `${element.id}_${q.id}`,
+                    label: `[${optVal}] ${q.label || 'Question'}`,
+                    required: Boolean(q.required),
+                    type: (q.type === 'textarea'
+                      ? 'TextAreaField'
+                      : q.type === 'number'
+                      ? 'NumberField'
+                      : q.type === 'select'
+                      ? 'SelectField'
+                      : q.type === 'radio'
+                      ? 'RadioField'
+                      : q.type === 'date'
+                      ? 'DateField'
+                      : 'TextField') as ElementsType,
+                  });
+                }
+              });
+            }
+          });
+        }
         break;
       default:
         break;

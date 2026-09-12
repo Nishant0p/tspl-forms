@@ -314,28 +314,6 @@ function PropertiesComponent({
           <span>Auto-populated Options:</span>
           <strong className="font-bold">{count} items</strong>
         </div>
-
-        <FormField
-          control={form.control}
-          name="required"
-          render={({ field }) => (
-            <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-xs">
-              <div className="space-y-0.5">
-                <FormLabel>Mandatory Field</FormLabel>
-                <FormDescription>User must pick an option.</FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={(val) => {
-                    field.onChange(val);
-                    form.handleSubmit(applyChanges)();
-                  }}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
       </form>
     </Form>
   );

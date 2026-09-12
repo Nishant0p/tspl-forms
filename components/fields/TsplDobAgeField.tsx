@@ -172,28 +172,6 @@ function PropertiesComponent({
             </FormItem>
           )}
         />
-
-        <FormField
-          control={form.control}
-          name="required"
-          render={({ field }) => (
-            <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-xs">
-              <div className="space-y-0.5">
-                <FormLabel>Mandatory Field</FormLabel>
-                <FormDescription>Respondent must pick birth date.</FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={(val) => {
-                    field.onChange(val);
-                    form.handleSubmit(applyChanges)();
-                  }}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
       </form>
     </Form>
   );

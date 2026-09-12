@@ -19,6 +19,8 @@ import {
   Settings2,
   Check,
   Layers,
+  Trash2,
+  HelpCircle,
 } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
@@ -39,8 +41,22 @@ import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Checkbox } from '../ui/checkbox';
+import { Switch } from '../ui/switch';
+import { Textarea } from '../ui/textarea';
 
 const type: ElementsType = 'ConditionField';
+
+const optionSpecificQuestionSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  type: z.enum(['text', 'textarea', 'number', 'select', 'radio', 'date']),
+  placeholder: z.string().optional(),
+  helperText: z.string().optional(),
+  required: z.boolean().optional(),
+  options: z.array(z.string()).optional(),
+});
+
+export type OptionSpecificQuestion = z.infer<typeof optionSpecificQuestionSchema>;
 
 export type ConditionFieldExtraAttributes = {
   label: string;
@@ -55,6 +71,10 @@ export type ConditionFieldExtraAttributes = {
   // Each option has its own target questions shown below
   // Map of optionValue -> array of target element IDs
   optionTargets: Record<string, string[]>;
+
+  // Option-specific new questions editable by developer
+  // Map of optionValue -> array of OptionSpecificQuestion
+  optionQuestions?: Record<string, OptionSpecificQuestion[]>;
 
   // Option-level Visibility (dynamically change visible options in a target dropdown/radio)
   targetOptionFieldId?: string;
@@ -85,6 +105,11 @@ const extraAttributes: ConditionFieldExtraAttributes = {
     No: [],
   },
 
+  optionQuestions: {
+    Yes: [],
+    No: [],
+  },
+
   targetOptionFieldId: '',
   thenVisibleOptions: [],
   elseVisibleOptions: [],
@@ -100,6 +125,7 @@ const propertiesSchema = z.object({
   decisionOptions: z.array(z.string()).default(['Yes', 'No']),
 
   optionTargets: z.record(z.array(z.string())).default({}),
+  optionQuestions: z.record(z.array(optionSpecificQuestionSchema)).default({}),
 
   targetOptionFieldId: z.string().default(''),
   thenVisibleOptions: z.array(z.string()).default([]),
@@ -114,6 +140,10 @@ export const ConditionFieldFormElement: FormElement = {
     extraAttributes: {
       ...extraAttributes,
       optionTargets: {
+        Yes: [],
+        No: [],
+      },
+      optionQuestions: {
         Yes: [],
         No: [],
       },
@@ -184,6 +214,9 @@ function PropertiesComponent({
   const initialOptionTargets: Record<string, string[]> = {
     ...(element.extraAttributes?.optionTargets || {}),
   };
+  const initialOptionQuestions: Record<string, OptionSpecificQuestion[]> = {
+    ...(element.extraAttributes?.optionQuestions || {}),
+  };
   const decisionOptions = element.extraAttributes?.decisionOptions || ['Yes', 'No'];
   decisionOptions.forEach((opt) => {
     if (!initialOptionTargets[opt]) {
@@ -197,6 +230,9 @@ function PropertiesComponent({
         initialOptionTargets[opt] = [];
       }
     }
+    if (!initialOptionQuestions[opt]) {
+      initialOptionQuestions[opt] = [];
+    }
   });
 
   const form = useForm<PropertiesType>({
@@ -209,6 +245,7 @@ function PropertiesComponent({
       decisionType: element.extraAttributes?.decisionType || 'buttons',
       decisionOptions,
       optionTargets: initialOptionTargets,
+      optionQuestions: initialOptionQuestions,
       targetOptionFieldId: element.extraAttributes?.targetOptionFieldId || '',
       thenVisibleOptions: element.extraAttributes?.thenVisibleOptions || [],
       elseVisibleOptions: element.extraAttributes?.elseVisibleOptions || [],
@@ -218,6 +255,7 @@ function PropertiesComponent({
   const watchSource = form.watch('sourceFieldId');
   const watchDecisionOptions = form.watch('decisionOptions') || [];
   const watchOptionTargets = form.watch('optionTargets') || {};
+  const watchOptionQuestions = (form.watch('optionQuestions') || {}) as Record<string, OptionSpecificQuestion[]>;
   const watchTargetOptionId = form.watch('targetOptionFieldId');
 
   const selectedOptionField = optionBasedElements.find((el) => el.id === watchTargetOptionId);
@@ -240,8 +278,12 @@ function PropertiesComponent({
     const optTargets: Record<string, string[]> = {
       ...(element.extraAttributes?.optionTargets || {}),
     };
+    const optQuestions: Record<string, OptionSpecificQuestion[]> = {
+      ...(element.extraAttributes?.optionQuestions || {}),
+    };
     opts.forEach((opt) => {
       if (!optTargets[opt]) optTargets[opt] = [];
+      if (!optQuestions[opt]) optQuestions[opt] = [];
     });
 
     form.reset({
@@ -252,6 +294,7 @@ function PropertiesComponent({
       decisionType: element.extraAttributes?.decisionType || 'buttons',
       decisionOptions: opts,
       optionTargets: optTargets,
+      optionQuestions: optQuestions,
       targetOptionFieldId: element.extraAttributes?.targetOptionFieldId || '',
       thenVisibleOptions: element.extraAttributes?.thenVisibleOptions || [],
       elseVisibleOptions: element.extraAttributes?.elseVisibleOptions || [],
@@ -267,6 +310,50 @@ function PropertiesComponent({
       },
     });
   }
+
+  // Add a specific new question to an option
+  const addQuestionToOption = (optName: string) => {
+    const currentMap = { ...(form.getValues('optionQuestions') || {}) };
+    const currentList = [...(currentMap[optName] || [])];
+    const newId = `q_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const newQuestion: OptionSpecificQuestion = {
+      id: newId,
+      label: `Question for "${optName}"`,
+      type: 'text',
+      placeholder: 'Enter answer...',
+      helperText: '',
+      required: false,
+      options: ['Option 1', 'Option 2'],
+    };
+    currentMap[optName] = [...currentList, newQuestion];
+    form.setValue('optionQuestions', currentMap);
+    applyChanges(form.getValues());
+  };
+
+  // Update a specific question in an option
+  const updateQuestionInOption = (
+    optName: string,
+    qIdx: number,
+    updates: Partial<OptionSpecificQuestion>
+  ) => {
+    const currentMap = { ...(form.getValues('optionQuestions') || {}) };
+    const currentList = [...(currentMap[optName] || [])];
+    if (!currentList[qIdx]) return;
+    currentList[qIdx] = { ...currentList[qIdx], ...updates };
+    currentMap[optName] = currentList;
+    form.setValue('optionQuestions', currentMap);
+    applyChanges(form.getValues());
+  };
+
+  // Remove a specific question from an option
+  const removeQuestionFromOption = (optName: string, qIdx: number) => {
+    const currentMap = { ...(form.getValues('optionQuestions') || {}) };
+    const currentList = [...(currentMap[optName] || [])];
+    currentList.splice(qIdx, 1);
+    currentMap[optName] = currentList;
+    form.setValue('optionQuestions', currentMap);
+    applyChanges(form.getValues());
+  };
 
   // Toggle a field for a specific option
   const toggleOptionField = (optName: string, fieldId: string) => {
@@ -508,13 +595,14 @@ function PropertiesComponent({
             <div className="space-y-3 pt-1">
               {activeBranchOptions.map((optName) => {
                 const currentFields = watchOptionTargets[optName] || [];
-                const isConfigured = currentFields.length > 0;
+                const specificQuestions = watchOptionQuestions[optName] || [];
+                const isConfigured = currentFields.length > 0 || specificQuestions.length > 0;
 
                 return (
                   <div
                     key={optName}
                     className={cn(
-                      'rounded-xl border p-3 bg-background/90 transition-all space-y-2.5 shadow-2xs',
+                      'rounded-xl border p-3.5 bg-background/90 transition-all space-y-3 shadow-2xs',
                       isConfigured
                         ? 'border-emerald-500/50 dark:border-emerald-500/40'
                         : 'border-border/80'
@@ -535,7 +623,12 @@ function PropertiesComponent({
                           Option: &quot;{optName}&quot;
                         </Badge>
                         <span className="text-[11px] text-muted-foreground">
-                          {isConfigured ? `${currentFields.length} selected` : 'None selected'}
+                          {specificQuestions.length > 0
+                            ? `${specificQuestions.length} custom Qs`
+                            : ''}
+                          {specificQuestions.length > 0 && currentFields.length > 0 ? ', ' : ''}
+                          {currentFields.length > 0 ? `${currentFields.length} linked` : ''}
+                          {!isConfigured ? 'No answers configured' : ''}
                         </span>
                       </div>
 
@@ -562,8 +655,189 @@ function PropertiesComponent({
                       </div>
                     </div>
 
-                    <p className="text-[11px] text-muted-foreground font-medium">
-                      When user selects <strong className="text-foreground">&quot;{optName}&quot;</strong>, show these questions below:
+                    {/* Developer Option-Specific Questions */}
+                    <div className="rounded-xl border border-primary/25 bg-primary/[0.03] p-3 space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <HelpCircle className="h-3.5 w-3.5 text-primary shrink-0" />
+                          <span className="text-xs font-bold text-foreground">
+                            Option-Specific Questions
+                          </span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-6 text-[11px] px-2 gap-1 text-primary border-primary/30 hover:bg-primary/10 font-semibold"
+                          onClick={() => addQuestionToOption(optName)}
+                        >
+                          <Plus className="h-3 w-3" />
+                          <span>New Question</span>
+                        </Button>
+                      </div>
+
+                      <p className="text-[10px] text-muted-foreground">
+                        Questions created here will only appear when the user selects <strong className="text-foreground">&quot;{optName}&quot;</strong>.
+                      </p>
+
+                      {specificQuestions.length === 0 ? (
+                        <div className="p-2.5 rounded-lg border border-dashed border-border/80 bg-background/60 text-[11px] text-muted-foreground flex items-center justify-between">
+                          <span>No option-specific questions added yet.</span>
+                          <button
+                            type="button"
+                            onClick={() => addQuestionToOption(optName)}
+                            className="text-primary font-semibold hover:underline cursor-pointer ml-2"
+                          >
+                            + Add Question
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 pt-1">
+                          {specificQuestions.map((q, qIdx) => (
+                            <div
+                              key={q.id || qIdx}
+                              className="p-3 rounded-xl border border-border/80 bg-background shadow-2xs space-y-2.5 text-xs"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                                  <span>Specific Question #{qIdx + 1}</span>
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0"
+                                  onClick={() => removeQuestionFromOption(optName, qIdx)}
+                                  title="Delete question"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+
+                              {/* Question Label */}
+                              <div className="space-y-1">
+                                <Label className="text-[11px] font-semibold">Question Label / Title</Label>
+                                <Input
+                                  value={q.label}
+                                  onChange={(e) =>
+                                    updateQuestionInOption(optName, qIdx, { label: e.target.value })
+                                  }
+                                  onBlur={() => applyChanges(form.getValues())}
+                                  placeholder="e.g. Please specify reason..."
+                                  className="h-8 text-xs bg-background"
+                                />
+                              </div>
+
+                              {/* Question Type & Required Grid */}
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                  <Label className="text-[11px] font-semibold">Question Type</Label>
+                                  <Select
+                                    value={q.type}
+                                    onValueChange={(val: any) =>
+                                      updateQuestionInOption(optName, qIdx, { type: val })
+                                    }
+                                  >
+                                    <SelectTrigger className="h-8 text-xs bg-background">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="text">Short Text</SelectItem>
+                                      <SelectItem value="textarea">Paragraph / Notes</SelectItem>
+                                      <SelectItem value="number">Number</SelectItem>
+                                      <SelectItem value="select">Dropdown Menu</SelectItem>
+                                      <SelectItem value="radio">Radio Choices</SelectItem>
+                                      <SelectItem value="date">Date Picker</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                <div className="space-y-1">
+                                  <Label className="text-[11px] font-semibold">Mandatory?</Label>
+                                  <div className="flex items-center h-8 gap-2">
+                                    <Switch
+                                      checked={q.required}
+                                      onCheckedChange={(checked) =>
+                                        updateQuestionInOption(optName, qIdx, { required: checked })
+                                      }
+                                    />
+                                    <span className="text-xs text-muted-foreground">
+                                      {q.required ? 'Required' : 'Optional'}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Placeholder */}
+                              <div className="space-y-1">
+                                <Label className="text-[11px] font-semibold">Placeholder</Label>
+                                <Input
+                                  value={q.placeholder || ''}
+                                  onChange={(e) =>
+                                    updateQuestionInOption(optName, qIdx, { placeholder: e.target.value })
+                                  }
+                                  onBlur={() => applyChanges(form.getValues())}
+                                  placeholder="e.g. Enter details..."
+                                  className="h-8 text-xs bg-background"
+                                />
+                              </div>
+
+                              {/* Choices if Select or Radio */}
+                              {(q.type === 'select' || q.type === 'radio') && (
+                                <div className="space-y-1.5 pt-1 border-t border-border/40">
+                                  <div className="flex items-center justify-between">
+                                    <Label className="text-[11px] font-semibold">Choices</Label>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const curOpts = q.options || [];
+                                        updateQuestionInOption(optName, qIdx, {
+                                          options: [...curOpts, `Choice ${curOpts.length + 1}`],
+                                        });
+                                      }}
+                                      className="text-[10px] text-primary font-semibold hover:underline"
+                                    >
+                                      + Add Choice
+                                    </button>
+                                  </div>
+                                  <div className="space-y-1">
+                                    {(q.options || ['Choice 1', 'Choice 2']).map((choice, cIdx) => (
+                                      <div key={cIdx} className="flex items-center gap-1.5">
+                                        <Input
+                                          value={choice}
+                                          onChange={(e) => {
+                                            const nextChoices = [...(q.options || [])];
+                                            nextChoices[cIdx] = e.target.value;
+                                            updateQuestionInOption(optName, qIdx, { options: nextChoices });
+                                          }}
+                                          onBlur={() => applyChanges(form.getValues())}
+                                          className="h-7 text-xs bg-background flex-1"
+                                        />
+                                        {(q.options || []).length > 1 && (
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const nextChoices = (q.options || []).filter((_, i) => i !== cIdx);
+                                              updateQuestionInOption(optName, qIdx, { options: nextChoices });
+                                            }}
+                                            className="text-muted-foreground hover:text-destructive text-xs p-1"
+                                          >
+                                            <X className="h-3 w-3" />
+                                          </button>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <p className="text-[11px] text-muted-foreground font-medium pt-1">
+                      Also link other form questions to show when user selects <strong className="text-foreground">&quot;{optName}&quot;</strong>:
                     </p>
 
                     {/* Question Selection List */}
@@ -808,6 +1082,8 @@ function DesignerComponent({
                 return el ? getElementDisplayName(el) : null;
               })
               .filter(Boolean);
+            const specificQuestions = extra.optionQuestions?.[opt] || [];
+            const hasAny = targets.length > 0 || specificQuestions.length > 0;
 
             return (
               <div key={opt} className="flex items-start gap-2 text-[11px]">
@@ -818,11 +1094,21 @@ function DesignerComponent({
                   {opt}
                 </Badge>
                 <ArrowRight className="h-3 w-3 mt-0.5 text-muted-foreground shrink-0" />
-                {targets.length > 0 ? (
-                  <div className="flex flex-wrap gap-1">
+                {hasAny ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {specificQuestions.map((sq, i) => (
+                      <span
+                        key={`sq-${i}`}
+                        className="bg-primary/15 text-primary border border-primary/25 px-1.5 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1"
+                        title={`Option Specific Question: ${sq.label}`}
+                      >
+                        <HelpCircle className="h-3 w-3" />
+                        <span>{sq.label || 'Question'} ({sq.type}){sq.required ? '*' : ''}</span>
+                      </span>
+                    ))}
                     {targets.map((name, i) => (
                       <span
-                        key={i}
+                        key={`target-${i}`}
                         className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded text-[10px] font-medium"
                       >
                         {name}
@@ -831,7 +1117,7 @@ function DesignerComponent({
                   </div>
                 ) : (
                   <span className="text-muted-foreground italic text-[10px]">
-                    No extra questions shown
+                    No extra questions configured
                   </span>
                 )}
               </div>
@@ -866,20 +1152,37 @@ function FormComponent({
   const isSelf = (extra.sourceFieldId || 'self') === 'self';
 
   const [selectedValue, setSelectedValue] = useState<string>(defaultValues || '');
+  const [subAnswers, setSubAnswers] = useState<Record<string, string>>({});
 
   if (!isSelf) {
     return null;
   }
 
   const handleSelect = (val: string) => {
+    const previousVal = selectedValue;
     setSelectedValue(val);
     if (submitFunction) {
       submitFunction(element.id, val);
+
+      // Clear previous option's sub-answers if changed
+      if (previousVal && previousVal !== val && extra.optionQuestions?.[previousVal]) {
+        extra.optionQuestions[previousVal].forEach((oldQ) => {
+          submitFunction(`${element.id}_${oldQ.id}`, '');
+        });
+      }
+    }
+  };
+
+  const handleSubAnswerChange = (qId: string, value: string) => {
+    setSubAnswers((prev) => ({ ...prev, [qId]: value }));
+    if (submitFunction) {
+      submitFunction(`${element.id}_${qId}`, value);
     }
   };
 
   const options = extra.decisionOptions || ['Yes', 'No'];
   const displayType = extra.decisionType || 'buttons';
+  const activeQuestions = (extra.optionQuestions && extra.optionQuestions[selectedValue]) || [];
 
   return (
     <div className="flex w-full flex-col gap-2.5">
@@ -959,6 +1262,108 @@ function FormComponent({
               ))}
             </SelectContent>
           </Select>
+        </div>
+      )}
+
+      {/* Render Option-Specific Questions if configured for selected option */}
+      {selectedValue && activeQuestions.length > 0 && (
+        <div className="mt-2.5 p-3.5 sm:p-4 rounded-xl border border-primary/20 bg-primary/[0.02] space-y-3.5 animate-in fade-in-50 duration-200 shadow-2xs">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-primary">
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>Additional questions for &quot;{selectedValue}&quot;:</span>
+          </div>
+
+          <div className="space-y-3">
+            {activeQuestions.map((q) => {
+              const val = subAnswers[q.id] || '';
+
+              return (
+                <div key={q.id} className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-foreground flex items-center gap-1">
+                    <span>{q.label || 'Question'}</span>
+                    {q.required && <span className="text-red-500 font-bold">*</span>}
+                  </Label>
+
+                  {q.type === 'text' && (
+                    <Input
+                      value={val}
+                      onChange={(e) => handleSubAnswerChange(q.id, e.target.value)}
+                      placeholder={q.placeholder || 'Enter answer...'}
+                      className="h-10 text-sm bg-background border-border rounded-xl"
+                    />
+                  )}
+
+                  {q.type === 'textarea' && (
+                    <Textarea
+                      value={val}
+                      onChange={(e) => handleSubAnswerChange(q.id, e.target.value)}
+                      placeholder={q.placeholder || 'Enter details...'}
+                      rows={3}
+                      className="text-sm bg-background border-border rounded-xl resize-y"
+                    />
+                  )}
+
+                  {q.type === 'number' && (
+                    <Input
+                      type="number"
+                      value={val}
+                      onChange={(e) => handleSubAnswerChange(q.id, e.target.value)}
+                      placeholder={q.placeholder || '0'}
+                      className="h-10 text-sm bg-background border-border rounded-xl"
+                    />
+                  )}
+
+                  {q.type === 'date' && (
+                    <Input
+                      type="date"
+                      value={val}
+                      onChange={(e) => handleSubAnswerChange(q.id, e.target.value)}
+                      className="h-10 text-sm bg-background border-border rounded-xl"
+                    />
+                  )}
+
+                  {q.type === 'select' && (
+                    <Select value={val} onValueChange={(v) => handleSubAnswerChange(q.id, v)}>
+                      <SelectTrigger className="h-10 text-sm bg-background border-border rounded-xl">
+                        <SelectValue placeholder={q.placeholder || 'Select an option...'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(q.options || []).map((choice) => (
+                          <SelectItem key={choice} value={choice}>
+                            {choice}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+
+                  {q.type === 'radio' && (
+                    <RadioGroup
+                      value={val}
+                      onValueChange={(v) => handleSubAnswerChange(q.id, v)}
+                      className="space-y-1.5 pt-1"
+                    >
+                      {(q.options || []).map((choice) => (
+                        <div key={choice} className="flex items-center space-x-2">
+                          <RadioGroupItem value={choice} id={`${element.id}-${q.id}-${choice}`} />
+                          <Label
+                            htmlFor={`${element.id}-${q.id}-${choice}`}
+                            className="text-xs font-medium cursor-pointer"
+                          >
+                            {choice}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  )}
+
+                  {q.helperText && (
+                    <p className="text-[11px] text-muted-foreground">{q.helperText}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
