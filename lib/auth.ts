@@ -81,7 +81,10 @@ export async function getSessionData(): Promise<Record<string, any> | null> {
       if (typeof val === 'object' && val !== null) return val;
     } catch {}
     return null;
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.digest === 'DYNAMIC_SERVER_USAGE' || err?.message?.includes?.('Dynamic server usage')) {
+      throw err;
+    }
     console.warn('[getSessionData] Error reading cookie:', err);
     return null;
   }

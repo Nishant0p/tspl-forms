@@ -1,13 +1,30 @@
 "use client"
 
 import * as React from "react"
+import dynamic from "next/dynamic"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { DayPicker } from "react-day-picker"
+import type { DayPickerProps } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker>
+export type CalendarProps = DayPickerProps & {
+  className?: string;
+  classNames?: any;
+  showOutsideDays?: boolean;
+};
+
+const DynamicDayPicker = dynamic(
+  () => import("react-day-picker").then((mod) => mod.DayPicker),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-64 w-[280px] items-center justify-center p-3 text-xs text-muted-foreground">
+        Loading calendar...
+      </div>
+    ),
+  }
+);
 
 function Calendar({
   className,
@@ -16,7 +33,7 @@ function Calendar({
   ...props
 }: CalendarProps) {
   return (
-    <DayPicker
+    <DynamicDayPicker
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
       classNames={{
