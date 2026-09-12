@@ -53,7 +53,11 @@ export function getSessionData(): Record<string, any> | null {
   try {
     const raw = cookies().get('session_user')?.value;
     if (!raw) return null;
-    return JSON.parse(raw);
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return JSON.parse(decodeURIComponent(raw));
+    }
   } catch {
     return null;
   }

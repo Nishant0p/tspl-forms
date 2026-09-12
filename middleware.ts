@@ -1,26 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const PUBLIC_ROUTES = ['/', '/platform', '/sign-in', '/access-denied'];
-const CSRF_COOKIE_NAME = 'csrf_token';
 
-function generateCsrfToken(): string {
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    const array = new Uint8Array(32);
-    crypto.getRandomValues(array);
-    return Array.from(array, (b) => b.toString(16).padStart(2, '0')).join('');
+function parseSessionCookie(raw: string | undefined): any | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    try {
+      return JSON.parse(decodeURIComponent(raw));
+    } catch {
+      return null;
+    }
   }
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
 }
 
-function hasValidSessionCookie(raw: string | undefined) {
-  if (!raw) return false;
+function hasValidSessionCookie(raw: string | undefined): boolean {
+  const parsed = parseSessionCookie(raw);
+  if (!parsed) return false;
 
-  try {
-    const parsed = JSON.parse(raw) as { id?: unknown; email?: unknown };
-    return typeof parsed?.id === 'string' && parsed.id.length > 0 && typeof parsed?.email === 'string';
-  } catch {
-    return false;
-  }
+  const hasId =
+    (typeof parsed.id === 'string' && parsed.id.trim().length > 0) ||
+    typeof parsed.id === 'number' ||
+    (typeof parsed.employeeId === 'string' && parsed.employeeId.trim().length > 0) ||
+    typeof parsed.employeeId === 'number';
+
+  const hasEmail = typeof parsed.email === 'string' && parsed.email.trim().length > 0;
+  const hasRole = typeof parsed.role === 'string' && parsed.role.trim().length > 0;
+
+  return Boolean(hasId || hasEmail || hasRole);
 }
 
 function isPublic(pathname: string) {
@@ -38,25 +46,34 @@ function isPublic(pathname: string) {
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  let response: NextResponse;
+  const session = req.cookies.get('session_user')?.value;
+  const isAuthenticated = hasValidSessionCookie(session);
 
-  if (isPublic(pathname)) {
-    response = NextResponse.next();
-  } else {
-    const session = req.cookies.get('session_user')?.value;
-    if (!hasValidSessionCookie(session)) {
-      const signIn = req.nextUrl.clone();
-      signIn.pathname = '/sign-in';
-      signIn.searchParams.set('redirect', pathname);
-      response = NextResponse.redirect(signIn);
-      response.cookies.delete('session_user');
-    } else {
-      response = NextResponse.next();
-    }
+  // If authenticated user visits /sign-in, redirect straight to /dashboard
+  if (pathname === '/sign-in' && isAuthenticated) {
+    const dashboard = req.nextUrl.clone();
+    dashboard.pathname = '/dashboard';
+    dashboard.search = '';
+    return NextResponse.redirect(dashboard);
   }
 
+  if (isPublic(pathname)) {
+    return NextResponse.next();
+  }
 
-  return response;
+  // Protected route check
+  if (!isAuthenticated) {
+    const signIn = req.nextUrl.clone();
+    signIn.pathname = '/sign-in';
+    if (pathname !== '/sign-in' && pathname !== '/access-denied') {
+      signIn.searchParams.set('redirect', pathname);
+    }
+    const response = NextResponse.redirect(signIn);
+    response.cookies.delete('session_user');
+    return response;
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { loginUser } from '@/app/actions/employee';
 import { Button } from '@/components/ui/button';
@@ -25,49 +25,82 @@ export default function SignInForm() {
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
-  const [isPending, startTransition] = useTransition();
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const navigateAfterLogin = () => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      let target = searchParams.get('redirect_url') || searchParams.get('redirect') || '/dashboard';
+      if (!target || target === '/sign-in' || target.startsWith('/sign-in') || target === '/access-denied') {
+        target = '/dashboard';
+      }
+      window.location.replace(target);
+    } catch {
+      window.location.href = '/dashboard';
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
-    startTransition(async () => {
-      try {
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ emailOrEmpId: email, password }),
-        });
+    const emailTrimmed = email.trim();
 
-        if (res.status === 404) {
-          const actionResult = await loginUser(email, password);
-          if (actionResult?.success) {
-            window.location.href = '/dashboard';
-            return;
+    try {
+      // 1. Try API login route
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ emailOrEmpId: emailTrimmed, password }),
+      });
+
+      let apiSuccess = false;
+      let apiError = '';
+
+      if (res.ok) {
+        try {
+          const result = await res.json();
+          if (result?.success) {
+            apiSuccess = true;
           } else {
-            setError(actionResult?.error || 'Invalid email/Employee ID or password');
-            return;
+            apiError = result?.error || 'Invalid credentials';
           }
+        } catch {
+          // non-json response
         }
+      }
 
-        const result = await res.json();
+      if (apiSuccess) {
+        navigateAfterLogin();
+        return;
+      }
 
-        if (!res.ok || !result?.success) {
-          setError(result?.error || 'Invalid email/Employee ID or password');
+      // 2. Fallback to server action if API returned error or 404
+      const actionResult = await loginUser(emailTrimmed, password);
+      if (actionResult?.success) {
+        navigateAfterLogin();
+        return;
+      }
+
+      setError(actionResult?.error || apiError || 'Invalid email/Employee ID or password');
+      setLoading(false);
+    } catch (err: any) {
+      // 3. If fetch network error, fallback to server action directly
+      try {
+        const actionResult = await loginUser(emailTrimmed, password);
+        if (actionResult?.success) {
+          navigateAfterLogin();
           return;
         }
-
-        const searchParams = new URLSearchParams(window.location.search);
-        const redirectUrl = searchParams.get('redirect_url') || searchParams.get('redirect') || '/dashboard';
-
-        // Direct browser navigation to ensure cookies are committed and active immediately
-        window.location.href = redirectUrl;
-      } catch (err: any) {
-        setError(err?.message || 'Unable to sign in. Please try again.');
+        setError(actionResult?.error || 'Invalid email/Employee ID or password');
+      } catch (subErr: any) {
+        setError(subErr?.message || 'Unable to sign in. Please check your connection.');
       }
-    });
+      setLoading(false);
+    }
   };
 
   return (
@@ -146,7 +179,7 @@ export default function SignInForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  disabled={isPending}
+                  disabled={loading}
                   autoComplete="username"
                   className="h-12 rounded-xl bg-background/60 border-border/80 px-4 text-sm shadow-sm transition-all focus-visible:ring-2 focus-visible:ring-primary/40"
                 />
@@ -166,7 +199,7 @@ export default function SignInForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  disabled={isPending}
+                  disabled={loading}
                   autoComplete="current-password"
                   className="h-12 rounded-xl bg-background/60 border-border/80 pl-4 pr-11 text-sm shadow-sm transition-all focus-visible:ring-2 focus-visible:ring-primary/40"
                 />
@@ -193,10 +226,10 @@ export default function SignInForm() {
             {/* Submit Button */}
             <Button
               type="submit"
-              disabled={isPending}
+              disabled={loading}
               className="w-full h-12 rounded-xl text-sm font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all gap-2"
             >
-              {isPending ? (
+              {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" /> Signing in…
                 </>
