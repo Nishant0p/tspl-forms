@@ -8,9 +8,13 @@ const CSRF_COOKIE_NAME = 'csrf_token';
  * (CSRF cookies are provisioned safely in middleware to prevent Server Component cookie mutation errors)
  */
 export async function getOrCreateCsrfToken(): Promise<string> {
-  const cookieStore = cookies();
-  const existing = cookieStore.get(CSRF_COOKIE_NAME)?.value;
-  return existing || '';
+  try {
+    const cookieStore: any = await Promise.resolve(cookies());
+    const existing = typeof cookieStore?.get === 'function' ? cookieStore.get(CSRF_COOKIE_NAME)?.value : '';
+    return existing || '';
+  } catch {
+    return '';
+  }
 }
 
 export type CsrfVerifyResult = {

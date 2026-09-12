@@ -48,10 +48,18 @@ export function getHardcodedAdminSession() {
   };
 }
 
-/** Read and parse the session cookie. Returns null if not set. */
-export function getSessionData(): Record<string, any> | null {
+/** Read and parse the session cookie. Returns null if not set. Supports both sync and async cookies(). */
+export async function getSessionData(): Promise<Record<string, any> | null> {
   try {
-    const raw = cookies().get('session_user')?.value;
+    const cookieStore: any = await Promise.resolve(cookies());
+    let raw: string | undefined;
+
+    if (typeof cookieStore?.get === 'function') {
+      raw = cookieStore.get('session_user')?.value;
+    } else if (cookieStore && typeof cookieStore === 'object') {
+      raw = cookieStore['session_user']?.value || cookieStore['session_user'];
+    }
+
     if (!raw) return null;
     let str = raw;
     if (typeof str === 'string' && str.startsWith('"') && str.endsWith('"')) {
@@ -73,7 +81,8 @@ export function getSessionData(): Record<string, any> | null {
       if (typeof val === 'object' && val !== null) return val;
     } catch {}
     return null;
-  } catch {
+  } catch (err) {
+    console.warn('[getSessionData] Error reading cookie:', err);
     return null;
   }
 }
@@ -100,7 +109,7 @@ export type AuthResult = {
 };
 
 export async function getCurrentEmployee() {
-  const session = getSessionData();
+  const session = await getSessionData();
   if (!session) return null;
 
   const idpConfig = getSuperAdminIdpConfig();
@@ -205,7 +214,7 @@ export async function getCurrentEmployee() {
 
 /** Authenticated user helper returning real-time role & status */
 export async function getCurrentUser() {
-  const session = getSessionData();
+  const session = await getSessionData();
   if (!session) return null;
 
   const idpConfig = getSuperAdminIdpConfig();
@@ -555,7 +564,7 @@ export async function requireAuth() {
     return user;
   }
 
-  const session = getSessionData();
+  const session = await getSessionData();
   if (session && (session.status === 'ACTIVE' || !session.status)) {
     return {
       id: String(session.id || session.employeeId || 'user'),
@@ -576,7 +585,7 @@ export async function requireAuth() {
 }
 
 export async function requireEmployee() {
-  const session = getSessionData();
+  const session = await getSessionData();
   if (!session) {
     redirect('/sign-in');
   }
@@ -629,7 +638,7 @@ export async function isSuperAdmin() {
     return true;
   }
 
-  const session = getSessionData();
+  const session = await getSessionData();
   if (session && session.role === 'SUPER_ADMIN') {
     return true;
   }

@@ -35,7 +35,10 @@ export default async function FormCards() {
         ))}
       </>
     );
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.message === 'NEXT_REDIRECT' || error?.digest?.startsWith?.('NEXT_REDIRECT')) {
+      throw error;
+    }
     console.error('Failed to load form cards', error);
     return (
       <div className="col-span-full rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">

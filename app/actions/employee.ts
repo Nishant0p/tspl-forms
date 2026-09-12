@@ -28,13 +28,16 @@ export async function loginUser(
 
     const sessionData = JSON.stringify(authResult.sessionData);
 
-    cookies().set('session_user', sessionData, {
-      httpOnly: true,
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      sameSite: 'lax',
-      secure: false, // Allows cookie over both HTTP and HTTPS
-    });
+    const cookieStore: any = await Promise.resolve(cookies());
+    if (typeof cookieStore?.set === 'function') {
+      cookieStore.set('session_user', sessionData, {
+        httpOnly: true,
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        sameSite: 'lax',
+        secure: false, // Allows cookie over both HTTP and HTTPS
+      });
+    }
 
     return { success: true };
   } catch (err: any) {
@@ -44,7 +47,12 @@ export async function loginUser(
 }
 
 export async function logoutUser() {
-  cookies().delete('session_user');
+  const cookieStore: any = await Promise.resolve(cookies());
+  if (typeof cookieStore?.delete === 'function') {
+    cookieStore.delete('session_user');
+  } else if (typeof cookieStore?.set === 'function') {
+    cookieStore.set('session_user', '', { path: '/', maxAge: 0 });
+  }
   redirect('/sign-in');
 }
 
@@ -244,11 +252,14 @@ export async function updateMyProfile(data: {
     branchId: updated.branchId || null,
   });
 
-  cookies().set('session_user', sessionData, {
-    httpOnly: true,
-    path: '/',
-    maxAge: 60 * 60 * 24 * 7,
-  });
+  const cookieStore: any = await Promise.resolve(cookies());
+  if (typeof cookieStore?.set === 'function') {
+    cookieStore.set('session_user', sessionData, {
+      httpOnly: true,
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    });
+  }
 
   revalidatePath('/', 'layout');
   return updated;

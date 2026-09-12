@@ -69,7 +69,10 @@ async function CardStatsWrapper() {
         data={stats}
       />
     );
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.message === 'NEXT_REDIRECT' || error?.digest?.startsWith?.('NEXT_REDIRECT')) {
+      throw error;
+    }
     console.error('Failed to load dashboard stats', error);
   }
 
