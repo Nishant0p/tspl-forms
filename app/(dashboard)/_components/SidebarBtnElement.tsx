@@ -38,13 +38,13 @@ export default function SidebarBtnElement({
       variant={'outline'}
       onClick={handleClick}
       className={cn(
-        'flex flex-col items-center justify-center gap-1.5 cursor-pointer h-[74px] w-full p-1.5 text-center bg-card hover:bg-accent border border-border/80 hover:border-foreground/40 transition-all shadow-xs [&_svg]:h-5 [&_svg]:w-5 [&_svg]:shrink-0 [&_svg]:text-foreground text-foreground',
+        'flex flex-col items-center justify-center gap-1.5 cursor-pointer h-[74px] w-full p-1.5 text-center bg-card hover:bg-accent border border-border/80 hover:border-foreground/40 transition-all shadow-xs [&_svg]:h-5 [&_svg]:w-5 [&_svg]:shrink-0 [&_svg]:text-foreground text-foreground whitespace-normal overflow-hidden',
         draggable.isDragging && 'ring-2 ring-primary opacity-50'
       )}
       {...draggable.attributes}
       {...draggable.listeners}>
       {icon}
-      <p className="text-[11px] font-semibold leading-tight text-foreground line-clamp-2">{label}</p>
+      <p className="text-[10px] sm:text-[11px] font-semibold leading-tight text-foreground line-clamp-2 break-words text-center w-full px-0.5">{label}</p>
     </Button>
   );
 }
@@ -59,9 +59,9 @@ export function SidebarBtnElementOverlay({
   return (
     <Button
       variant={'outline'}
-      className="flex h-[72px] w-[110px] cursor-grab flex-col items-center justify-center gap-1.5 p-1.5 text-center shadow-lg border-primary ring-2 ring-primary [&_svg]:h-5 [&_svg]:w-5 [&_svg]:shrink-0 bg-background">
+      className="flex h-[72px] w-[110px] cursor-grab flex-col items-center justify-center gap-1.5 p-1.5 text-center shadow-lg border-primary ring-2 ring-primary [&_svg]:h-5 [&_svg]:w-5 [&_svg]:shrink-0 bg-background whitespace-normal overflow-hidden">
       {icon}
-      <p className="text-[11px] font-medium leading-tight text-foreground line-clamp-2">{label}</p>
+      <p className="text-[10px] sm:text-[11px] font-medium leading-tight text-foreground line-clamp-2 break-words text-center w-full px-0.5">{label}</p>
     </Button>
   );
 }

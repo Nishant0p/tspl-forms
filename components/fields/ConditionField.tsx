@@ -1209,9 +1209,7 @@ function FormComponent({
           <span>{extra.label}</span>
           {extra.required && <span className="text-red-500">*</span>}
         </Label>
-        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1">
-          <Sparkles className="h-3 w-3" /> Decision
-        </span>
+
       </div>
 
       {extra.helperText && <p className="text-xs text-muted-foreground">{extra.helperText}</p>}

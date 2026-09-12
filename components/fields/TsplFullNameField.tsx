@@ -245,9 +245,8 @@ function DesignerComponent({
           readOnly
           disabled
           placeholder={placeholder}
-          className="pl-9 bg-muted/40 cursor-not-allowed"
+          className="bg-muted/40 cursor-not-allowed"
         />
-        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       </div>
       {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
     </div>
@@ -336,12 +335,11 @@ function FormComponent({
           onChange={handleChange}
           onBlur={handleBlur}
           className={cn(
-            'pl-9 transition-colors',
+            'transition-colors',
             error && 'border-red-500 focus-visible:ring-red-500/20',
             isValidName && 'border-emerald-500/80 focus-visible:ring-emerald-500/20'
           )}
         />
-        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       </div>
 
       {hasInvalidChars ? (

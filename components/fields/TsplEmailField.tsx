@@ -209,9 +209,8 @@ function DesignerComponent({
           disabled
           type="email"
           placeholder={placeholder}
-          className="pl-9 bg-muted/40 cursor-not-allowed"
+          className="bg-muted/40 cursor-not-allowed"
         />
-        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       </div>
       {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
     </div>
@@ -307,12 +306,11 @@ function FormComponent({
           onChange={handleChange}
           onBlur={handleBlur}
           className={cn(
-            'pl-9 pr-8 transition-colors',
+            'transition-colors',
             (error || showFormatError) && 'border-red-500 focus-visible:ring-red-500/20',
             isValidFormat && trimmed.length > 0 && 'border-emerald-500/80 focus-visible:ring-emerald-500/20'
           )}
         />
-        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       </div>
 
       {showFormatError ? (

@@ -58,7 +58,7 @@ export const TsplMobileFieldFormElement: FormElement = {
   }),
   designerBtnElement: {
     icon: <Phone className="h-8 w-8 text-primary" />,
-    label: 'Mobile (10-Digit)',
+    label: 'Mobile No.',
   },
   designerComponent: DesignerComponent,
   formComponent: FormComponent,

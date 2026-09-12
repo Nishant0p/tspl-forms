@@ -50,7 +50,7 @@ export const TsplCurrentDateTimeFieldFormElement: FormElement = {
   }),
   designerBtnElement: {
     icon: <Clock className="h-8 w-8 text-primary" />,
-    label: 'Current Date/Time',
+    label: 'Date & Time',
   },
   designerComponent: DesignerComponent,
   formComponent: FormComponent,

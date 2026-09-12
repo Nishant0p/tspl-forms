@@ -634,9 +634,7 @@ function FormComponent({
           <span>{label}</span>
           {required && <span className="text-red-500 font-bold">*</span>}
         </Label>
-        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-          India Postal API
-        </span>
+
       </div>
 
       <div className="rounded-xl border border-border/80 bg-card p-3 shadow-xs space-y-3">
