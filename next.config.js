@@ -9,7 +9,7 @@ const nextConfig = {
   outputFileTracing: false,
   experimental: {
     serverActions: {
-      allowedOrigins: ['forms.tsplgroup.in', '187.127.159.207', 'localhost:3000'],
+      allowedOrigins: ['forms.tsplgroup.in', 'localhost:3000'],
     },
   },
 }

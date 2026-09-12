@@ -11,17 +11,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Label } from '@radix-ui/react-label';
 import {
   GitBranch,
-  CheckCircle2,
   Plus,
   X,
-  Sliders,
-  Eye,
-  EyeOff,
   Filter,
   ArrowRight,
   Sparkles,
-  HelpCircle,
   Settings2,
+  Check,
+  Layers,
 } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
@@ -36,13 +33,12 @@ import {
   FormMessage,
 } from '../ui/form';
 import { Input } from '../ui/input';
-import { Switch } from '../ui/switch';
-import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { Checkbox } from '../ui/checkbox';
 
 const type: ElementsType = 'ConditionField';
 
@@ -51,28 +47,28 @@ export type ConditionFieldExtraAttributes = {
   helperText: string;
   required: boolean;
 
-  // Source Decision Question: 'self' means this element itself asks the question on the form,
-  // or the ID of another question in the form to watch
+  // Source Decision Question
   sourceFieldId: string;
   decisionType: 'buttons' | 'radio' | 'select';
   decisionOptions: string[];
 
-  // IF Decision Rule
-  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'is_empty' | 'is_not_empty';
-  compareValue: string;
-
-  // THEN Action (when condition is TRUE)
-  thenAction: 'show' | 'hide';
-  thenTargetFields: string[];
+  // Each option has its own target questions shown below
+  // Map of optionValue -> array of target element IDs
+  optionTargets: Record<string, string[]>;
 
   // Option-level Visibility (dynamically change visible options in a target dropdown/radio)
-  targetOptionFieldId: string;
-  thenVisibleOptions: string[];
-  elseVisibleOptions: string[];
+  targetOptionFieldId?: string;
+  thenVisibleOptions?: string[];
+  elseVisibleOptions?: string[];
 
-  // ELSE Action (when condition is FALSE)
-  elseAction: 'hide' | 'show' | 'none';
-  elseTargetFields: string[];
+  // Legacy fallback fields kept for backward compatibility
+  operator?: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'is_empty' | 'is_not_empty';
+  compareValue?: string;
+  thenAction?: 'show' | 'hide' | 'editable';
+  thenTargetFields?: string[];
+  thenEditableFields?: string[];
+  elseAction?: 'hide' | 'show' | 'none';
+  elseTargetFields?: string[];
 };
 
 const extraAttributes: ConditionFieldExtraAttributes = {
@@ -84,18 +80,14 @@ const extraAttributes: ConditionFieldExtraAttributes = {
   decisionType: 'buttons',
   decisionOptions: ['Yes', 'No'],
 
-  operator: 'equals',
-  compareValue: 'Yes',
-
-  thenAction: 'show',
-  thenTargetFields: [],
+  optionTargets: {
+    Yes: [],
+    No: [],
+  },
 
   targetOptionFieldId: '',
   thenVisibleOptions: [],
   elseVisibleOptions: [],
-
-  elseAction: 'hide',
-  elseTargetFields: [],
 };
 
 const propertiesSchema = z.object({
@@ -107,20 +99,11 @@ const propertiesSchema = z.object({
   decisionType: z.enum(['buttons', 'radio', 'select']).default('buttons'),
   decisionOptions: z.array(z.string()).default(['Yes', 'No']),
 
-  operator: z
-    .enum(['equals', 'not_equals', 'contains', 'not_contains', 'is_empty', 'is_not_empty'])
-    .default('equals'),
-  compareValue: z.string().default('Yes'),
-
-  thenAction: z.enum(['show', 'hide']).default('show'),
-  thenTargetFields: z.array(z.string()).default([]),
+  optionTargets: z.record(z.array(z.string())).default({}),
 
   targetOptionFieldId: z.string().default(''),
   thenVisibleOptions: z.array(z.string()).default([]),
   elseVisibleOptions: z.array(z.string()).default([]),
-
-  elseAction: z.enum(['hide', 'show', 'none']).default('hide'),
-  elseTargetFields: z.array(z.string()).default([]),
 });
 
 export const ConditionFieldFormElement: FormElement = {
@@ -130,8 +113,10 @@ export const ConditionFieldFormElement: FormElement = {
     type,
     extraAttributes: {
       ...extraAttributes,
-      thenTargetFields: [],
-      elseTargetFields: [],
+      optionTargets: {
+        Yes: [],
+        No: [],
+      },
       thenVisibleOptions: [],
       elseVisibleOptions: [],
     },
@@ -146,7 +131,7 @@ export const ConditionFieldFormElement: FormElement = {
   validate: (formElement: FormElementInstance, currentValue: string): boolean => {
     const element = formElement as CustomInstance;
     const isSelf = (element.extraAttributes?.sourceFieldId || 'self') === 'self';
-    if (!isSelf) return true; // Background logic rule does not require validation
+    if (!isSelf) return true;
     if (element.extraAttributes?.required) {
       return Boolean(currentValue && currentValue.trim().length > 0);
     }
@@ -160,6 +145,19 @@ type CustomInstance = FormElementInstance & {
 
 type PropertiesType = z.infer<typeof propertiesSchema>;
 
+function getElementDisplayName(el: FormElementInstance): string {
+  if (el.extraAttributes?.label && el.extraAttributes.label.trim()) {
+    return el.extraAttributes.label;
+  }
+  if (el.extraAttributes?.title && el.extraAttributes.title.trim()) {
+    return el.extraAttributes.title;
+  }
+  if (el.type === 'TitleField') return 'Title Field';
+  if (el.type === 'TsplRangeDropdownField') return 'Range Dropdown (Years / Numbers)';
+  if (el.type === 'TsplCurrentDateTimeField') return 'Submission Date & Time';
+  return el.type;
+}
+
 function PropertiesComponent({
   elementInstance,
 }: {
@@ -168,15 +166,38 @@ function PropertiesComponent({
   const element = elementInstance as CustomInstance;
   const { updateElement, elements } = useDesginerStore();
 
-  // Retrieve other questions in the form for targeting
+  // Retrieve other questions in the form for targeting (TitleField, Range Dropdown, DateTime, etc.)
   const otherElements = useMemo(() => {
-    return elements.filter((el) => el.id !== element.id && el.type !== 'BannerField' && el.type !== 'ThemeField');
+    return elements.filter(
+      (el) => el.id !== element.id && el.type !== 'BannerField' && el.type !== 'ThemeField'
+    );
   }, [elements, element.id]);
 
   // Option-based fields (SelectField, RadioField, CheckboxField) for option visibility control
   const optionBasedElements = useMemo(() => {
-    return otherElements.filter((el) => ['SelectField', 'RadioField', 'CheckboxField'].includes(el.type));
+    return otherElements.filter((el) =>
+      ['SelectField', 'RadioField', 'CheckboxField', 'TsplRangeDropdownField'].includes(el.type)
+    );
   }, [otherElements]);
+
+  // Build default option targets ensuring each option in decisionOptions has an entry
+  const initialOptionTargets: Record<string, string[]> = {
+    ...(element.extraAttributes?.optionTargets || {}),
+  };
+  const decisionOptions = element.extraAttributes?.decisionOptions || ['Yes', 'No'];
+  decisionOptions.forEach((opt) => {
+    if (!initialOptionTargets[opt]) {
+      // If legacy target fields exist, seed the first option with them
+      if (opt === (element.extraAttributes?.compareValue || 'Yes') && element.extraAttributes?.thenTargetFields) {
+        initialOptionTargets[opt] = [
+          ...(element.extraAttributes.thenTargetFields || []),
+          ...(element.extraAttributes.thenEditableFields || []),
+        ];
+      } else {
+        initialOptionTargets[opt] = [];
+      }
+    }
+  });
 
   const form = useForm<PropertiesType>({
     resolver: zodResolver(propertiesSchema),
@@ -186,46 +207,54 @@ function PropertiesComponent({
       required: element.extraAttributes?.required ?? false,
       sourceFieldId: element.extraAttributes?.sourceFieldId || 'self',
       decisionType: element.extraAttributes?.decisionType || 'buttons',
-      decisionOptions: element.extraAttributes?.decisionOptions || ['Yes', 'No'],
-      operator: element.extraAttributes?.operator || 'equals',
-      compareValue: element.extraAttributes?.compareValue || 'Yes',
-      thenAction: element.extraAttributes?.thenAction || 'show',
-      thenTargetFields: element.extraAttributes?.thenTargetFields || [],
+      decisionOptions,
+      optionTargets: initialOptionTargets,
       targetOptionFieldId: element.extraAttributes?.targetOptionFieldId || '',
       thenVisibleOptions: element.extraAttributes?.thenVisibleOptions || [],
       elseVisibleOptions: element.extraAttributes?.elseVisibleOptions || [],
-      elseAction: element.extraAttributes?.elseAction || 'hide',
-      elseTargetFields: element.extraAttributes?.elseTargetFields || [],
     },
   });
 
   const watchSource = form.watch('sourceFieldId');
-  const watchTargetOptionId = form.watch('targetOptionFieldId');
-  const watchThenTargets = form.watch('thenTargetFields') || [];
-  const watchElseTargets = form.watch('elseTargetFields') || [];
   const watchDecisionOptions = form.watch('decisionOptions') || [];
+  const watchOptionTargets = form.watch('optionTargets') || {};
+  const watchTargetOptionId = form.watch('targetOptionFieldId');
 
-  // Options of the chosen option-based target field
   const selectedOptionField = optionBasedElements.find((el) => el.id === watchTargetOptionId);
   const targetFieldOptions: string[] = selectedOptionField?.extraAttributes?.options || [];
 
+  // Options available for branching: either self choices, or options of the watched question
+  const activeBranchOptions: string[] = useMemo(() => {
+    if (watchSource === 'self') {
+      return watchDecisionOptions;
+    }
+    const watchedEl = otherElements.find((e) => e.id === watchSource);
+    if (watchedEl?.extraAttributes?.options && Array.isArray(watchedEl.extraAttributes.options)) {
+      return watchedEl.extraAttributes.options;
+    }
+    return watchDecisionOptions.length > 0 ? watchDecisionOptions : ['Option 1', 'Option 2'];
+  }, [watchSource, watchDecisionOptions, otherElements]);
+
   useEffect(() => {
+    const opts = element.extraAttributes?.decisionOptions || ['Yes', 'No'];
+    const optTargets: Record<string, string[]> = {
+      ...(element.extraAttributes?.optionTargets || {}),
+    };
+    opts.forEach((opt) => {
+      if (!optTargets[opt]) optTargets[opt] = [];
+    });
+
     form.reset({
       label: element.extraAttributes?.label || extraAttributes.label,
       helperText: element.extraAttributes?.helperText || '',
       required: element.extraAttributes?.required ?? false,
       sourceFieldId: element.extraAttributes?.sourceFieldId || 'self',
       decisionType: element.extraAttributes?.decisionType || 'buttons',
-      decisionOptions: element.extraAttributes?.decisionOptions || ['Yes', 'No'],
-      operator: element.extraAttributes?.operator || 'equals',
-      compareValue: element.extraAttributes?.compareValue || 'Yes',
-      thenAction: element.extraAttributes?.thenAction || 'show',
-      thenTargetFields: element.extraAttributes?.thenTargetFields || [],
+      decisionOptions: opts,
+      optionTargets: optTargets,
       targetOptionFieldId: element.extraAttributes?.targetOptionFieldId || '',
       thenVisibleOptions: element.extraAttributes?.thenVisibleOptions || [],
       elseVisibleOptions: element.extraAttributes?.elseVisibleOptions || [],
-      elseAction: element.extraAttributes?.elseAction || 'hide',
-      elseTargetFields: element.extraAttributes?.elseTargetFields || [],
     });
   }, [element, form]);
 
@@ -239,20 +268,37 @@ function PropertiesComponent({
     });
   }
 
-  // Helper to toggle a target field in the array
-  const toggleTargetField = (fieldArrayName: 'thenTargetFields' | 'elseTargetFields', targetId: string) => {
-    const current = form.getValues(fieldArrayName) || [];
-    let next: string[];
-    if (current.includes(targetId)) {
-      next = current.filter((id) => id !== targetId);
+  // Toggle a field for a specific option
+  const toggleOptionField = (optName: string, fieldId: string) => {
+    const currentTargets = { ...(form.getValues('optionTargets') || {}) };
+    const currentList = currentTargets[optName] || [];
+    let nextList: string[];
+    if (currentList.includes(fieldId)) {
+      nextList = currentList.filter((id) => id !== fieldId);
     } else {
-      next = [...current, targetId];
+      nextList = [...currentList, fieldId];
     }
-    form.setValue(fieldArrayName, next);
+    currentTargets[optName] = nextList;
+    form.setValue('optionTargets', currentTargets);
     applyChanges(form.getValues());
   };
 
-  // Helper to toggle an option in then/else options
+  // Select all fields for an option
+  const selectAllForOption = (optName: string) => {
+    const currentTargets = { ...(form.getValues('optionTargets') || {}) };
+    currentTargets[optName] = otherElements.map((el) => el.id);
+    form.setValue('optionTargets', currentTargets);
+    applyChanges(form.getValues());
+  };
+
+  // Clear all fields for an option
+  const clearAllForOption = (optName: string) => {
+    const currentTargets = { ...(form.getValues('optionTargets') || {}) };
+    currentTargets[optName] = [];
+    form.setValue('optionTargets', currentTargets);
+    applyChanges(form.getValues());
+  };
+
   const toggleOption = (optionArrayName: 'thenVisibleOptions' | 'elseVisibleOptions', opt: string) => {
     const current = form.getValues(optionArrayName) || [];
     let next: string[];
@@ -275,7 +321,7 @@ function PropertiesComponent({
         }}
         className="space-y-5"
       >
-        {/* Section 1: Decision Source */}
+        {/* Section 1: Decision Trigger */}
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-3">
           <div className="flex items-center gap-2">
             <Settings2 className="h-4 w-4 text-primary" />
@@ -308,21 +354,20 @@ function PropertiesComponent({
                     </SelectItem>
                     {otherElements.map((el) => (
                       <SelectItem key={el.id} value={el.id}>
-                        Watch: {el.extraAttributes?.label || el.extraAttributes?.title || el.type}
+                        Watch: {getElementDisplayName(el)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <FormDescription className="text-[11px]">
                   {field.value === 'self'
-                    ? 'Renders an interactive question on the form (e.g. Yes / No).'
-                    : 'Watches an existing question already present on the form.'}
+                    ? 'Renders an interactive decision question directly on the form.'
+                    : 'Watches another question in the form in the background.'}
                 </FormDescription>
               </FormItem>
             )}
           />
 
-          {/* If source is self: question config */}
           {watchSource === 'self' && (
             <div className="space-y-3 pt-2 border-t border-primary/15">
               <FormField
@@ -367,7 +412,6 @@ function PropertiesComponent({
                 )}
               />
 
-              {/* Options list */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-semibold">Decision Choices</Label>
@@ -377,12 +421,15 @@ function PropertiesComponent({
                     size="sm"
                     className="h-7 text-[11px] gap-1 px-2"
                     onClick={() => {
-                      const next = [...watchDecisionOptions, `Option ${watchDecisionOptions.length + 1}`];
+                      const newOptName = `Option ${watchDecisionOptions.length + 1}`;
+                      const next = [...watchDecisionOptions, newOptName];
+                      const targets = { ...form.getValues('optionTargets'), [newOptName]: [] };
                       form.setValue('decisionOptions', next);
+                      form.setValue('optionTargets', targets);
                       applyChanges(form.getValues());
                     }}
                   >
-                    <Plus className="h-3.5 w-3.5" /> Add
+                    <Plus className="h-3.5 w-3.5" /> Add Choice
                   </Button>
                 </div>
 
@@ -392,9 +439,20 @@ function PropertiesComponent({
                       <Input
                         value={opt}
                         onChange={(e) => {
+                          const val = e.target.value;
                           const next = [...watchDecisionOptions];
-                          next[idx] = e.target.value;
+                          const oldVal = next[idx];
+                          next[idx] = val;
+
+                          // update key in optionTargets
+                          const targets = { ...form.getValues('optionTargets') };
+                          if (oldVal !== val) {
+                            targets[val] = targets[oldVal] || [];
+                            delete targets[oldVal];
+                          }
+
                           form.setValue('decisionOptions', next);
+                          form.setValue('optionTargets', targets);
                         }}
                         onBlur={() => applyChanges(form.getValues())}
                         className="h-8 text-xs bg-background flex-1"
@@ -406,8 +464,13 @@ function PropertiesComponent({
                           size="icon"
                           className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
                           onClick={() => {
+                            const removed = watchDecisionOptions[idx];
                             const next = watchDecisionOptions.filter((_, i) => i !== idx);
+                            const targets = { ...form.getValues('optionTargets') };
+                            delete targets[removed];
+
                             form.setValue('decisionOptions', next);
+                            form.setValue('optionTargets', targets);
                             applyChanges(form.getValues());
                           }}
                         >
@@ -422,151 +485,165 @@ function PropertiesComponent({
           )}
         </div>
 
-        {/* Section 2: IF Condition (Emerald / Green) */}
+        {/* Section 2: Each Option Has Different Questions Below */}
         <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3.5 space-y-3">
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded bg-emerald-500 text-white font-bold text-[10px] tracking-wider uppercase">
-              IF
-            </span>
-            <h4 className="text-xs font-bold text-foreground">Decision Match Condition</h4>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <FormField
-              control={form.control}
-              name="operator"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">Operator</FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={(val: any) => {
-                      field.onChange(val);
-                      applyChanges({ ...form.getValues(), operator: val });
-                    }}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="h-9 text-xs bg-background">
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="equals">Equals (==)</SelectItem>
-                      <SelectItem value="not_equals">Does not equal (!=)</SelectItem>
-                      <SelectItem value="contains">Contains</SelectItem>
-                      <SelectItem value="not_contains">Does not contain</SelectItem>
-                      <SelectItem value="is_not_empty">Is Answered</SelectItem>
-                      <SelectItem value="is_empty">Is Empty</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="compareValue"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">Compare Value</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="e.g. Yes" className="h-9 text-xs bg-background" />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* THEN Action */}
-          <div className="pt-2 border-t border-emerald-500/20 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
-                <ArrowRight className="h-3.5 w-3.5" /> THEN (When True):
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded bg-emerald-500 text-white font-bold text-[10px] tracking-wider uppercase">
+                BRANCHING
               </span>
-              <FormField
-                control={form.control}
-                name="thenAction"
-                render={({ field }) => (
-                  <div className="flex items-center gap-1 bg-background rounded-lg p-0.5 border">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        field.onChange('show');
-                        applyChanges({ ...form.getValues(), thenAction: 'show' });
-                      }}
-                      className={cn(
-                        'px-2 py-1 text-[11px] font-semibold rounded',
-                        field.value === 'show'
-                          ? 'bg-emerald-500 text-white shadow-xs'
-                          : 'text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      Show
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        field.onChange('hide');
-                        applyChanges({ ...form.getValues(), thenAction: 'hide' });
-                      }}
-                      className={cn(
-                        'px-2 py-1 text-[11px] font-semibold rounded',
-                        field.value === 'hide'
-                          ? 'bg-red-500 text-white shadow-xs'
-                          : 'text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      Hide
-                    </button>
-                  </div>
-                )}
-              />
-            </div>
-
-            {/* Target questions checklist */}
-            <div className="space-y-1 max-h-40 overflow-y-auto pr-1 border rounded-lg p-2 bg-background/50">
-              {otherElements.length === 0 ? (
-                <p className="text-[11px] text-muted-foreground italic py-1">
-                  Add more questions to the form to link them here.
-                </p>
-              ) : (
-                otherElements.map((el) => {
-                  const isChecked = watchThenTargets.includes(el.id);
-                  return (
-                    <label
-                      key={el.id}
-                      className={cn(
-                        'flex items-center gap-2 p-1.5 rounded cursor-pointer text-xs transition-colors',
-                        isChecked ? 'bg-emerald-500/15 text-foreground font-medium' : 'hover:bg-muted text-muted-foreground'
-                      )}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => toggleTargetField('thenTargetFields', el.id)}
-                        className="rounded border-border text-emerald-600 focus:ring-emerald-500"
-                      />
-                      <span className="truncate">
-                        {el.extraAttributes?.label || el.extraAttributes?.title || el.type}
-                      </span>
-                    </label>
-                  );
-                })
-              )}
+              <h4 className="text-xs font-bold text-foreground">Option Answers (Questions Shown Below)</h4>
             </div>
           </div>
+
+          <p className="text-[11px] text-muted-foreground">
+            For each choice, select which questions should appear below when the user selects that option.
+          </p>
+
+          {activeBranchOptions.length === 0 ? (
+            <p className="text-xs text-muted-foreground italic py-2">
+              Add at least one choice above to configure questions.
+            </p>
+          ) : (
+            <div className="space-y-3 pt-1">
+              {activeBranchOptions.map((optName) => {
+                const currentFields = watchOptionTargets[optName] || [];
+                const isConfigured = currentFields.length > 0;
+
+                return (
+                  <div
+                    key={optName}
+                    className={cn(
+                      'rounded-xl border p-3 bg-background/90 transition-all space-y-2.5 shadow-2xs',
+                      isConfigured
+                        ? 'border-emerald-500/50 dark:border-emerald-500/40'
+                        : 'border-border/80'
+                    )}
+                  >
+                    {/* Option Header */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            'text-xs font-bold px-2 py-0.5 max-w-[170px] truncate',
+                            isConfigured
+                              ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                              : 'bg-muted text-foreground'
+                          )}
+                        >
+                          Option: &quot;{optName}&quot;
+                        </Badge>
+                        <span className="text-[11px] text-muted-foreground">
+                          {isConfigured ? `${currentFields.length} selected` : 'None selected'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-[10px] px-1.5 text-muted-foreground hover:text-foreground"
+                          onClick={() => selectAllForOption(optName)}
+                        >
+                          Select All
+                        </Button>
+                        <span className="text-muted-foreground/40 text-[10px]">|</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-[10px] px-1.5 text-muted-foreground hover:text-destructive"
+                          onClick={() => clearAllForOption(optName)}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] text-muted-foreground font-medium">
+                      When user selects <strong className="text-foreground">&quot;{optName}&quot;</strong>, show these questions below:
+                    </p>
+
+                    {/* Question Selection List */}
+                    {otherElements.length === 0 ? (
+                      <p className="text-[11px] text-muted-foreground italic py-1">
+                        Add questions (Title Field, Range Dropdown, Date & Time, etc.) to your form to show them here.
+                      </p>
+                    ) : (
+                      <div className="max-h-48 overflow-y-auto space-y-1 pr-1 rounded-lg border border-border/60 p-1.5 bg-muted/20 divide-y divide-border/30">
+                        {otherElements.map((el) => {
+                          const isChecked = currentFields.includes(el.id);
+                          const displayName = getElementDisplayName(el);
+
+                          return (
+                            <label
+                              key={el.id}
+                              onClick={() => toggleOptionField(optName, el.id)}
+                              className={cn(
+                                'flex items-center justify-between gap-2 p-1.5 rounded cursor-pointer transition-colors text-xs select-none',
+                                isChecked
+                                  ? 'bg-emerald-500/10 text-emerald-950 dark:text-emerald-100 font-medium'
+                                  : 'hover:bg-muted/40 text-muted-foreground hover:text-foreground'
+                              )}
+                            >
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <Checkbox
+                                  checked={isChecked}
+                                  onCheckedChange={() => toggleOptionField(optName, el.id)}
+                                  className={cn(
+                                    'h-4 w-4 rounded',
+                                    isChecked && 'border-emerald-600 bg-emerald-600 text-white'
+                                  )}
+                                />
+                                <span className="truncate" title={displayName}>
+                                  {displayName}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-1 shrink-0">
+                                {el.type === 'TsplCurrentDateTimeField' && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[9px] px-1.5 py-0 h-4 border-blue-500/40 text-blue-600 dark:text-blue-400 bg-blue-500/10"
+                                  >
+                                    Time (Editable)
+                                  </Badge>
+                                )}
+                                {el.type === 'TitleField' && (
+                                  <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">
+                                    Title Field
+                                  </Badge>
+                                )}
+                                {el.type === 'TsplRangeDropdownField' && (
+                                  <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">
+                                    Range Dropdown
+                                  </Badge>
+                                )}
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Section 3: Change Visible Option (Option-Level Decision) */}
+        {/* Section 3: Optional Dropdown Option Filter */}
         <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-3.5 space-y-3">
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-indigo-500" />
             <h4 className="text-xs font-bold text-foreground">
-              Change Visible Options in Dropdown / Radio
+              Filter Options in Target Dropdown / Radio (Optional)
             </h4>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            Dynamically filter which options appear in another question based on this decision.
+            Optionally filter which choices appear inside another dropdown or radio list based on this decision.
           </p>
 
           <FormField
@@ -574,7 +651,6 @@ function PropertiesComponent({
             name="targetOptionFieldId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-xs">Target Question with Options</FormLabel>
                 <Select
                   value={field.value || 'none'}
                   onValueChange={(val) => {
@@ -585,14 +661,14 @@ function PropertiesComponent({
                 >
                   <FormControl>
                     <SelectTrigger className="h-9 text-xs bg-background">
-                      <SelectValue placeholder="None (Only show/hide questions)" />
+                      <SelectValue placeholder="None (Control questions only)" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="none">-- None (Control whole questions only) --</SelectItem>
+                    <SelectItem value="none">-- None (Show / hide questions only) --</SelectItem>
                     {optionBasedElements.map((el) => (
                       <SelectItem key={el.id} value={el.id}>
-                        {el.extraAttributes?.label || el.type} ({el.type})
+                        {getElementDisplayName(el)} ({el.type})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -605,7 +681,7 @@ function PropertiesComponent({
             <div className="space-y-3 pt-2 border-t border-indigo-500/20">
               <div>
                 <Label className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                  Visible options when condition is TRUE:
+                  Visible options when condition is active:
                 </Label>
                 <div className="flex flex-wrap gap-1.5 mt-1.5">
                   {targetFieldOptions.map((opt) => {
@@ -631,7 +707,7 @@ function PropertiesComponent({
 
               <div>
                 <Label className="text-xs font-semibold text-orange-700 dark:text-orange-300">
-                  Visible options when condition is FALSE (ELSE):
+                  Visible options otherwise:
                 </Label>
                 <div className="flex flex-wrap gap-1.5 mt-1.5">
                   {targetFieldOptions.map((opt) => {
@@ -658,114 +734,8 @@ function PropertiesComponent({
           )}
         </div>
 
-        {/* Section 4: ELSE Action (Orange / Amber) */}
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3.5 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded bg-amber-500 text-white font-bold text-[10px] tracking-wider uppercase">
-                ELSE
-              </span>
-              <h4 className="text-xs font-bold text-foreground">Otherwise Behavior</h4>
-            </div>
-
-            <FormField
-              control={form.control}
-              name="elseAction"
-              render={({ field }) => (
-                <div className="flex items-center gap-1 bg-background rounded-lg p-0.5 border">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      field.onChange('hide');
-                      applyChanges({ ...form.getValues(), elseAction: 'hide' });
-                    }}
-                    className={cn(
-                      'px-2 py-1 text-[11px] font-semibold rounded',
-                      field.value === 'hide'
-                        ? 'bg-amber-500 text-white shadow-xs'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    Hide
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      field.onChange('show');
-                      applyChanges({ ...form.getValues(), elseAction: 'show' });
-                    }}
-                    className={cn(
-                      'px-2 py-1 text-[11px] font-semibold rounded',
-                      field.value === 'show'
-                        ? 'bg-emerald-500 text-white shadow-xs'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    Show
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      field.onChange('none');
-                      applyChanges({ ...form.getValues(), elseAction: 'none' });
-                    }}
-                    className={cn(
-                      'px-2 py-1 text-[11px] font-semibold rounded',
-                      field.value === 'none'
-                        ? 'bg-muted-foreground text-white shadow-xs'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    None
-                  </button>
-                </div>
-              )}
-            />
-          </div>
-
-          <p className="text-[11px] text-muted-foreground">
-            {form.watch('elseAction') === 'hide' &&
-              'Questions shown in the IF rule are automatically kept hidden when false.'}
-            {form.watch('elseAction') === 'show' &&
-              'Alternative questions below will be shown instead when condition is false.'}
-            {form.watch('elseAction') === 'none' &&
-              'Do not change question visibility when condition is false.'}
-          </p>
-
-          {/* If elseAction === 'show': alternative targets */}
-          {form.watch('elseAction') === 'show' && (
-            <div className="space-y-1 max-h-36 overflow-y-auto pr-1 border rounded-lg p-2 bg-background/50 pt-2">
-              <Label className="text-[11px] font-semibold text-muted-foreground">
-                Alternative Questions to Show when FALSE:
-              </Label>
-              {otherElements.map((el) => {
-                const isChecked = watchElseTargets.includes(el.id);
-                return (
-                  <label
-                    key={el.id}
-                    className={cn(
-                      'flex items-center gap-2 p-1.5 rounded cursor-pointer text-xs transition-colors',
-                      isChecked ? 'bg-amber-500/15 text-foreground font-medium' : 'hover:bg-muted text-muted-foreground'
-                    )}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => toggleTargetField('elseTargetFields', el.id)}
-                      className="rounded border-border text-amber-600 focus:ring-amber-500"
-                    />
-                    <span className="truncate">
-                      {el.extraAttributes?.label || el.extraAttributes?.title || el.type}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
         <Button type="button" onClick={form.handleSubmit(applyChanges)} className="w-full text-xs font-semibold">
-          Save Condition Rule
+          Save Condition Settings
         </Button>
       </form>
     </Form>
@@ -782,17 +752,11 @@ function DesignerComponent({
   const extra = element.extraAttributes || extraAttributes;
 
   const isSelf = (extra.sourceFieldId || 'self') === 'self';
-  const thenTargets = extra.thenTargetFields || [];
-  const elseTargets = extra.elseTargetFields || [];
-
-  // Count target names
-  const thenTargetNames = elements
-    .filter((el) => thenTargets.includes(el.id))
-    .map((el) => el.extraAttributes?.label || el.type);
+  const options = extra.decisionOptions || ['Yes', 'No'];
+  const optionTargets = extra.optionTargets || {};
 
   return (
     <div className="flex w-full flex-col gap-2.5 select-none">
-      {/* Top Header Card */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
@@ -811,69 +775,74 @@ function DesignerComponent({
           variant="outline"
           className="text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
         >
-          If / Else Decision
+          Option Branching
         </Badge>
       </div>
 
-      {/* Decision question preview if self */}
       {isSelf && (
         <div className="flex flex-wrap items-center gap-2 py-1">
-          {(extra.decisionOptions || ['Yes', 'No']).map((opt, i) => (
+          {options.map((opt, i) => (
             <div
               key={i}
-              className={cn(
-                'px-4 py-1.5 rounded-xl text-xs font-semibold border shadow-2xs transition-all flex items-center gap-1.5',
-                opt === extra.compareValue
-                  ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 font-bold'
-                  : 'bg-muted/40 border-border/80 text-muted-foreground'
-              )}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-semibold border shadow-2xs transition-all flex items-center gap-1.5 bg-muted/40 border-border/80 text-foreground"
             >
-              <div
-                className={cn(
-                  'h-2 w-2 rounded-full',
-                  opt === extra.compareValue ? 'bg-emerald-500' : 'bg-muted-foreground/40'
-                )}
-              />
+              <div className="h-2 w-2 rounded-full bg-emerald-500" />
               <span>{opt}</span>
             </div>
           ))}
         </div>
       )}
 
-      {/* Visual Flow Representation */}
-      <div className="rounded-xl border border-border/80 bg-muted/20 p-2.5 text-xs space-y-1.5 font-mono">
-        <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-          <span className="font-bold bg-emerald-500/20 px-1.5 py-0.5 rounded text-[10px]">IF</span>
-          <span>Answer {extra.operator} &quot;{extra.compareValue}&quot;</span>
-          <ArrowRight className="h-3 w-3 shrink-0" />
-          <span className="font-semibold uppercase text-[11px]">
-            {extra.thenAction} ({thenTargets.length} question{thenTargets.length === 1 ? '' : 's'})
-          </span>
+      {/* Visual Branching Summary */}
+      <div className="rounded-xl border border-border/80 bg-muted/20 p-2.5 text-xs space-y-2 font-sans">
+        <div className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400 text-xs">
+          <Layers className="h-3.5 w-3.5" />
+          <span>Option Answers (Branching Logic):</span>
         </div>
 
-        {thenTargetNames.length > 0 && (
-          <div className="pl-6 text-[11px] text-muted-foreground flex flex-wrap gap-1 font-sans">
-            {thenTargetNames.map((name, idx) => (
-              <span key={idx} className="bg-muted px-2 py-0.5 rounded text-[10px] truncate max-w-[200px]">
-                {name}
-              </span>
-            ))}
-          </div>
-        )}
+        <div className="space-y-1.5 pl-1">
+          {options.map((opt) => {
+            const targets = (optionTargets[opt] || [])
+              .map((id) => {
+                const el = elements.find((e) => e.id === id);
+                return el ? getElementDisplayName(el) : null;
+              })
+              .filter(Boolean);
 
-        <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 pt-0.5">
-          <span className="font-bold bg-amber-500/20 px-1.5 py-0.5 rounded text-[10px]">ELSE</span>
-          <span>Otherwise</span>
-          <ArrowRight className="h-3 w-3 shrink-0" />
-          <span className="font-semibold uppercase text-[11px]">
-            {extra.elseAction} ({extra.elseAction === 'show' ? elseTargets.length : thenTargets.length} question{thenTargets.length === 1 ? '' : 's'})
-          </span>
+            return (
+              <div key={opt} className="flex items-start gap-2 text-[11px]">
+                <Badge
+                  variant="secondary"
+                  className="font-bold text-[10px] shrink-0 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/30"
+                >
+                  {opt}
+                </Badge>
+                <ArrowRight className="h-3 w-3 mt-0.5 text-muted-foreground shrink-0" />
+                {targets.length > 0 ? (
+                  <div className="flex flex-wrap gap-1">
+                    {targets.map((name, i) => (
+                      <span
+                        key={i}
+                        className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded text-[10px] font-medium"
+                      >
+                        {name}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground italic text-[10px]">
+                    No extra questions shown
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {extra.targetOptionFieldId && (
-          <div className="flex items-center gap-1.5 text-[10px] text-indigo-500 font-sans pt-1 border-t border-border/40">
+          <div className="flex items-center gap-1.5 text-[10px] text-indigo-500 pt-1 border-t border-border/40">
             <Filter className="h-3 w-3" />
-            <span>Changes visible options in target dropdown/radio</span>
+            <span>Filters options in target dropdown/radio</span>
           </div>
         )}
       </div>
@@ -898,7 +867,6 @@ function FormComponent({
 
   const [selectedValue, setSelectedValue] = useState<string>(defaultValues || '');
 
-  // If this condition element is merely watching another field, it doesn't render any visible UI on the form
   if (!isSelf) {
     return null;
   }
@@ -933,7 +901,6 @@ function FormComponent({
 
       {extra.helperText && <p className="text-xs text-muted-foreground">{extra.helperText}</p>}
 
-      {/* Render based on decisionType */}
       {displayType === 'buttons' && (
         <div className="flex flex-wrap gap-2.5 pt-1">
           {options.map((opt) => {

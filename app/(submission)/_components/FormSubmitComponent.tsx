@@ -30,8 +30,8 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
   const [answeredCount, setAnsweredCount] = useState<number>(0);
   const [formValuesState, setFormValuesState] = useState<{ [key: string]: string }>({});
 
-  // Dynamic conditional logic evaluation (If/Else Decisions & Visible Options)
-  const { hiddenFieldIds, fieldOptionOverrides } = useMemo(() => {
+  // Dynamic conditional logic evaluation (If/Else Decisions, Visible Options & Editable fields)
+  const { hiddenFieldIds, editableFieldIds, fieldOptionOverrides } = useMemo(() => {
     return evaluateFormConditions(content, formValuesState);
   }, [content, formValuesState]);
 
@@ -51,20 +51,21 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
     (el) => el.type !== 'ThankYouField' && el.type !== 'BannerField' && el.type !== 'ThemeField'
   );
 
-  // Input questions only (exclude layout text / dividers / auto-capture fields / hidden fields)
+  // Input questions only (exclude layout text / dividers / auto-capture fields unless editable / hidden fields)
   const inputQuestions = questionsContent.filter(
     (el) =>
       !hiddenFieldIds.has(el.id) &&
-      ![
-        'TitleField',
-        'SubTitleField',
-        'ParagraphField',
-        'SeperatorField',
-        'SpacerField',
-        'SectionHeaderField',
-        'BannerField',
-        'TsplCurrentDateTimeField',
-      ].includes(el.type)
+      (el.type === 'TsplCurrentDateTimeField'
+        ? editableFieldIds.has(el.id)
+        : ![
+            'TitleField',
+            'SubTitleField',
+            'ParagraphField',
+            'SeperatorField',
+            'SpacerField',
+            'SectionHeaderField',
+            'BannerField',
+          ].includes(el.type))
   );
 
   const totalQuestions = inputQuestions.length;
@@ -157,12 +158,15 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
     try {
       setIsSubmitting(true);
 
-      // Auto-inject submission timestamp for all TsplCurrentDateTimeField elements
+      // Auto-inject submission timestamp for TsplCurrentDateTimeField unless manually edited
       const { format } = await import('date-fns');
       const submissionStamp = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
       for (const el of content) {
         if (el.type === 'TsplCurrentDateTimeField') {
-          formValues.current[el.id] = submissionStamp;
+          // If field is editable and respondent entered a custom datetime, retain it
+          if (!editableFieldIds.has(el.id) || !formValues.current[el.id]) {
+            formValues.current[el.id] = submissionStamp;
+          }
         }
       }
 
@@ -440,9 +444,8 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
             return null;
           }
 
-          // TsplCurrentDateTimeField is invisible — it only auto-records the
-          // submission timestamp silently via its FormComponent (returns null).
-          if (element.type === 'TsplCurrentDateTimeField') {
+          // TsplCurrentDateTimeField: if not made editable, keep invisible (auto-recorded silently)
+          if (element.type === 'TsplCurrentDateTimeField' && !editableFieldIds.has(element.id)) {
             const FormElement = FormElements[element.type].formComponent;
             return (
               <FormElement
@@ -453,14 +456,20 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
             );
           }
 
-          // Apply dynamic option visibility overrides if present
+          // Apply dynamic option visibility overrides and editable flag
           let effectiveElement = element;
-          if (fieldOptionOverrides.has(element.id)) {
+          const isCurrentTimeEditable =
+            element.type === 'TsplCurrentDateTimeField' && editableFieldIds.has(element.id);
+
+          if (fieldOptionOverrides.has(element.id) || isCurrentTimeEditable) {
             effectiveElement = {
               ...element,
               extraAttributes: {
                 ...element.extraAttributes,
-                options: fieldOptionOverrides.get(element.id),
+                options: fieldOptionOverrides.has(element.id)
+                  ? fieldOptionOverrides.get(element.id)
+                  : element.extraAttributes?.options,
+                isEditable: isCurrentTimeEditable ? true : element.extraAttributes?.isEditable,
               },
             };
           }

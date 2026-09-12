@@ -10,7 +10,7 @@ import { useDesginerStore } from '@/store/store';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Label } from '@radix-ui/react-label';
 import { Clock, ShieldCheck } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import {
@@ -25,6 +25,7 @@ import {
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const type: ElementsType = 'TsplCurrentDateTimeField';
 
@@ -194,6 +195,8 @@ function DesignerComponent({
 function FormComponent({
   elementInstance,
   submitFunction,
+  isInvalid,
+  defaultValues,
 }: {
   elementInstance: FormElementInstance;
   submitFunction?: SubmitFunction;
@@ -201,17 +204,69 @@ function FormComponent({
   defaultValues?: string;
 }) {
   const element = elementInstance as CustomInstance;
+  const isEditable = Boolean(element.extraAttributes?.isEditable);
+  const { label = 'Submission Date & Time', helperText } = element.extraAttributes || {};
 
-  // Silently auto-record the current timestamp into form values on mount.
-  // No UI is rendered — the field is invisible to the user.
-  useEffect(() => {
-    const stamp = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
-    if (submitFunction) {
-      submitFunction(element.id, stamp);
+  const [value, setValue] = useState<string>(() => {
+    if (defaultValues) {
+      return defaultValues.includes(' ') ? defaultValues.replace(' ', 'T').slice(0, 16) : defaultValues;
     }
-  // Only run once on mount — we capture the time the form is first opened.
+    try {
+      return format(new Date(), "yyyy-MM-dd'T'HH:mm");
+    } catch {
+      return '';
+    }
+  });
+
+  // Seed default timestamp on mount if not provided
+  useEffect(() => {
+    if (!defaultValues) {
+      try {
+        const stamp = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
+        if (submitFunction) {
+          submitFunction(element.id, stamp);
+        }
+      } catch {}
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return null;
+  // When not made editable, field remains invisible and is auto-marked in background
+  if (!isEditable) {
+    return null;
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setValue(val);
+    if (submitFunction) {
+      const normalized = val ? val.replace('T', ' ') + (val.length === 16 ? ':00' : '') : '';
+      submitFunction(element.id, normalized);
+    }
+  };
+
+  return (
+    <div className="flex w-full flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <Label className={cn('font-semibold text-sm text-foreground flex items-center gap-1.5', isInvalid && 'text-red-500')}>
+          <Clock className="h-4 w-4 text-primary" />
+          <span>{label}</span>
+        </Label>
+        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 flex items-center gap-1">
+          <Clock className="h-3 w-3" /> Editable Date/Time
+        </span>
+      </div>
+
+      <div className="relative">
+        <Input
+          type="datetime-local"
+          value={value}
+          onChange={handleChange}
+          className="h-11 text-sm bg-background font-mono"
+        />
+      </div>
+
+      {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
+    </div>
+  );
 }

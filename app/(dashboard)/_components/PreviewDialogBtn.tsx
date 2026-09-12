@@ -22,7 +22,7 @@ export default function PreviewDialogBtn({
   const { elements } = useDesginerStore();
   const [previewValues, setPreviewValues] = useState<Record<string, string>>({});
 
-  const { hiddenFieldIds, fieldOptionOverrides } = useMemo(() => {
+  const { hiddenFieldIds, editableFieldIds, fieldOptionOverrides } = useMemo(() => {
     return evaluateFormConditions(elements, previewValues);
   }, [elements, previewValues]);
 
@@ -170,14 +170,32 @@ export default function PreviewDialogBtn({
                 return null;
               }
 
-              // Apply dynamic option visibility overrides if present
+              // TsplCurrentDateTimeField: if not made editable, keep invisible (auto-recorded silently)
+              if (element.type === 'TsplCurrentDateTimeField' && !editableFieldIds.has(element.id)) {
+                const FormComponent = FormElements[element.type].formComponent;
+                return (
+                  <FormComponent
+                    key={element.id}
+                    elementInstance={element}
+                    submitFunction={handlePreviewSubmit}
+                  />
+                );
+              }
+
+              // Apply dynamic option visibility overrides or editable flag
               let effectiveElement = element;
-              if (fieldOptionOverrides.has(element.id)) {
+              const isCurrentTimeEditable =
+                element.type === 'TsplCurrentDateTimeField' && editableFieldIds.has(element.id);
+
+              if (fieldOptionOverrides.has(element.id) || isCurrentTimeEditable) {
                 effectiveElement = {
                   ...element,
                   extraAttributes: {
                     ...element.extraAttributes,
-                    options: fieldOptionOverrides.get(element.id),
+                    options: fieldOptionOverrides.has(element.id)
+                      ? fieldOptionOverrides.get(element.id)
+                      : element.extraAttributes?.options,
+                    isEditable: isCurrentTimeEditable ? true : element.extraAttributes?.isEditable,
                   },
                 };
               }
