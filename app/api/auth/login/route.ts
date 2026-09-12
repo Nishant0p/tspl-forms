@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       path: '/',
       maxAge: 60 * 60 * 24 * 7, // 7 days
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Allows cookie over both HTTP and HTTPS (e.g. internal server IP or non-SSL domains)
     });
 
     return res;

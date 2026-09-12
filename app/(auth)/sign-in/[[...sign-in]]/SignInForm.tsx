@@ -59,8 +59,11 @@ export default function SignInForm() {
           return;
         }
 
+        const searchParams = new URLSearchParams(window.location.search);
+        const redirectUrl = searchParams.get('redirect_url') || searchParams.get('redirect') || '/dashboard';
+
         // Direct browser navigation to ensure cookies are committed and active immediately
-        window.location.href = '/dashboard';
+        window.location.href = redirectUrl;
       } catch (err: any) {
         setError(err?.message || 'Unable to sign in. Please try again.');
       }

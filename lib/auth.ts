@@ -134,14 +134,56 @@ export async function getCurrentEmployee() {
     searchConditions.push({ email: { equals: String(session.email).trim(), mode: 'insensitive' } });
   }
 
-  if (searchConditions.length === 0) return null;
+  if (searchConditions.length === 0) {
+    if (session && (session.role || session.email)) {
+      return {
+        id: typeof session.id === 'number' ? session.id : 0,
+        clerkUserId: String(session.id || session.employeeId || 'user'),
+        employeeId: String(session.employeeId || session.id || 'user'),
+        firstName: session.firstName || 'User',
+        lastName: session.lastName || '',
+        email: session.email || '',
+        role: (session.role || 'EMPLOYEE') as EmployeeRole,
+        status: (session.status || 'ACTIVE') as EmployeeStatus,
+        departmentId: session.departmentId || null,
+        branchId: session.branchId || null,
+        department: null,
+        branch: null,
+        manager: null,
+      } as any;
+    }
+    return null;
+  }
 
-  return await prisma.employee.findFirst({
+  const dbEmployee = await prisma.employee.findFirst({
     where: {
       OR: searchConditions,
     },
     include: { department: true, branch: true, manager: true },
   });
+
+  if (dbEmployee) return dbEmployee;
+
+  // Fallback to session data if DB query returns null but user has valid authenticated session
+  if (session && (session.role || session.email)) {
+    return {
+      id: typeof session.id === 'number' ? session.id : 0,
+      clerkUserId: String(session.id || session.employeeId || 'user'),
+      employeeId: String(session.employeeId || session.id || 'user'),
+      firstName: session.firstName || 'User',
+      lastName: session.lastName || '',
+      email: session.email || '',
+      role: (session.role || 'EMPLOYEE') as EmployeeRole,
+      status: (session.status || 'ACTIVE') as EmployeeStatus,
+      departmentId: session.departmentId || null,
+      branchId: session.branchId || null,
+      department: null,
+      branch: null,
+      manager: null,
+    } as any;
+  }
+
+  return null;
 }
 
 /** Authenticated user helper returning real-time role & status */
@@ -499,10 +541,20 @@ export async function requireAuth() {
 }
 
 export async function requireEmployee() {
+  const session = getSessionData();
+  if (!session) {
+    redirect('/sign-in');
+  }
+
   const employee = await getCurrentEmployee();
-  if (!employee || employee.status !== 'ACTIVE') {
+  if (!employee) {
+    redirect('/sign-in');
+  }
+
+  if (employee.status !== 'ACTIVE') {
     redirect('/access-denied');
   }
+
   return employee;
 }
 

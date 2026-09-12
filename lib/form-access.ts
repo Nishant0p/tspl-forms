@@ -97,6 +97,16 @@ export async function canAccessForm(form: FormAccessRecord, user?: { id: string 
     return { allowed: true };
   }
 
+  const employee = await getCurrentEmployee();
+
+  // Super Admin and Admin have universal access
+  if (
+    (employee && (employee.role === 'SUPER_ADMIN' || employee.role === 'ADMIN')) ||
+    ((currentUser as any)?.role === 'SUPER_ADMIN' || (currentUser as any)?.role === 'ADMIN')
+  ) {
+    return { allowed: true };
+  }
+
   const status = getFormStatus(form);
 
   if (status === 'DRAFT') {
@@ -133,8 +143,6 @@ export async function canAccessForm(form: FormAccessRecord, user?: { id: string 
     return { allowed: false, reason: 'login-required' };
   }
 
-  const employee = await getCurrentEmployee();
-
   if (!employee || employee.status !== 'ACTIVE') {
     return { allowed: false, reason: 'forbidden' };
   }
@@ -148,12 +156,13 @@ export async function canAccessForm(form: FormAccessRecord, user?: { id: string 
   const hasBranchRestriction = (form.allowedBranches ?? []).length > 0;
   const hasEmployeeRestriction = (form.allowedEmployees ?? []).length > 0;
 
+  const employeeAllowed = hasEmployeeRestriction && (form.allowedEmployees ?? []).some((item) => item.employeeId === employee.id);
   const roleAllowed = !hasRoleRestriction || (form.allowedRoles ?? []).some((item) => item.role === employee.role);
   const departmentAllowed = !hasDepartmentRestriction || (form.allowedDepartments ?? []).some((item) => item.departmentId === employee.departmentId);
   const branchAllowed = !hasBranchRestriction || (form.allowedBranches ?? []).some((item) => item.branchId === employee.branchId);
-  const employeeAllowed = !hasEmployeeRestriction || (form.allowedEmployees ?? []).some((item) => item.employeeId === employee.id);
 
-  if (!roleAllowed || !departmentAllowed || !branchAllowed || !employeeAllowed) {
+  // If explicitly added as an allowed employee, grant access; otherwise verify role, department, and branch
+  if (!employeeAllowed && (!roleAllowed || !departmentAllowed || !branchAllowed)) {
     return { allowed: false, reason: 'forbidden' };
   }
 
