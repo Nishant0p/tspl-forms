@@ -31,13 +31,13 @@ const type: ElementsType = 'TsplCurrentDateTimeField';
 
 const extraAttributes = {
   label: 'Submission Date & Time',
-  helperText: 'Recorded automatically upon form submission.',
+  helperText: '',
   includeTime: true,
 };
 
 const propertiesSchema = z.object({
   label: z.string().min(2).max(60),
-  helperText: z.string().max(200),
+  helperText: z.string().optional(),
   includeTime: z.boolean().default(true),
 });
 
@@ -126,26 +126,7 @@ function PropertiesComponent({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="helperText"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Helper Text</FormLabel>
-              <FormControl>
-                <Textarea
-                  {...field}
-                  rows={2}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.currentTarget.blur();
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </form>
+        </form>
     </Form>
   );
 }
@@ -187,8 +168,7 @@ function DesignerComponent({
         </span>
       </div>
 
-      {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
-    </div>
+      </div>
   );
 }
 
@@ -266,7 +246,6 @@ function FormComponent({
         />
       </div>
 
-      {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
-    </div>
+      </div>
   );
 }

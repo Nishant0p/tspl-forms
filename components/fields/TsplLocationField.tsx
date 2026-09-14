@@ -50,7 +50,7 @@ const type: ElementsType = 'TsplLocationField';
 
 const extraAttributes = {
   label: 'Location / Address',
-  helperText: 'Enter 6-digit Indian PIN code to automatically fetch area, district, and state.',
+  helperText: '',
   required: false,
   placeholder: 'Enter 6-digit PIN code (e.g. 110001)',
   includeStreetAddress: true,
@@ -59,7 +59,7 @@ const extraAttributes = {
 
 const propertiesSchema = z.object({
   label: z.string().min(2).max(60),
-  helperText: z.string().max(200),
+  helperText: z.string().optional(),
   required: z.boolean().default(false),
   placeholder: z.string().max(60),
   includeStreetAddress: z.boolean().default(true),
@@ -230,27 +230,6 @@ function PropertiesComponent({
 
         <FormField
           control={form.control}
-          name="helperText"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Helper Text</FormLabel>
-              <FormControl>
-                <Textarea
-                  {...field}
-                  rows={2}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.currentTarget.blur();
-                  }}
-                />
-              </FormControl>
-              <FormDescription>Instructions shown below the input.</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
           name="includeStreetAddress"
           render={({ field }) => (
             <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-xs">
@@ -402,8 +381,7 @@ function DesignerComponent({
         )}
       </div>
 
-      {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
-    </div>
+      </div>
   );
 }
 
@@ -768,11 +746,6 @@ function FormComponent({
         )}
       </div>
 
-      {helperText && (
-        <p className={cn('text-xs text-muted-foreground', error && 'text-red-500')}>
-          {helperText}
-        </p>
-      )}
-    </div>
+      </div>
   );
 }

@@ -42,7 +42,7 @@ const extraAttributes = {
 
 const propertiesSchema = z.object({
   label: z.string().min(2).max(50),
-  helperText: z.string().max(200),
+  helperText: z.string().optional(),
   required: z.boolean().default(false),
 });
 
@@ -137,26 +137,7 @@ function PropertiesComponent({
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="helperText"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Helper Text</FormLabel>
-              <FormControl>
-                <Textarea
-                  {...field}
-                  rows={2}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.currentTarget.blur();
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </form>
+        </form>
     </Form>
   );
 }
@@ -209,10 +190,7 @@ function DesignerComponent({
           <span className="text-muted-foreground truncate">Select date (DD/MM/YYYY)</span>
         </Button>
       </div>
-      {helperText && (
-        <p className="text-[.8rem] text-muted-foreground">{helperText}</p>
-      )}
-    </div>
+      </div>
   );
 }
 
@@ -426,11 +404,6 @@ function FormComponent({
         </PopoverContent>
       </Popover>
 
-      {helperText && (
-        <p className={cn("text-[.8rem] text-muted-foreground", error && "text-red-500")}>
-          {helperText}
-        </p>
-      )}
-    </div>
+      </div>
   );
 }

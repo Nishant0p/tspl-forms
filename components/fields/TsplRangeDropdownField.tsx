@@ -32,7 +32,7 @@ const type: ElementsType = 'TsplRangeDropdownField';
 
 const extraAttributes = {
   label: 'Range Dropdown (Years / Numbers)',
-  helperText: 'Select a value from the auto-populated range.',
+  helperText: '',
   required: false,
   placeholder: 'Select an option...',
   min: 2000,
@@ -44,7 +44,7 @@ const extraAttributes = {
 
 const propertiesSchema = z.object({
   label: z.string().min(2).max(60),
-  helperText: z.string().max(200),
+  helperText: z.string().optional(),
   required: z.boolean().default(false),
   placeholder: z.string().max(50),
   min: z.coerce.number().default(2000),
@@ -348,8 +348,7 @@ function DesignerComponent({
         <ChevronDown className="h-4 w-4 opacity-50" />
       </div>
 
-      {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
-    </div>
+      </div>
   );
 }
 
@@ -423,7 +422,6 @@ function FormComponent({
         </SelectContent>
       </Select>
 
-      {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
-    </div>
+      </div>
   );
 }

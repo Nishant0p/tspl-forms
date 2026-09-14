@@ -278,6 +278,7 @@ async function SubMissionTable({ id }: { id: number }) {
       case "TsplAadhaarField":
       case "TsplPanField":
       case "TsplBankIfscField":
+      case "TsplBankAccountField":
         columns.push({
           id: element.id,
           label: element.extraAttributes?.label || element.extraAttributes?.title || element.type,
@@ -423,6 +424,13 @@ function RowCell({ type, value }: { type: ElementsType, value: string }) {
     case "CheckboxField":
       const checked = value === 'true';
       node = <Checkbox checked={checked} disabled />
+      break;
+    case "TsplBankAccountField":
+      node = (
+        <span className="font-mono text-xs font-semibold bg-muted/50 px-2 py-0.5 rounded border border-border/70">
+          {value}
+        </span>
+      );
       break;
     case "FileUploadField":
     case "ImageField":

@@ -19,7 +19,7 @@ import { FileText } from 'lucide-react';
 
 const type: ElementsType = 'FileUploadField';
 const extraAttributes = { label: 'File Upload', helperText: '', required: false, accept: '*' };
-const propertiesSchema = z.object({ label: z.string().min(2).max(50), helperText: z.string().max(200), required: z.boolean().default(false), accept: z.string().max(100) });
+const propertiesSchema = z.object({ label: z.string().min(2).max(50), helperText: z.string().optional(), required: z.boolean().default(false), accept: z.string().max(100) });
 
 export const FileUploadFieldFormElement: FormElement = {
   type,
@@ -45,8 +45,7 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
       <form onBlur={form.handleSubmit(applyChanges)} onSubmit={(e) => e.preventDefault()} className="space-y-4">
         <FormField control={form.control} name="label" render={({ field }) => (<FormItem><FormLabel>Label</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
         <FormField control={form.control} name="accept" render={({ field }) => (<FormItem><FormLabel>Accepted File Types</FormLabel><FormControl><Input {...field} placeholder="image/*, application/pdf, *" /></FormControl><FormMessage /></FormItem>)} />
-        <FormField control={form.control} name="helperText" render={({ field }) => (<FormItem><FormLabel>Helper Text</FormLabel><FormControl><Textarea {...field} rows={2} /></FormControl><FormMessage /></FormItem>)} />
-      </form>
+        </form>
     </Form>
   );
 }
@@ -54,7 +53,7 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
 function DesignerComponent({ elementInstance }: { elementInstance: FormElementInstance }) {
   const element = elementInstance as CustomInstance;
   const { label, helperText, required, accept } = element.extraAttributes;
-  return <div className="flex w-full flex-col gap-2"><Label className="mr-2 text-foreground">{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">Accepts: {accept}</div>{helperText && <p className="text-[.8rem] text-muted-foreground">{helperText}</p>}</div>;
+  return <div className="flex w-full flex-col gap-2"><Label className="mr-2 text-foreground">{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">Accepts: {accept}</div></div>;
 }
 
 function toFilePayload(file: File, dataUrl: string) {

@@ -32,14 +32,14 @@ const type: ElementsType = 'TsplPanField';
 
 const extraAttributes = {
   label: 'PAN Card Number',
-  helperText: 'Enter 10-character Permanent Account Number (e.g. ABCDE1234F)',
+  helperText: '',
   required: false,
   placeholder: 'ABCDE1234F',
 };
 
 const propertiesSchema = z.object({
   label: z.string().min(2).max(80),
-  helperText: z.string().max(200),
+  helperText: z.string().optional(),
   required: z.boolean().default(false),
   placeholder: z.string().max(30),
 });
@@ -182,26 +182,6 @@ function PropertiesComponent({
 
         <FormField
           control={form.control}
-          name="helperText"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Helper Text</FormLabel>
-              <FormControl>
-                <Textarea
-                  {...field}
-                  rows={2}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.currentTarget.blur();
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
           name="required"
           render={({ field }) => (
             <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-xs">
@@ -264,8 +244,7 @@ function DesignerComponent({
         />
       </div>
 
-      {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
-    </div>
+      </div>
   );
 }
 
@@ -388,11 +367,6 @@ function FormComponent({
           {value.length < 10
             ? `PAN must be 10 characters (${10 - value.length} left). Format: 5 letters, 4 digits, 1 letter.`
             : 'Invalid PAN format. Standard format: 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F).'}
-        </p>
-      ) : helperText ? (
-        <p className="text-xs text-muted-foreground flex items-center gap-1">
-          <FileText className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
-          <span>{helperText}</span>
         </p>
       ) : null}
     </div>

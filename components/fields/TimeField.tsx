@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 
 const type: ElementsType = 'TimeField';
 const extraAttributes = { label: 'Time Field', helperText: '', required: false };
-const propertiesSchema = z.object({ label: z.string().min(2).max(50), helperText: z.string().max(200), required: z.boolean().default(false) });
+const propertiesSchema = z.object({ label: z.string().min(2).max(50), helperText: z.string().optional(), required: z.boolean().default(false) });
 
 export const TimeFieldFormElement: FormElement = {
   type,
@@ -45,8 +45,7 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
     <Form {...form}>
       <form onBlur={form.handleSubmit(applyChanges)} onSubmit={(e) => e.preventDefault()} className="space-y-4">
         <FormField control={form.control} name="label" render={({ field }) => (<FormItem><FormLabel>Label</FormLabel><FormControl><Input {...field} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} /></FormControl><FormMessage /></FormItem>)} />
-        <FormField control={form.control} name="helperText" render={({ field }) => (<FormItem><FormLabel>Helper Text</FormLabel><FormControl><Textarea {...field} rows={2} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} /></FormControl><FormMessage /></FormItem>)} />
-      </form>
+        </form>
     </Form>
   );
 }
@@ -54,7 +53,7 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
 function DesignerComponent({ elementInstance }: { elementInstance: FormElementInstance }) {
   const element = elementInstance as CustomInstance;
   const { label, helperText, required } = element.extraAttributes;
-  return <div className="flex w-full flex-col gap-2"><Label className="mr-2 text-foreground">{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><Input readOnly disabled type="time" /><span className="text-sm text-muted-foreground">Pick a time</span>{helperText && <p className="text-[.8rem] text-muted-foreground">{helperText}</p>}</div>;
+  return <div className="flex w-full flex-col gap-2"><Label className="mr-2 text-foreground">{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><Input readOnly disabled type="time" /><span className="text-sm text-muted-foreground">Pick a time</span></div>;
 }
 
 function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValues }: { elementInstance: FormElementInstance; submitFunction?: SubmitFunction; isInvalid?: boolean; defaultValues?: string; }) {

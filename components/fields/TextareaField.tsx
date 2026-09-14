@@ -40,7 +40,7 @@ const extraAttributes = {
 
 const propertiesSchema = z.object({
   label: z.string().min(2).max(50),
-  helperText: z.string().max(200),
+  helperText: z.string().optional(),
   required: z.boolean().default(false),
   placeholder: z.string().max(50),
   rows: z.number().min(1).max(10),
@@ -161,25 +161,6 @@ function PropertiesComponent({
         />
         <FormField
           control={form.control}
-          name="helperText"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Helper Text</FormLabel>
-              <FormControl>
-                <Textarea
-                  {...field}
-                  rows={2}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.currentTarget.blur();
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
           name="rows"
           render={({ field }) => (
             <FormItem>
@@ -228,10 +209,7 @@ function DesignerComponent({
         disabled
         placeholder={placeholder}
       />
-      {helperText && (
-        <p className="text-sm text-muted-foreground">{helperText}</p>
-      )}
-    </div>
+      </div>
   );
 }
 

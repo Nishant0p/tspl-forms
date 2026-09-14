@@ -31,7 +31,7 @@ const type: ElementsType = 'TsplMobileField';
 
 const extraAttributes = {
   label: 'Mobile Number',
-  helperText: 'Enter 10-digit mobile number (e.g. 9876543210)',
+  helperText: '',
   required: false,
   placeholder: '9876543210',
   showCountryCode: true,
@@ -39,7 +39,7 @@ const extraAttributes = {
 
 const propertiesSchema = z.object({
   label: z.string().min(2).max(60),
-  helperText: z.string().max(200),
+  helperText: z.string().optional(),
   required: z.boolean().default(false),
   placeholder: z.string().max(30),
   showCountryCode: z.boolean().default(true),
@@ -168,26 +168,6 @@ function PropertiesComponent({
 
         <FormField
           control={form.control}
-          name="helperText"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Helper Text</FormLabel>
-              <FormControl>
-                <Textarea
-                  {...field}
-                  rows={2}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.currentTarget.blur();
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
           name="showCountryCode"
           render={({ field }) => (
             <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-xs">
@@ -247,8 +227,7 @@ function DesignerComponent({
           className="bg-muted/40 cursor-not-allowed"
         />
       </div>
-      {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
-    </div>
+      </div>
   );
 }
 
@@ -369,8 +348,6 @@ function FormComponent({
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           Sirf 10-digit number accept hoga. {10 - digits.length} digit aur daliye.
         </p>
-      ) : helperText ? (
-        <p className="text-xs text-muted-foreground">{helperText}</p>
       ) : null}
     </div>
   );

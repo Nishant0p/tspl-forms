@@ -205,6 +205,11 @@ function FormMiniPreview({ contentJson, formName }: { contentJson: string; formN
                       <span>🏦</span>
                       <span className="truncate">IFSC • Bank & Branch</span>
                     </div>
+                  ) : el.type === 'TsplBankAccountField' ? (
+                    <div className="h-4 w-full rounded border border-primary/30 bg-primary/5 px-1.5 text-[9px] text-primary flex items-center gap-1 font-mono">
+                      <span>🔢</span>
+                      <span className="truncate">•••• •••• •••• (A/C No)</span>
+                    </div>
                   ) : el.type === 'TsplConsentField' ? (
                     <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground pt-0.5">
                       <div className="h-2.5 w-2.5 rounded border border-primary/50 bg-primary/10 shrink-0" />
@@ -300,7 +305,7 @@ export default function FormCard({ form, isAdmin = false }: { form: Form; isAdmi
               <Button
                 asChild
                 className="w-full min-h-[38px] gap-1.5 text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 shadow-sm transition-colors">
-                <Link href={`/forms/${form.id}`}>
+                <Link href={`/builder/${form.id}`}>
                   Submissions <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </Button>

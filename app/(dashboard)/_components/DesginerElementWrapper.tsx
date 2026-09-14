@@ -100,6 +100,7 @@ const QUESTION_TYPE_OPTIONS: Array<{
   { type: 'TsplAadhaarField', label: 'Aadhaar Card', icon: <Fingerprint className="h-4 w-4 text-primary" /> },
   { type: 'TsplPanField', label: 'PAN Card', icon: <CreditCard className="h-4 w-4 text-primary" /> },
   { type: 'TsplBankIfscField', label: 'Bank IFSC', icon: <Landmark className="h-4 w-4 text-primary" /> },
+  { type: 'TsplBankAccountField', label: 'Bank Account', icon: <Landmark className="h-4 w-4 text-primary" /> },
   { type: 'ConditionField', label: 'Condition (If/Else)', icon: <GitBranch className="h-4 w-4 text-emerald-500" /> },
 ];
 
@@ -415,18 +416,6 @@ export default function DesginerElementWrapper({
               </Select>
             </div>
           </div>
-
-          {/* Description / Helper Text Row (if enabled) */}
-          {showDescription && (
-            <div className="pt-0">
-              <Input
-                value={element.extraAttributes?.helperText || ''}
-                onChange={(e) => handleHelperChange(e.target.value)}
-                placeholder="Description"
-                className="h-8 text-xs text-muted-foreground bg-transparent border-b border-t-0 border-x-0 rounded-none focus-visible:ring-0 focus-visible:border-foreground px-3"
-              />
-            </div>
-          )}
 
           {/* Card Body / Options Area (Exact Google Forms Layout Per Type) */}
           <div className="py-2">
@@ -757,13 +746,7 @@ export default function DesginerElementWrapper({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => setShowDescription(!showDescription)}
-                  className="text-xs"
-                >
-                  {showDescription ? 'Hide description' : 'Show description'}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
+                </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>

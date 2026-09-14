@@ -77,11 +77,10 @@ export default function CardStat({
           </div>
           {trendLabel && (
             <span
-              className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
-                isUp
+              className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${isUp
                   ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400'
                   : 'bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400'
-              }`}
+                }`}
             >
               {trendLabel}
             </span>

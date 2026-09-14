@@ -32,7 +32,7 @@ const type: ElementsType = 'TsplAadhaarField';
 
 const extraAttributes = {
   label: 'Aadhaar Card Number',
-  helperText: 'Enter 12-digit Aadhaar number (e.g. 1234 5678 9012)',
+  helperText: '',
   required: false,
   placeholder: '1234 5678 9012',
   allowMasking: true,
@@ -40,7 +40,7 @@ const extraAttributes = {
 
 const propertiesSchema = z.object({
   label: z.string().min(2).max(80),
-  helperText: z.string().max(200),
+  helperText: z.string().optional(),
   required: z.boolean().default(false),
   placeholder: z.string().max(40),
   allowMasking: z.boolean().default(true),
@@ -175,26 +175,6 @@ function PropertiesComponent({
 
         <FormField
           control={form.control}
-          name="helperText"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Helper Text</FormLabel>
-              <FormControl>
-                <Textarea
-                  {...field}
-                  rows={2}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.currentTarget.blur();
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
           name="required"
           render={({ field }) => (
             <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-xs">
@@ -281,8 +261,7 @@ function DesignerComponent({
         />
       </div>
 
-      {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
-    </div>
+      </div>
   );
 }
 
@@ -424,11 +403,6 @@ function FormComponent({
         <p className="text-xs text-red-500 font-medium flex items-center gap-1">
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           Aadhaar must be exactly 12 digits. {12 - digits.length} digit(s) remaining.
-        </p>
-      ) : helperText ? (
-        <p className="text-xs text-muted-foreground flex items-center gap-1">
-          <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
-          <span>{helperText}</span>
         </p>
       ) : null}
     </div>

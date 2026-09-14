@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 
 const type: ElementsType = 'RatingField';
 const extraAttributes = { label: 'Rating Field', helperText: '', required: false, maxRating: 5 };
-const propertiesSchema = z.object({ label: z.string().min(2).max(50), helperText: z.string().max(200), required: z.boolean().default(false), maxRating: z.number().min(3).max(10) });
+const propertiesSchema = z.object({ label: z.string().min(2).max(50), helperText: z.string().optional(), required: z.boolean().default(false), maxRating: z.number().min(3).max(10) });
 
 export const RatingFieldFormElement: FormElement = {
   type,
@@ -39,13 +39,13 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
   const form = useForm<propertiesType>({ resolver: zodResolver(propertiesSchema), defaultValues: element.extraAttributes });
   useEffect(() => { form.reset(element.extraAttributes); }, [element, form]);
   function applyChanges(data: propertiesType) { updateElement(element.id, { ...element, extraAttributes: { ...element.extraAttributes, label: data.label, helperText: data.helperText, maxRating: data.maxRating } }); }
-  return <Form {...form}><form onBlur={form.handleSubmit(applyChanges)} onSubmit={(e) => e.preventDefault()} className="space-y-4"><FormField control={form.control} name="label" render={({ field }) => (<FormItem><FormLabel>Label</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={form.control} name="helperText" render={({ field }) => (<FormItem><FormLabel>Helper Text</FormLabel><FormControl><Textarea {...field} rows={3} /></FormControl><FormMessage /></FormItem>)} /><FormField control={form.control} name="maxRating" render={({ field }) => (<FormItem><FormLabel>Max Rating {form.watch('maxRating')}</FormLabel><FormControl><Slider defaultValue={[field.value]} min={3} max={10} step={1} onValueChange={(values) => field.onChange(values[0])} /></FormControl><FormMessage /></FormItem>)} /></form></Form>;
+  return <Form {...form}><form onBlur={form.handleSubmit(applyChanges)} onSubmit={(e) => e.preventDefault()} className="space-y-4"><FormField control={form.control} name="label" render={({ field }) => (<FormItem><FormLabel>Label</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={form.control} name="maxRating" render={({ field }) => (<FormItem><FormLabel>Max Rating {form.watch('maxRating')}</FormLabel><FormControl><Slider defaultValue={[field.value]} min={3} max={10} step={1} onValueChange={(values) => field.onChange(values[0])} /></FormControl><FormMessage /></FormItem>)} /></form></Form>;
 }
 
 function DesignerComponent({ elementInstance }: { elementInstance: FormElementInstance }) {
   const element = elementInstance as CustomInstance;
   const { label, helperText, required } = element.extraAttributes;
-  return <div className="flex w-full flex-col gap-2"><Label className="mr-2 text-foreground">{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><div className="flex gap-1 text-amber-500">{Array.from({ length: 5 }).map((_, index) => <Star key={index} className="h-5 w-5 fill-current" />)}</div>{helperText && <p className="text-[.8rem] text-muted-foreground">{helperText}</p>}</div>;
+  return <div className="flex w-full flex-col gap-2"><Label className="mr-2 text-foreground">{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><div className="flex gap-1 text-amber-500">{Array.from({ length: 5 }).map((_, index) => <Star key={index} className="h-5 w-5 fill-current" />)}</div></div>;
 }
 
 function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValues }: { elementInstance: FormElementInstance; submitFunction?: SubmitFunction; isInvalid?: boolean; defaultValues?: string; }) {

@@ -25,6 +25,8 @@ export default function FormElementsSidebar() {
     FormElements.TsplAadhaarField,
     FormElements.TsplPanField,
     FormElements.TsplBankIfscField,
+    FormElements.TsplBankAccountField,
+    FormElements.ConditionField,
   ];
 
   const layoutElements = [
@@ -39,7 +41,6 @@ export default function FormElementsSidebar() {
   ];
 
   const formElements = [
-    FormElements.ConditionField,
     FormElements.TextField,
     FormElements.EmailField,
     FormElements.PhoneField,

@@ -31,14 +31,14 @@ const type: ElementsType = 'TsplEmailField';
 
 const extraAttributes = {
   label: 'Email ID',
-  helperText: 'Must be a valid email format (e.g. user@gmail.com)',
+  helperText: '',
   required: false,
   placeholder: 'user@gmail.com',
 };
 
 const propertiesSchema = z.object({
   label: z.string().min(2).max(60),
-  helperText: z.string().max(200),
+  helperText: z.string().optional(),
   required: z.boolean().default(false),
   placeholder: z.string().max(60),
 });
@@ -159,26 +159,7 @@ function PropertiesComponent({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="helperText"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Helper Text / Guidance</FormLabel>
-              <FormControl>
-                <Textarea
-                  {...field}
-                  rows={2}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.currentTarget.blur();
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </form>
+        </form>
     </Form>
   );
 }
@@ -212,8 +193,7 @@ function DesignerComponent({
           className="bg-muted/40 cursor-not-allowed"
         />
       </div>
-      {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
-    </div>
+      </div>
   );
 }
 
@@ -318,8 +298,6 @@ function FormComponent({
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           Galat format! Kripya valid email dalein (e.g. user@gmail.com).
         </p>
-      ) : helperText ? (
-        <p className="text-xs text-muted-foreground">{helperText}</p>
       ) : null}
     </div>
   );

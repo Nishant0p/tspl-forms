@@ -36,6 +36,7 @@ import { TsplLocationFieldFormElement } from '@/components/fields/TsplLocationFi
 import { TsplAadhaarFieldFormElement } from '@/components/fields/TsplAadhaarField';
 import { TsplPanFieldFormElement } from '@/components/fields/TsplPanField';
 import { TsplBankIfscFieldFormElement } from '@/components/fields/TsplBankIfscField';
+import { TsplBankAccountFieldFormElement } from '@/components/fields/TsplBankAccountField';
 import { ConditionFieldFormElement } from '@/components/fields/ConditionField';
 
 export type ElementsType =
@@ -77,6 +78,7 @@ export type ElementsType =
   | 'TsplAadhaarField'
   | 'TsplPanField'
   | 'TsplBankIfscField'
+  | 'TsplBankAccountField'
   | 'ConditionField';
 
 export type SubmitFunction = (key: string, value: string) => void;
@@ -156,5 +158,6 @@ export const FormElements: FormElementsType = {
   TsplAadhaarField: TsplAadhaarFieldFormElement,
   TsplPanField: TsplPanFieldFormElement,
   TsplBankIfscField: TsplBankIfscFieldFormElement,
+  TsplBankAccountField: TsplBankAccountFieldFormElement,
   ConditionField: ConditionFieldFormElement,
 };

@@ -44,7 +44,7 @@ const type: ElementsType = 'TsplBankIfscField';
 
 const extraAttributes = {
   label: 'Bank IFSC Code',
-  helperText: 'Enter 11-character Bank IFSC code to automatically fetch Bank & Branch details.',
+  helperText: '',
   required: false,
   placeholder: 'SBIN0000001',
   autoFetch: true,
@@ -52,7 +52,7 @@ const extraAttributes = {
 
 const propertiesSchema = z.object({
   label: z.string().min(2).max(80),
-  helperText: z.string().max(200),
+  helperText: z.string().optional(),
   required: z.boolean().default(false),
   placeholder: z.string().max(30),
   autoFetch: z.boolean().default(true),
@@ -209,26 +209,6 @@ function PropertiesComponent({
 
         <FormField
           control={form.control}
-          name="helperText"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Helper Text</FormLabel>
-              <FormControl>
-                <Textarea
-                  {...field}
-                  rows={2}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.currentTarget.blur();
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
           name="required"
           render={({ field }) => (
             <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-xs">
@@ -344,8 +324,7 @@ function DesignerComponent({
         </div>
       </div>
 
-      {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
-    </div>
+      </div>
   );
 }
 
@@ -676,9 +655,6 @@ function FormComponent({
         )}
       </div>
 
-      {helperText && !apiError && (
-        <p className="text-xs text-muted-foreground">{helperText}</p>
-      )}
-    </div>
+      </div>
   );
 }

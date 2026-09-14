@@ -31,7 +31,7 @@ const type: ElementsType = 'TsplFullNameField';
 
 const extraAttributes = {
   label: 'Full Name',
-  helperText: 'Enter your full legal name as per government records / ID.',
+  helperText: '',
   required: false,
   placeholder: 'e.g. Rahul Sharma',
   autoTitleCase: true,
@@ -39,7 +39,7 @@ const extraAttributes = {
 
 const propertiesSchema = z.object({
   label: z.string().min(2).max(60),
-  helperText: z.string().max(200),
+  helperText: z.string().optional(),
   required: z.boolean().default(false),
   placeholder: z.string().max(60),
   autoTitleCase: z.boolean().default(true),
@@ -176,26 +176,6 @@ function PropertiesComponent({
 
         <FormField
           control={form.control}
-          name="helperText"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Helper Text</FormLabel>
-              <FormControl>
-                <Textarea
-                  {...field}
-                  rows={2}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.currentTarget.blur();
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
           name="autoTitleCase"
           render={({ field }) => (
             <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-xs">
@@ -248,8 +228,7 @@ function DesignerComponent({
           className="bg-muted/40 cursor-not-allowed"
         />
       </div>
-      {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
-    </div>
+      </div>
   );
 }
 
@@ -347,8 +326,6 @@ function FormComponent({
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           Name me sirf letters allow hain (numbers ya special symbols nahi).
         </p>
-      ) : helperText ? (
-        <p className="text-xs text-muted-foreground">{helperText}</p>
       ) : null}
     </div>
   );

@@ -60,7 +60,7 @@ export type OptionSpecificQuestion = z.infer<typeof optionSpecificQuestionSchema
 
 export type ConditionFieldExtraAttributes = {
   label: string;
-  helperText: string;
+  helperText?: string;
   required: boolean;
 
   // Source Decision Question
@@ -93,7 +93,7 @@ export type ConditionFieldExtraAttributes = {
 
 const extraAttributes: ConditionFieldExtraAttributes = {
   label: 'Do you need transport facilities?',
-  helperText: 'Select an option to see additional relevant questions.',
+  helperText: '',
   required: false,
 
   sourceFieldId: 'self',
@@ -117,7 +117,7 @@ const extraAttributes: ConditionFieldExtraAttributes = {
 
 const propertiesSchema = z.object({
   label: z.string().min(2).max(120),
-  helperText: z.string().max(200),
+  helperText: z.string().optional(),
   required: z.boolean().default(false),
 
   sourceFieldId: z.string().default('self'),
@@ -1056,7 +1056,6 @@ function DesignerComponent({
               <span>{isSelf ? extra.label : `Condition (Watches: ${extra.sourceFieldId})`}</span>
               {extra.required && isSelf && <span className="text-red-500">*</span>}
             </Label>
-            {extra.helperText && <p className="text-[11px] text-muted-foreground">{extra.helperText}</p>}
           </div>
         </div>
 
@@ -1214,8 +1213,6 @@ function FormComponent({
         </Label>
 
       </div>
-
-      {extra.helperText && <p className="text-xs text-muted-foreground">{extra.helperText}</p>}
 
       {displayType === 'buttons' && (
         <div className="flex flex-wrap gap-2.5 pt-1">

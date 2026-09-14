@@ -45,7 +45,7 @@ const defaultEducationOptions = [
 
 const extraAttributes = {
   label: 'Education Qualification',
-  helperText: 'Select your highest educational degree / qualification.',
+  helperText: '',
   required: false,
   placeholder: 'Select highest education qualification...',
   options: defaultEducationOptions,
@@ -53,7 +53,7 @@ const extraAttributes = {
 
 const propertiesSchema = z.object({
   label: z.string().min(2).max(60),
-  helperText: z.string().max(200),
+  helperText: z.string().optional(),
   required: z.boolean().default(false),
   placeholder: z.string().max(60),
   options: z.array(z.string()).default(defaultEducationOptions),
@@ -202,26 +202,6 @@ function PropertiesComponent({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="helperText"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Helper Text</FormLabel>
-              <FormControl>
-                <Textarea
-                  {...field}
-                  rows={2}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.currentTarget.blur();
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <Separator />
 
         {/* Readymade Degrees List */}
@@ -314,8 +294,7 @@ function DesignerComponent({
         <ChevronDown className="h-4 w-4 opacity-50" />
       </div>
 
-      {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
-    </div>
+      </div>
   );
 }
 
@@ -384,7 +363,6 @@ function FormComponent({
         </SelectContent>
       </Select>
 
-      {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
-    </div>
+      </div>
   );
 }

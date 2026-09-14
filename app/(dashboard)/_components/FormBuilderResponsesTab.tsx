@@ -113,6 +113,7 @@ export default function FormBuilderResponsesTab({ formId }: { formId: number }) 
       case 'TsplAadhaarField':
       case 'TsplPanField':
       case 'TsplBankIfscField':
+      case 'TsplBankAccountField':
         columns.push({
           id: element.id,
           label: element.extraAttributes?.label || element.extraAttributes?.title || element.type,
@@ -410,6 +411,14 @@ function renderCellValue(type: ElementsType, value: any) {
           </span>
         );
       }
+
+    case 'TsplBankAccountField':
+      return (
+        <span className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-foreground bg-muted/50 px-2 py-0.5 rounded border border-border/70">
+          <Landmark className="h-3.5 w-3.5 text-primary shrink-0" />
+          <span>{String(value)}</span>
+        </span>
+      );
 
     default:
       return <span className="truncate max-w-[160px] inline-block">{String(value)}</span>;

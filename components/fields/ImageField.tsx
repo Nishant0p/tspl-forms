@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 
 const type: ElementsType = 'ImageField';
 const extraAttributes = { label: 'Image Field', helperText: '', required: false };
-const propertiesSchema = z.object({ label: z.string().min(2).max(50), helperText: z.string().max(200), required: z.boolean().default(false) });
+const propertiesSchema = z.object({ label: z.string().min(2).max(50), helperText: z.string().optional(), required: z.boolean().default(false) });
 
 export const ImageFieldFormElement: FormElement = {
   type,
@@ -37,13 +37,13 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
   const form = useForm<propertiesType>({ resolver: zodResolver(propertiesSchema), defaultValues: element.extraAttributes });
   useEffect(() => { form.reset(element.extraAttributes); }, [element, form]);
   function applyChanges(data: propertiesType) { updateElement(element.id, { ...element, extraAttributes: { ...element.extraAttributes, label: data.label, helperText: data.helperText } }); }
-  return <Form {...form}><form onBlur={form.handleSubmit(applyChanges)} onSubmit={(e) => e.preventDefault()} className="space-y-4"><FormField control={form.control} name="label" render={({ field }) => (<FormItem><FormLabel>Label</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={form.control} name="helperText" render={({ field }) => (<FormItem><FormLabel>Helper Text</FormLabel><FormControl><Textarea {...field} rows={3} /></FormControl><FormMessage /></FormItem>)} /></form></Form>;
+  return <Form {...form}><form onBlur={form.handleSubmit(applyChanges)} onSubmit={(e) => e.preventDefault()} className="space-y-4"><FormField control={form.control} name="label" render={({ field }) => (<FormItem><FormLabel>Label</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /></form></Form>;
 }
 
 function DesignerComponent({ elementInstance }: { elementInstance: FormElementInstance }) {
   const element = elementInstance as CustomInstance;
   const { label, helperText, required } = element.extraAttributes;
-  return <div className="flex w-full flex-col gap-2"><Label className="mr-2 text-foreground">{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">Image upload / image response</div>{helperText && <p className="text-[.8rem] text-muted-foreground">{helperText}</p>}</div>;
+  return <div className="flex w-full flex-col gap-2"><Label className="mr-2 text-foreground">{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">Image upload / image response</div></div>;
 }
 
 function toFilePayload(file: File, dataUrl: string) { return JSON.stringify({ name: file.name, type: file.type, size: file.size, dataUrl }); }

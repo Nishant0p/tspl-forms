@@ -32,7 +32,7 @@ const extraAttributes = {
 
 const propertiesSchema = z.object({
   label: z.string().min(2).max(50),
-  helperText: z.string().max(200),
+  helperText: z.string().optional(),
   required: z.boolean().default(false),
   min: z.number().min(0).max(9),
   max: z.number().min(1).max(20),
@@ -124,19 +124,6 @@ function PropertiesComponent({
         />
         <FormField
           control={form.control}
-          name="helperText"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Helper Text</FormLabel>
-              <FormControl>
-                <Textarea {...field} rows={3} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
           name="min"
           render={({ field }) => (
             <FormItem>
@@ -197,8 +184,7 @@ function DesignerComponent({
         <Slider value={[Math.floor((min + max) / 2)]} min={min} max={max} step={1} disabled />
         <span className="text-xs text-muted-foreground">{max}</span>
       </div>
-      {helperText && <p className="text-[.8rem] text-muted-foreground">{helperText}</p>}
-    </div>
+      </div>
   );
 }
 

@@ -201,6 +201,7 @@ export default function FloatingRightCapsuleToolbar({
                     { type: 'TsplAadhaarField', label: 'Aadhaar Card' },
                     { type: 'TsplPanField', label: 'PAN Card' },
                     { type: 'TsplBankIfscField', label: 'Bank IFSC' },
+                    { type: 'TsplBankAccountField', label: 'Bank Account' },
                     { type: 'ConditionField', label: 'Condition (If/Else)' },
                   ] as Array<{ type: ElementsType; label: string }>
                 ).map((item) => (

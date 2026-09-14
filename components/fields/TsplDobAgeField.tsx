@@ -32,13 +32,13 @@ const type: ElementsType = 'TsplDobAgeField';
 
 const extraAttributes = {
   label: 'Date of Birth & Age',
-  helperText: 'Select your birth date. Current age will be calculated automatically.',
+  helperText: '',
   required: false,
 };
 
 const propertiesSchema = z.object({
   label: z.string().min(2).max(60),
-  helperText: z.string().max(200),
+  helperText: z.string().optional(),
   required: z.boolean().default(false),
 });
 
@@ -153,26 +153,7 @@ function PropertiesComponent({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="helperText"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Helper Text</FormLabel>
-              <FormControl>
-                <Textarea
-                  {...field}
-                  rows={2}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.currentTarget.blur();
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </form>
+        </form>
     </Form>
   );
 }
@@ -212,8 +193,7 @@ function DesignerComponent({
         </div>
       </div>
 
-      {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
-    </div>
+      </div>
   );
 }
 
@@ -316,8 +296,6 @@ function FormComponent({
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           Birthdate future me nahi ho sakti. Kripya valid date chunein.
         </p>
-      ) : helperText ? (
-        <p className="text-xs text-muted-foreground">{helperText}</p>
       ) : null}
     </div>
   );

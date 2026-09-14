@@ -60,7 +60,7 @@ export const defaultGenderOptions = [
 
 const extraAttributes = {
   label: 'Gender',
-  helperText: 'Please select your gender.',
+  helperText: '',
   required: false,
   options: defaultGenderOptions,
   displayStyle: 'cards' as 'cards' | 'radio' | 'dropdown',
@@ -69,7 +69,7 @@ const extraAttributes = {
 
 const propertiesSchema = z.object({
   label: z.string().min(2).max(60),
-  helperText: z.string().max(200),
+  helperText: z.string().optional(),
   required: z.boolean().default(false),
   displayStyle: z.enum(['cards', 'radio', 'dropdown']).default('cards'),
   allowOtherSpecification: z.boolean().default(true),
@@ -193,27 +193,6 @@ function PropertiesComponent({
                 />
               </FormControl>
               <FormDescription>The title displayed for this question.</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="helperText"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Helper Text</FormLabel>
-              <FormControl>
-                <Textarea
-                  {...field}
-                  rows={2}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.currentTarget.blur();
-                  }}
-                />
-              </FormControl>
-              <FormDescription>Instructions or guidance shown below the field.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -472,8 +451,7 @@ function DesignerComponent({
         </div>
       )}
 
-      {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
-    </div>
+      </div>
   );
 }
 
@@ -672,11 +650,6 @@ function FormComponent({
         </div>
       )}
 
-      {helperText && (
-        <p className={cn('text-xs text-muted-foreground', error && 'text-red-500')}>
-          {helperText}
-        </p>
-      )}
-    </div>
+      </div>
   );
 }
