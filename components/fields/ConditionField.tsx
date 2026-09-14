@@ -187,6 +187,9 @@ function getElementDisplayName(el: FormElementInstance): string {
   if (el.type === 'TsplCurrentDateTimeField') return 'Submission Date & Time';
   if (el.type === 'TsplGenderField') return 'Gender';
   if (el.type === 'TsplLocationField') return 'Location (Pincode)';
+  if (el.type === 'TsplAadhaarField') return 'Aadhaar Card';
+  if (el.type === 'TsplPanField') return 'PAN Card';
+  if (el.type === 'TsplBankIfscField') return 'Bank IFSC';
   return el.type;
 }
 

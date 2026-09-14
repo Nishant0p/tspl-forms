@@ -22,6 +22,9 @@ import {
   Calendar,
   Share2,
   MapPin,
+  Fingerprint,
+  CreditCard,
+  Landmark,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FormCollaboratorsModal from '@/components/FormCollaboratorsModal';
@@ -107,6 +110,9 @@ export default function FormBuilderResponsesTab({ formId }: { formId: number }) 
       case 'TsplConsentField':
       case 'TsplGenderField':
       case 'TsplLocationField':
+      case 'TsplAadhaarField':
+      case 'TsplPanField':
+      case 'TsplBankIfscField':
         columns.push({
           id: element.id,
           label: element.extraAttributes?.label || element.extraAttributes?.title || element.type,
@@ -366,6 +372,41 @@ function renderCellValue(type: ElementsType, value: any) {
           <span className="inline-flex items-center gap-1 font-medium text-foreground truncate max-w-[240px]" title={String(value)}>
             <MapPin className="h-3 w-3 text-primary shrink-0" />
             <span className="truncate">{String(value)}</span>
+          </span>
+        );
+      }
+
+    case 'TsplAadhaarField':
+      return (
+        <span className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-foreground">
+          <Fingerprint className="h-3.5 w-3.5 text-primary shrink-0" />
+          <span>{String(value)}</span>
+        </span>
+      );
+
+    case 'TsplPanField':
+      return (
+        <span className="inline-flex items-center gap-1 font-mono text-xs font-bold uppercase bg-muted/60 px-2 py-0.5 rounded border border-border/80 text-foreground">
+          <CreditCard className="h-3 w-3 text-primary shrink-0" />
+          <span>{String(value)}</span>
+        </span>
+      );
+
+    case 'TsplBankIfscField':
+      try {
+        const parsed = JSON.parse(value);
+        const display = parsed.formatted || `${parsed.ifsc || ''} — ${parsed.bank || ''}${parsed.branch ? ` (${parsed.branch})` : ''}`.trim();
+        return (
+          <span className="inline-flex items-center gap-1.5 font-medium text-foreground truncate max-w-[260px]" title={display}>
+            <Landmark className="h-3.5 w-3.5 text-primary shrink-0" />
+            <span className="truncate">{display}</span>
+          </span>
+        );
+      } catch {
+        return (
+          <span className="inline-flex items-center gap-1.5 font-mono font-medium text-foreground">
+            <Landmark className="h-3.5 w-3.5 text-primary shrink-0" />
+            <span>{String(value)}</span>
           </span>
         );
       }

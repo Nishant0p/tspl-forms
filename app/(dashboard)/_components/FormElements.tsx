@@ -33,6 +33,9 @@ import { TsplFullNameFieldFormElement } from '@/components/fields/TsplFullNameFi
 import { TsplConsentFieldFormElement } from '@/components/fields/TsplConsentField';
 import { TsplGenderFieldFormElement } from '@/components/fields/TsplGenderField';
 import { TsplLocationFieldFormElement } from '@/components/fields/TsplLocationField';
+import { TsplAadhaarFieldFormElement } from '@/components/fields/TsplAadhaarField';
+import { TsplPanFieldFormElement } from '@/components/fields/TsplPanField';
+import { TsplBankIfscFieldFormElement } from '@/components/fields/TsplBankIfscField';
 import { ConditionFieldFormElement } from '@/components/fields/ConditionField';
 
 export type ElementsType =
@@ -71,6 +74,9 @@ export type ElementsType =
   | 'TsplConsentField'
   | 'TsplGenderField'
   | 'TsplLocationField'
+  | 'TsplAadhaarField'
+  | 'TsplPanField'
+  | 'TsplBankIfscField'
   | 'ConditionField';
 
 export type SubmitFunction = (key: string, value: string) => void;
@@ -147,5 +153,8 @@ export const FormElements: FormElementsType = {
   TsplConsentField: TsplConsentFieldFormElement,
   TsplGenderField: TsplGenderFieldFormElement,
   TsplLocationField: TsplLocationFieldFormElement,
+  TsplAadhaarField: TsplAadhaarFieldFormElement,
+  TsplPanField: TsplPanFieldFormElement,
+  TsplBankIfscField: TsplBankIfscFieldFormElement,
   ConditionField: ConditionFieldFormElement,
 };

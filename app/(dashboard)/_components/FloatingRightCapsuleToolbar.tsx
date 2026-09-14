@@ -198,6 +198,9 @@ export default function FloatingRightCapsuleToolbar({
                     { type: 'TsplRangeDropdownField', label: 'Range Dropdown' },
                     { type: 'TsplEducationField', label: 'Education' },
                     { type: 'TsplConsentField', label: 'Consent / Declaration' },
+                    { type: 'TsplAadhaarField', label: 'Aadhaar Card' },
+                    { type: 'TsplPanField', label: 'PAN Card' },
+                    { type: 'TsplBankIfscField', label: 'Bank IFSC' },
                     { type: 'ConditionField', label: 'Condition (If/Else)' },
                   ] as Array<{ type: ElementsType; label: string }>
                 ).map((item) => (

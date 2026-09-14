@@ -40,6 +40,20 @@ The builder supports the following fields:
 - **File Upload Field**: Attachment upload widget.
 - **Signature Field**: Canvas-based digital signature widget.
 
+#### TSPL Custom Elements (Enterprise Suite)
+- **Full Name Field**: Dedicated applicant/employee full name capture.
+- **Strict Email Field**: TSPL-domain enforced or standard strict email validation.
+- **Strict Mobile Field**: 10-digit Indian mobile number validation with +91 country prefix.
+- **Aadhaar Card Field (NEW)**: Strict 12-digit UIDAI Aadhaar number input with live digit counter, 4-4-4 spacing formatting (`1234 5678 9012`), and optional PII masking toggle.
+- **PAN Card Field (NEW)**: Standard 10-character alphanumeric Indian PAN format (`[A-Z]{5}[0-9]{4}[A-Z]{1}`) with auto-capitalization, real-time validation, and entity category detection.
+- **Bank IFSC Code Field (NEW)**: 11-character bank IFSC input with live auto-lookup using the Razorpay IFSC API (`https://ifsc.razorpay.com/{ifsccode}`), displaying detected Bank Name, Branch, District, State, and supported transfer modes (`NEFT`, `RTGS`, `IMPS`, `UPI`).
+- **Location Field**: Indian PIN code lookup with auto-detection of District, State, and Post Office names via Postal API.
+- **Current Date & Time**: Auto-stamped or editable submission timestamp.
+- **DOB → Age Field**: Date of birth selector with real-time age calculation in years.
+- **Education Field**: Readymade qualification and degree selector.
+- **Range Dropdown Field**: Year/number range selector.
+- **Consent / Declaration Field**: Legal agreement checkbox with custom terms.
+
 ---
 
 ## 2. Access Control & Distribution

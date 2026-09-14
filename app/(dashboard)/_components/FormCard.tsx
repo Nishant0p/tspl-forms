@@ -190,6 +190,21 @@ function FormMiniPreview({ contentJson, formName }: { contentJson: string; formN
                       <span className="text-[9px]">📍</span>
                       <span className="truncate">{el.extraAttributes?.placeholder || 'PIN Code Location'}</span>
                     </div>
+                  ) : el.type === 'TsplAadhaarField' ? (
+                    <div className="h-4 w-full rounded border border-primary/30 bg-primary/5 px-1.5 text-[9px] text-primary flex items-center gap-1 font-mono">
+                      <span>🇮🇳</span>
+                      <span className="truncate">•••• •••• •••• (12 Digits)</span>
+                    </div>
+                  ) : el.type === 'TsplPanField' ? (
+                    <div className="h-4 w-full rounded border border-primary/30 bg-primary/5 px-1.5 text-[9px] text-primary flex items-center gap-1 font-mono uppercase">
+                      <span>💳</span>
+                      <span className="truncate">ABCDE1234F (PAN)</span>
+                    </div>
+                  ) : el.type === 'TsplBankIfscField' ? (
+                    <div className="h-4 w-full rounded border border-primary/30 bg-primary/5 px-1.5 text-[9px] text-primary flex items-center gap-1 font-mono">
+                      <span>🏦</span>
+                      <span className="truncate">IFSC • Bank & Branch</span>
+                    </div>
                   ) : el.type === 'TsplConsentField' ? (
                     <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground pt-0.5">
                       <div className="h-2.5 w-2.5 rounded border border-primary/50 bg-primary/10 shrink-0" />

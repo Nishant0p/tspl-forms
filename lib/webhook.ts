@@ -92,7 +92,9 @@ export async function sendTsplWebhookNotification({
       }
     }
 
-    // Build the direct JSON payload containing strictly the TSPL fields
+    // Build the direct JSON payload containing strictly the non-sensitive TSPL fields.
+    // NOTE: Sensitive identification and financial elements (TsplAadhaarField, TsplPanField,
+    // and TsplBankIfscField) are STRICTLY EXCLUDED from webhook dispatches for privacy & security.
     const tsplPayload = {
       name: fullName || '',
       email: email || '',

@@ -22,6 +22,9 @@ export default function FormElementsSidebar() {
     FormElements.TsplRangeDropdownField,
     FormElements.TsplEducationField,
     FormElements.TsplConsentField,
+    FormElements.TsplAadhaarField,
+    FormElements.TsplPanField,
+    FormElements.TsplBankIfscField,
   ];
 
   const layoutElements = [

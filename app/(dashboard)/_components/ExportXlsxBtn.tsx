@@ -38,13 +38,13 @@ export default function ExportXlsxBtn({ formTitle, columns, rows }: ExportXlsxBt
           try {
             const parsed = JSON.parse(val);
             if (typeof parsed === 'object' && parsed !== null) {
-              val = parsed.name || parsed.dataUrl || JSON.stringify(parsed);
+              val = parsed.formatted || parsed.name || parsed.dataUrl || JSON.stringify(parsed);
             }
           } catch {
             // keep original string
           }
         } else if (typeof val === 'object') {
-          val = val.name || val.dataUrl || JSON.stringify(val);
+          val = val.formatted || val.name || val.dataUrl || JSON.stringify(val);
         }
 
         formattedRow[col.label || col.id] = val;
