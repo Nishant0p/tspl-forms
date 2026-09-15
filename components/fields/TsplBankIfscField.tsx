@@ -265,7 +265,7 @@ function DesignerComponent({
   elementInstance: FormElementInstance;
 }) {
   const element = elementInstance as CustomInstance;
-  const { label, helperText, required, placeholder = 'SBIN0000001' } = element.extraAttributes;
+  const { label, helperText, placeholder = 'SBIN0000001' } = element.extraAttributes;
 
   return (
     <div className="flex w-full flex-col gap-2.5">
@@ -273,11 +273,10 @@ function DesignerComponent({
         <Label className="font-semibold text-foreground text-sm flex items-center gap-1.5">
           <Landmark className="h-4 w-4 text-primary" />
           <span>{label}</span>
-          {required && <span className="text-red-500 font-bold">*</span>}
         </Label>
         <div className="flex items-center gap-1.5">
           <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/30 text-primary bg-primary/5 uppercase font-bold tracking-wider">
-            Razorpay IFSC API
+            Ifsc Auto-verification
           </Badge>
         </div>
       </div>
@@ -343,7 +342,6 @@ function FormComponent({
   const {
     label,
     helperText,
-    required,
     placeholder = 'SBIN0000001',
     autoFetch = true,
   } = element.extraAttributes;
@@ -381,7 +379,7 @@ function FormComponent({
     if (!submitFunction) return;
 
     if (!cleanIfsc) {
-      setError(required);
+      setError(false);
       submitFunction(element.id, '');
       return;
     }
@@ -491,7 +489,7 @@ function FormComponent({
     setIfsc('');
     setBankData(null);
     setApiError(null);
-    setError(required);
+    setError(false);
     if (submitFunction) {
       submitFunction(element.id, '');
     }
@@ -510,7 +508,6 @@ function FormComponent({
         >
           <Landmark className="h-4 w-4 text-primary shrink-0" />
           <span>{label}</span>
-          {required && <span className="text-red-500 font-bold">*</span>}
         </Label>
 
         <div className="flex items-center gap-2">

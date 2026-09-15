@@ -75,11 +75,11 @@ export const TsplBankAccountFieldFormElement: FormElement = {
   propertiesComponent: PropertiesComponent,
   validate: (formElement: FormElementInstance, currentValue: string): boolean => {
     const element = formElement as CustomInstance;
-    const { required, minDigits = 9, maxDigits = 18 } = element.extraAttributes;
+    const { minDigits = 9, maxDigits = 18 } = element.extraAttributes;
     const cleanDigits = (currentValue || '').replace(/\D/g, '');
 
     if (!cleanDigits) {
-      return !required;
+      return true;
     }
 
     const isValidLength = cleanDigits.length >= minDigits && cleanDigits.length <= maxDigits;
@@ -250,29 +250,6 @@ function PropertiesComponent({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="required"
-          render={({ field }) => (
-            <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-xs">
-              <div className="space-y-0.5">
-                <FormLabel className="text-sm font-semibold">Required</FormLabel>
-                <FormDescription className="text-xs">
-                  Respondents must enter a valid bank account number.
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={(val) => {
-                    field.onChange(val);
-                    form.handleSubmit(applyChanges)();
-                  }}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
       </form>
     </Form>
   );
@@ -284,7 +261,7 @@ function DesignerComponent({
   elementInstance: FormElementInstance;
 }) {
   const element = elementInstance as CustomInstance;
-  const { label, required, placeholder, minDigits = 9, maxDigits = 18, requireConfirmation } =
+  const { label, placeholder, minDigits = 9, maxDigits = 18, requireConfirmation } =
     element.extraAttributes;
 
   return (
@@ -293,7 +270,6 @@ function DesignerComponent({
         <Label className="text-foreground font-semibold flex items-center gap-1.5">
           <Landmark className="h-4 w-4 text-primary" />
           <span>{label}</span>
-          {required && <span className="text-destructive font-bold">*</span>}
         </Label>
         <Badge
           variant="outline"
@@ -350,7 +326,6 @@ function FormComponent({
   const element = elementInstance as CustomInstance;
   const {
     label,
-    required,
     placeholder,
     minDigits = 9,
     maxDigits = 18,
@@ -380,7 +355,7 @@ function FormComponent({
 
     const validLength = digitsOnly.length >= minDigits && digitsOnly.length <= maxDigits;
     const match = !requireConfirmation || digitsOnly === cleanConfirmDigits;
-    const valid = required ? validLength && match : digitsOnly.length === 0 || (validLength && match);
+    const valid = digitsOnly.length === 0 || (validLength && match);
 
     setError(!valid);
     if (requireConfirmation && cleanConfirmDigits.length > 0) {
@@ -403,7 +378,7 @@ function FormComponent({
     setConfirmMismatch(!match);
 
     const validLength = cleanDigits.length >= minDigits && cleanDigits.length <= maxDigits;
-    const valid = required ? validLength && match : cleanDigits.length === 0 || (validLength && match);
+    const valid = cleanDigits.length === 0 || (validLength && match);
     setError(!valid);
 
     if (submitFunction) {
@@ -415,7 +390,7 @@ function FormComponent({
     if (!submitFunction) return;
     const validLength = cleanDigits.length >= minDigits && cleanDigits.length <= maxDigits;
     const match = !requireConfirmation || cleanDigits === cleanConfirmDigits;
-    const valid = required ? validLength && match : cleanDigits.length === 0 || (validLength && match);
+    const valid = cleanDigits.length === 0 || (validLength && match);
 
     setError(!valid);
     if (valid) {
@@ -437,7 +412,6 @@ function FormComponent({
         >
           <Landmark className="h-4 w-4 text-primary" />
           <span>{label}</span>
-          {required && <span className="text-destructive font-bold">*</span>}
         </Label>
 
         {cleanDigits.length > 0 && (
@@ -568,8 +542,6 @@ function FormComponent({
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           {confirmMismatch
             ? 'Account numbers do not match.'
-            : cleanDigits.length === 0 && required
-            ? 'Bank account number is required.'
             : `Please enter a valid ${minDigits} to ${maxDigits} digit bank account number.`}
         </p>
       ) : null}

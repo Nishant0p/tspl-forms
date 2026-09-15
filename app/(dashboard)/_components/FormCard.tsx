@@ -305,7 +305,7 @@ export default function FormCard({ form, isAdmin = false }: { form: Form; isAdmi
               <Button
                 asChild
                 className="w-full min-h-[38px] gap-1.5 text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 shadow-sm transition-colors">
-                <Link href={`/builder/${form.id}`}>
+                <Link href={`/builder/${form.id}?tab=responses`}>
                   Submissions <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </Button>

@@ -23,6 +23,7 @@ export default function FormBuilderClientWrapper(props: {
   departments: any[];
   branches: any[];
   employees: any[];
+  initialTab?: 'questions' | 'responses' | 'settings';
 }) {
   return <FormBuilder {...props} />;
 }

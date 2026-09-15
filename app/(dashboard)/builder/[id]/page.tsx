@@ -6,10 +6,13 @@ import React from 'react';
 
 export default async function BuilderPage({
   params,
+  searchParams,
 }: {
   params: { id: string } | Promise<{ id: string }>;
+  searchParams?: { [key: string]: string | string[] | undefined } | Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const resolvedParams = await Promise.resolve(params);
+  const resolvedSearchParams = searchParams ? await Promise.resolve(searchParams) : undefined;
   const id = resolvedParams?.id;
   const numId = Number(id);
 
@@ -40,12 +43,21 @@ export default async function BuilderPage({
     notFound();
   }
 
+  const rawTab = typeof resolvedSearchParams?.tab === 'string' ? resolvedSearchParams.tab.toLowerCase() : '';
+  const initialTab: 'questions' | 'responses' | 'settings' =
+    rawTab === 'responses' || rawTab === 'response' || rawTab === 'submissions'
+      ? 'responses'
+      : rawTab === 'settings'
+      ? 'settings'
+      : 'questions';
+
   return (
     <FormBuilderClientWrapper
       form={form}
       departments={departments}
       branches={branches}
       employees={employees}
+      initialTab={initialTab}
     />
   );
 }

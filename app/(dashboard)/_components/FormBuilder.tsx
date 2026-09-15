@@ -35,6 +35,7 @@ import {
   Send,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { buildFormSubmitUrl } from '@/lib/url';
 import FormAccessSettings from './FormAccessSettings';
 import FormShareDialog from './FormShareDialog';
@@ -70,11 +71,44 @@ type FormBuilderProps = {
   departments: AccessOption[];
   branches: AccessOption[];
   employees: EmployeeOption[];
+  initialTab?: 'questions' | 'responses' | 'settings';
 };
 
-export default function FormBuilder({ form, departments, branches, employees }: FormBuilderProps) {
+export default function FormBuilder({
+  form,
+  departments,
+  branches,
+  employees,
+  initialTab = 'questions',
+}: FormBuilderProps) {
   const { setElements } = useDesginerStore();
-  const [activeTab, setActiveTab] = useState<'questions' | 'responses' | 'settings'>('questions');
+  const searchParams = useSearchParams();
+  const tabParam = searchParams?.get('tab')?.toLowerCase();
+
+  const getResolvedTab = (): 'questions' | 'responses' | 'settings' => {
+    if (tabParam === 'responses' || tabParam === 'response' || tabParam === 'submissions') {
+      return 'responses';
+    }
+    if (tabParam === 'settings') {
+      return 'settings';
+    }
+    if (initialTab) {
+      return initialTab;
+    }
+    return 'questions';
+  };
+
+  const [activeTab, setActiveTab] = useState<'questions' | 'responses' | 'settings'>(getResolvedTab);
+
+  useEffect(() => {
+    if (tabParam === 'responses' || tabParam === 'response' || tabParam === 'submissions') {
+      setActiveTab('responses');
+    } else if (tabParam === 'settings') {
+      setActiveTab('settings');
+    } else if (tabParam === 'questions') {
+      setActiveTab('questions');
+    }
+  }, [tabParam]);
   const [copied, setCopied] = useState(false);
 
   const mouseSensor = useSensor(MouseSensor, {

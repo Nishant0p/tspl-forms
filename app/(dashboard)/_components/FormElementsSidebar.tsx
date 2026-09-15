@@ -37,7 +37,6 @@ export default function FormElementsSidebar() {
     FormElements.SeperatorField,
     FormElements.SpacerField,
     FormElements.SectionHeaderField,
-    FormElements.ThankYouField,
   ];
 
   const formElements = [
