@@ -306,13 +306,7 @@ export async function GetForm() {
   const employee = await getCurrentEmployee();
   const superAdmin = (await isSuperAdmin()) || Boolean(
     employee?.role === 'SUPER_ADMIN' ||
-    user?.role === 'SUPER_ADMIN' ||
-    user?.id === 'EMP000' ||
-    user?.id === 'TSPL000' ||
-    employee?.employeeId === 'EMP000' ||
-    employee?.employeeId === 'TSPL000' ||
-    user?.primaryEmailAddress?.emailAddress?.toLowerCase() === 'nishant@brandboosters.marketing' ||
-    (user as any)?.email?.toLowerCase() === 'nishant@brandboosters.marketing'
+    user?.role === 'SUPER_ADMIN'
   );
   const isAdmin = superAdmin || ['ADMIN', 'HR', 'EDITOR', 'MANAGER'].includes(String(employee?.role || user?.role));
 

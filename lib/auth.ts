@@ -22,9 +22,9 @@ export class ForbiddenError extends Error {
 /** Get Super Admin IDP settings from process.env or hardcoded defaults */
 export function getSuperAdminIdpConfig() {
   return {
-    idp: (process.env.SUPER_ADMIN_IDP || 'TSPL000').trim(),
-    email: (process.env.SUPER_ADMIN_EMAIL || 'nishant@brandboosters.marketing').trim().toLowerCase(),
-    password: process.env.SUPER_ADMIN_PASSWORD || 'Nishant@Atharva',
+    idp: (process.env.SUPER_ADMIN_IDP || 'EMP000').trim(),
+    email: (process.env.SUPER_ADMIN_EMAIL || 'tech@tsplgroup.in').trim().toLowerCase(),
+    password: process.env.SUPER_ADMIN_PASSWORD || 'Techpassamour25',
     route: (process.env.SUPER_ADMIN_ROUTE || '/super-admin').trim(),
   };
 }
@@ -32,12 +32,14 @@ export function getSuperAdminIdpConfig() {
 /** Super admin session generated from hardcoded / env variables */
 export function getHardcodedAdminSession() {
   const config = getSuperAdminIdpConfig();
+  const firstName = process.env.SUPER_ADMIN_FIRST_NAME || 'Super';
+  const lastName = process.env.SUPER_ADMIN_LAST_NAME || 'Admin';
   return {
     clerkUserId: config.idp,
     id: 1000000,
     employeeId: config.idp,
-    firstName: 'Nishant',
-    lastName: 'Admin',
+    firstName,
+    lastName,
     email: config.email,
     role: 'SUPER_ADMIN' as EmployeeRole,
     status: 'ACTIVE' as EmployeeStatus,
@@ -115,53 +117,7 @@ export async function getCurrentEmployee() {
   const session = await getSessionData();
   if (!session) return null;
 
-  const idpConfig = getSuperAdminIdpConfig();
-
-  const isSuperAdminSession =
-    session.role === 'SUPER_ADMIN' ||
-    session.id === idpConfig.idp ||
-    session.employeeId === idpConfig.idp ||
-    session.id === 'EMP000' ||
-    session.employeeId === 'EMP000' ||
-    session.id === 'TSPL000' ||
-    session.employeeId === 'TSPL000' ||
-    (Boolean(idpConfig.email) && session.email?.toLowerCase() === idpConfig.email) ||
-    session.email?.toLowerCase() === 'nishant@brandboosters.marketing' ||
-    session.email?.toLowerCase() === 'tech@tsplgroup.in';
-
-  // Check if current session is Super Admin
-  if (isSuperAdminSession) {
-    try {
-      const dbAdmin = await prisma.employee.findFirst({
-        where: {
-          OR: [
-            { clerkUserId: { equals: idpConfig.idp, mode: 'insensitive' } },
-            { employeeId: { equals: idpConfig.idp, mode: 'insensitive' } },
-            { employeeId: { equals: 'EMP000', mode: 'insensitive' } },
-            { employeeId: { equals: 'TSPL000', mode: 'insensitive' } },
-            { email: { equals: idpConfig.email, mode: 'insensitive' } },
-            { email: { equals: 'nishant@brandboosters.marketing', mode: 'insensitive' } },
-          ],
-        },
-        include: { department: true, branch: true, manager: true },
-      });
-      if (dbAdmin) return dbAdmin;
-    } catch (e) {
-      console.warn('[getCurrentEmployee] Admin DB query error, using admin session fallback:', e);
-    }
-
-    const adminSession = getHardcodedAdminSession();
-    if (adminSession) {
-      return {
-        ...adminSession,
-        firstName: session.firstName || adminSession.firstName,
-        lastName: session.lastName || adminSession.lastName,
-        imageUrl: session.imageUrl || adminSession.imageUrl,
-      } as any;
-    }
-  }
-
-  // Real-time lookup in DB by clerkUserId, employeeId, or email (case-insensitive)
+  // 1. Real-time lookup in DB for the currently logged-in user by clerkUserId, employeeId, or email
   const searchConditions: any[] = [];
   if (session.id) {
     searchConditions.push({ clerkUserId: { equals: String(session.id), mode: 'insensitive' } });
@@ -193,7 +149,24 @@ export async function getCurrentEmployee() {
     }
   }
 
-  // Fallback to session data if DB query returns null but user has valid authenticated session
+  // 2. Only if employee is NOT found in DB, check if this session specifically matches the .env bootstrap Super Admin
+  const idpConfig = getSuperAdminIdpConfig();
+  const isEnvSuperAdminSession =
+    (Boolean(idpConfig.idp) && (session.id === idpConfig.idp || session.employeeId === idpConfig.idp)) ||
+    (Boolean(idpConfig.email) && session.email?.toLowerCase() === idpConfig.email.toLowerCase());
+
+  if (isEnvSuperAdminSession) {
+    const adminSession = getHardcodedAdminSession();
+    return {
+      ...adminSession,
+      firstName: session.firstName || adminSession.firstName,
+      lastName: session.lastName || adminSession.lastName,
+      email: session.email || adminSession.email,
+      imageUrl: session.imageUrl || adminSession.imageUrl,
+    } as any;
+  }
+
+  // 3. Fallback to session data if DB query returns null but user has valid authenticated session
   if (session && (session.role || session.email || session.id)) {
     return {
       id: typeof session.id === 'number' ? session.id : 0,
@@ -220,73 +193,45 @@ export async function getCurrentUser() {
   const session = await getSessionData();
   if (!session) return null;
 
-  const idpConfig = getSuperAdminIdpConfig();
-  if (
-    idpConfig.idp &&
-    idpConfig.email &&
-    (session.id === idpConfig.idp ||
-      session.employeeId === idpConfig.idp ||
-      session.email?.toLowerCase() === idpConfig.email)
-  ) {
-    const dbAdmin: any = await prisma.employee.findFirst({
-      where: {
-        OR: [
-          { clerkUserId: { equals: idpConfig.idp, mode: 'insensitive' } },
-          { employeeId: { equals: idpConfig.idp, mode: 'insensitive' } },
-          { email: { equals: idpConfig.email, mode: 'insensitive' } },
-        ],
-      },
-    });
-
-    const admin = getHardcodedAdminSession();
-    if (admin) {
-      const firstName = dbAdmin?.firstName || session.firstName || admin.firstName;
-      const lastName = dbAdmin?.lastName || session.lastName || admin.lastName;
-      const imageUrl = dbAdmin?.imageUrl || session.imageUrl || admin.imageUrl;
-
-      return {
-        id: admin.clerkUserId,
-        firstName,
-        lastName,
-        fullName: `${firstName} ${lastName}`,
-        emailAddresses: [{ emailAddress: admin.email }],
-        primaryEmailAddress: { emailAddress: admin.email },
-        role: admin.role as EmployeeRole,
-        status: admin.status as EmployeeStatus,
-        imageUrl,
-        departmentId: dbAdmin?.departmentId || session.departmentId || null,
-        branchId: dbAdmin?.branchId || session.branchId || null,
-      };
-    }
-  }
-
   const employee: any = await getCurrentEmployee();
   if (employee) {
+    const firstName = employee.firstName || session.firstName || 'User';
+    const lastName = employee.lastName || session.lastName || '';
+    const email = employee.email || session.email || '';
+    const fullName = `${firstName} ${lastName}`.trim() || firstName;
+
     return {
-      id: employee.clerkUserId,
-      firstName: employee.firstName,
-      lastName: employee.lastName,
-      fullName: `${employee.firstName} ${employee.lastName}`,
-      emailAddresses: [{ emailAddress: employee.email }],
-      primaryEmailAddress: { emailAddress: employee.email },
-      role: employee.role as EmployeeRole,
-      status: employee.status as EmployeeStatus,
+      id: String(employee.clerkUserId || employee.employeeId || employee.id),
+      employeeId: employee.employeeId || String(employee.id),
+      firstName,
+      lastName,
+      fullName,
+      emailAddresses: [{ emailAddress: email }],
+      primaryEmailAddress: { emailAddress: email },
+      role: (employee.role || session.role || 'EMPLOYEE') as EmployeeRole,
+      status: (employee.status || session.status || 'ACTIVE') as EmployeeStatus,
       imageUrl: employee.imageUrl || session.imageUrl,
-      departmentId: employee.departmentId,
-      branchId: employee.branchId,
+      departmentId: employee.departmentId || null,
+      branchId: employee.branchId || null,
     };
   }
 
+  const firstName = session.firstName || 'User';
+  const lastName = session.lastName || '';
+  const email = session.email || '';
+  const fullName = `${firstName} ${lastName}`.trim() || firstName;
+
   return {
-    id: session.id,
-    firstName: session.firstName,
-    lastName: session.lastName,
-    fullName: `${session.firstName} ${session.lastName}`,
-    emailAddresses: [{ emailAddress: session.email }],
-    primaryEmailAddress: { emailAddress: session.email },
+    id: String(session.id || session.employeeId || 'user'),
+    employeeId: String(session.employeeId || session.id || 'user'),
+    firstName,
+    lastName,
+    fullName,
+    emailAddresses: [{ emailAddress: email }],
+    primaryEmailAddress: { emailAddress: email },
     role: (session.role || 'EMPLOYEE') as EmployeeRole,
     status: (session.status || 'ACTIVE') as EmployeeStatus,
-    imageUrl: session.imageUrl,
+    imageUrl: session.imageUrl || null,
     departmentId: session.departmentId || null,
     branchId: session.branchId || null,
   };
@@ -435,8 +380,6 @@ export async function authenticateCredentials(
         employee.role === 'SUPER_ADMIN' ||
         inputLower === idpConfig.email ||
         inputLower === idpConfig.idp.toLowerCase() ||
-        inputLower === 'tech@tsplgroup.in' ||
-        inputLower === 'nishant@brandboosters.marketing' ||
         candidateArray.includes(idpConfig.idp) ||
         candidateArray.includes('TSPL000') ||
         candidateArray.includes('EMP000');
@@ -444,9 +387,7 @@ export async function authenticateCredentials(
       if (isSuperAdminUser) {
         if (
           password === idpConfig.password ||
-          passTrim === idpConfig.password.trim() ||
-          password === 'Nishant@Atharva' ||
-          password === 'Techpassamour25'
+          passTrim === idpConfig.password.trim()
         ) {
           isPasswordCorrect = true;
         }
@@ -457,8 +398,7 @@ export async function authenticateCredentials(
     if (!isPasswordCorrect && (!dbPassTrim || dbPassTrim === '')) {
       if (
         password === idpConfig.password ||
-        password === 'Nishant@Atharva' ||
-        password === 'Techpassamour25'
+        passTrim === idpConfig.password.trim()
       ) {
         isPasswordCorrect = true;
       }
@@ -496,15 +436,11 @@ export async function authenticateCredentials(
   const isSuperAdminEnvMatch =
     (inputLower === idpConfig.email ||
       inputLower === idpConfig.idp.toLowerCase() ||
-      inputLower === 'tech@tsplgroup.in' ||
-      inputLower === 'nishant@brandboosters.marketing' ||
       candidateArray.includes(idpConfig.idp) ||
       candidateArray.includes('TSPL000') ||
       candidateArray.includes('EMP000')) &&
     (password === idpConfig.password ||
-      passTrim === idpConfig.password.trim() ||
-      password === 'Nishant@Atharva' ||
-      password === 'Techpassamour25');
+      passTrim === idpConfig.password.trim());
 
   if (isSuperAdminEnvMatch) {
     const adminSession = getHardcodedAdminSession();
