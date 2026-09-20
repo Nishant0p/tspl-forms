@@ -3,6 +3,8 @@
 import prisma from '@/lib/prisma';
 import { requireEmployee, ForbiddenError, getSuperAdminIdpConfig, getHardcodedAdminSession, EmployeeStatus, authenticateCredentials } from '@/lib/auth';
 import { verifyCsrfToken } from '@/lib/csrf';
+import { signSessionToken } from '@/lib/session';
+import { hashPasswordSync } from '@/lib/password';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -26,16 +28,16 @@ export async function loginUser(
       };
     }
 
-    const sessionData = JSON.stringify(authResult.sessionData);
+    const sessionToken = await signSessionToken(authResult.sessionData);
 
     const cookieStore: any = await Promise.resolve(cookies());
     if (typeof cookieStore?.set === 'function') {
-      cookieStore.set('session_user', sessionData, {
+      cookieStore.set('session_user', sessionToken, {
         httpOnly: true,
         path: '/',
         maxAge: 60 * 60 * 24 * 7, // 7 days
         sameSite: 'lax',
-        secure: false, // Allows cookie over both HTTP and HTTPS
+        secure: process.env.NODE_ENV === 'production',
       });
     }
 
@@ -107,6 +109,9 @@ export async function createEmployee(data: {
   const assignedBranchId = data.branchId || creatorDb?.branchId || caller.branchId || null;
   const createdById = creatorDb?.id || null;
 
+  const rawPassword = data.password?.trim();
+  const hashedPassword = rawPassword ? hashPasswordSync(rawPassword) : null;
+
   const created = await (prisma.employee as any).create({
     data: {
       clerkUserId: generatedId,
@@ -114,7 +119,7 @@ export async function createEmployee(data: {
       firstName: data.firstName.trim(),
       lastName: data.lastName.trim(),
       email: data.email.trim().toLowerCase(),
-      password: data.password?.trim() || null,
+      password: hashedPassword,
       phone: data.phone?.trim() || null,
       role: (data.role || 'EMPLOYEE') as any,
       status: 'ACTIVE',

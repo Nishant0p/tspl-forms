@@ -22,10 +22,28 @@ export type CsrfVerifyResult = {
   error?: string;
 };
 
-/**
- * Validates that the submitted CSRF token matches the value stored in the cookie.
- * Returns { valid: boolean, error?: string } safely without throwing unhandled exceptions.
- */
 export async function verifyCsrfToken(submittedToken?: string): Promise<CsrfVerifyResult> {
-  return { valid: true };
+  try {
+    const cookieStore: any = await Promise.resolve(cookies());
+    const cookieToken = typeof cookieStore?.get === 'function' ? cookieStore.get(CSRF_COOKIE_NAME)?.value : '';
+
+    if (!cookieToken || !submittedToken) {
+      return { valid: false, error: 'CSRF token is missing or expired.' };
+    }
+
+    const cookieBuf = Buffer.from(cookieToken);
+    const submittedBuf = Buffer.from(submittedToken);
+
+    if (cookieBuf.length !== submittedBuf.length) {
+      return { valid: false, error: 'Invalid CSRF token.' };
+    }
+
+    const matches = crypto.timingSafeEqual(cookieBuf as any, submittedBuf as any);
+    return {
+      valid: matches,
+      error: matches ? undefined : 'CSRF token verification failed.',
+    };
+  } catch (err: any) {
+    return { valid: false, error: err?.message || 'CSRF validation error.' };
+  }
 }

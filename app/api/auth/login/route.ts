@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateCredentials } from '@/lib/auth';
+import { signSessionToken } from '@/lib/session';
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,15 +23,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const sessionData = JSON.stringify(authResult.sessionData);
+    const sessionToken = await signSessionToken(authResult.sessionData);
     const res = NextResponse.json({ success: true });
 
-    res.cookies.set('session_user', sessionData, {
+    res.cookies.set('session_user', sessionToken, {
       httpOnly: true,
       path: '/',
       maxAge: 60 * 60 * 24 * 7, // 7 days
       sameSite: 'lax',
-      secure: false, // Allows cookie over both HTTP and HTTPS (e.g. internal server IP or non-SSL domains)
+      secure: process.env.NODE_ENV === 'production',
     });
 
     return res;

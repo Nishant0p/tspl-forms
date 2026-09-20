@@ -50,6 +50,14 @@ export default function FileViewerModal({
     /\.(mp4|webm|ogg|mov|mkv)/i.test(lowerName) ||
     lowerType.includes('video');
 
+  // Sanitize file URL to prevent javascript: or dangerous protocol injection
+  const isDangerousScheme =
+    lowerUrl.startsWith('javascript:') ||
+    lowerUrl.startsWith('vbscript:') ||
+    lowerUrl.startsWith('data:text/html');
+
+  const safeDownloadUrl = isDangerousScheme ? '#' : fileUrl;
+
   const renderIcon = () => {
     if (isPdf) return <FileText className="h-4 w-4 text-red-500" />;
     if (isImage) return <ImageIcon className="h-4 w-4 text-blue-500" />;
@@ -79,35 +87,48 @@ export default function FileViewerModal({
           </DialogTitle>
 
           <div className="flex items-center gap-2 mr-2">
-            <a
-              href={fileUrl}
-              download={fileName}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium transition-colors"
-              title="Download file"
-            >
-              <Download className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Download</span>
-            </a>
-            <a
-              href={fileUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium transition-colors"
-              title="Open in new tab"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">New Tab</span>
-            </a>
+            {!isDangerousScheme && (
+              <>
+                <a
+                  href={safeDownloadUrl}
+                  download={fileName}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium transition-colors"
+                  title="Download file"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Download</span>
+                </a>
+                <a
+                  href={safeDownloadUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium transition-colors"
+                  title="Open in new tab"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">New Tab</span>
+                </a>
+              </>
+            )}
           </div>
         </DialogHeader>
 
         <div className="flex-1 w-full overflow-auto pt-4 flex items-center justify-center min-h-[400px]">
-          {isPdf ? (
+          {isDangerousScheme ? (
+            <div className="flex flex-col items-center justify-center p-8 text-center max-w-md">
+              <FileText className="h-12 w-12 text-destructive mb-3" />
+              <h3 className="font-semibold text-foreground text-sm">Preview Blocked</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                This file format contains executable code and cannot be safely previewed in the browser.
+              </p>
+            </div>
+          ) : isPdf ? (
             <iframe
               src={fileUrl}
               title={fileName}
+              sandbox="allow-same-origin allow-forms"
               className="w-full h-[65vh] rounded-md border border-border bg-white dark:bg-zinc-900"
             />
           ) : isImage ? (
@@ -128,11 +149,21 @@ export default function FileViewerModal({
               />
             </div>
           ) : (
-            <iframe
-              src={fileUrl}
-              title={fileName}
-              className="w-full h-[65vh] rounded-md border border-border bg-white dark:bg-zinc-900"
-            />
+            <div className="flex flex-col items-center justify-center p-8 text-center max-w-md bg-muted/20 rounded-lg border border-border">
+              <FileText className="h-12 w-12 text-primary mb-3" />
+              <h3 className="font-semibold text-foreground text-sm">{fileName}</h3>
+              <p className="text-xs text-muted-foreground mt-1 mb-4">
+                This document cannot be previewed directly. Please download to view it.
+              </p>
+              <a
+                href={safeDownloadUrl}
+                download={fileName}
+                className="inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Download Document
+              </a>
+            </div>
           )}
         </div>
       </DialogContent>

@@ -3,6 +3,7 @@
 import { getCurrentEmployee, requireEmployee, ForbiddenError, EmployeeRole, EmployeeStatus } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { hashPasswordSync } from '@/lib/password';
 
 const ALLOWED_ADMIN_CREATED_ROLES: EmployeeRole[] = [
   'HR',
@@ -159,7 +160,7 @@ export async function createAdminManagedUser(data: CreateManagedUserInput) {
       firstName: data.firstName.trim(),
       lastName: data.lastName.trim(),
       email: cleanEmail,
-      password: data.password.trim(),
+      password: hashPasswordSync(data.password.trim()),
       phone: data.phone?.trim() || null,
       role: data.role,
       status: 'ACTIVE',
@@ -225,7 +226,7 @@ export async function updateAdminManagedUserPassword(id: number, newPassword: st
   const updated = await prisma.employee.update({
     where: { id },
     data: {
-      password: newPassword.trim(),
+      password: hashPasswordSync(newPassword.trim()),
     },
   });
 

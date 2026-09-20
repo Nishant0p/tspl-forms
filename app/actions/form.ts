@@ -935,33 +935,12 @@ export async function GetFormSubmissionsByShareUrl(shareUrl: string) {
     });
   }
 
-  // Fallback to lookup by direct numeric ID if provided (e.g. /responses/5)
-  if (!form && /^\d+$/.test(cleanShareUrl)) {
-    form = await prisma.form.findUnique({
-      where: {
-        id: parseInt(cleanShareUrl, 10),
-      },
-      include: {
-        FormSubmissions: {
-          include: {
-            employee: {
-              include: {
-                department: true,
-                branch: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        },
-      },
-    });
-  }
-
   if (!form) {
     throw new Error('Form not found');
   }
+
+  // Enforce VIEW permission (Creator, Branch Admin, Super Admin, Assigned Collaborator)
+  await requireFormPermission(form.id, 'VIEW');
 
   return form;
 }

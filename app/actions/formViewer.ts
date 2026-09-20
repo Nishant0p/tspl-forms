@@ -5,6 +5,7 @@ import { requireEmployee, getCurrentEmployee, getCurrentUser } from '@/lib/auth'
 import { revalidatePath } from 'next/cache';
 import { generateResponseToken } from '@/lib/response-token';
 import { requireFormPermission } from './form';
+import { hashPasswordSync } from '@/lib/password';
 
 function formatTsplEmployeeId(id: string): string {
   let clean = (id || '').trim().toUpperCase();
@@ -362,7 +363,7 @@ export async function createAndAssignNewCollaborator(data: {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: cleanEmail,
-        password: password?.trim() || 'Tspl123456',
+        password: hashPasswordSync(password?.trim() || 'Tspl123456'),
         role: accessType === 'EDITOR' ? 'EDITOR' : 'FORM_VIEWER',
         status: 'ACTIVE',
         createdById: targetAdminId,

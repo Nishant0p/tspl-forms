@@ -3,6 +3,7 @@
 import { requireSuperAdmin, EmployeeRole, EmployeeStatus } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { hashPasswordSync } from '@/lib/password';
 
 export type CreateAdminInput = {
   firstName: string;
@@ -207,7 +208,7 @@ export async function createAdminUser(data: CreateAdminInput) {
       firstName: data.firstName.trim(),
       lastName: data.lastName.trim(),
       email: data.email.trim().toLowerCase(),
-      password: data.password.trim(),
+      password: hashPasswordSync(data.password.trim()),
       phone: data.phone?.trim() || null,
       role: data.role,
       status: data.status,
@@ -292,7 +293,7 @@ export async function updateAdminPassword(id: number, newPassword: string) {
   const updated = await prisma.employee.update({
     where: { id },
     data: {
-      password: newPassword.trim(),
+      password: hashPasswordSync(newPassword.trim()),
     },
   });
 

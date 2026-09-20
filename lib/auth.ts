@@ -2,6 +2,9 @@ import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 
+import { verifySessionTokenSync } from '@/lib/session';
+import { hashPasswordSync, verifyPasswordSync, isPasswordHashed } from '@/lib/password';
+
 export type EmployeeRole = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'HR' | 'MANAGER' | 'EMPLOYEE' | 'FORM_VIEWER';
 export type EmployeeStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 
@@ -19,12 +22,12 @@ export class ForbiddenError extends Error {
   }
 }
 
-/** Get Super Admin IDP settings from process.env or hardcoded defaults */
+/** Get Super Admin IDP settings from process.env */
 export function getSuperAdminIdpConfig() {
   return {
     idp: (process.env.SUPER_ADMIN_IDP || 'EMP000').trim(),
     email: (process.env.SUPER_ADMIN_EMAIL || 'tech@tsplgroup.in').trim().toLowerCase(),
-    password: process.env.SUPER_ADMIN_PASSWORD || 'Techpassamour25',
+    password: process.env.SUPER_ADMIN_PASSWORD ? process.env.SUPER_ADMIN_PASSWORD.trim() : '',
     route: (process.env.SUPER_ADMIN_ROUTE || '/super-admin').trim(),
   };
 }
@@ -50,7 +53,7 @@ export function getHardcodedAdminSession() {
   };
 }
 
-/** Read and parse the session cookie. Returns null if not set. Supports both sync and async cookies(). */
+/** Read and cryptographically verify the session cookie. Returns null if not set, invalid, or tampered. */
 export async function getSessionData(): Promise<Record<string, any> | null> {
   try {
     const cookieStore: any = await Promise.resolve(cookies());
@@ -63,31 +66,17 @@ export async function getSessionData(): Promise<Record<string, any> | null> {
     }
 
     if (!raw) return null;
-    let str = raw;
-    if (typeof str === 'string' && str.startsWith('"') && str.endsWith('"')) {
-      str = str.slice(1, -1);
-    }
-    try {
-      const val = JSON.parse(str);
-      if (typeof val === 'object' && val !== null) return val;
-      str = val;
-    } catch {}
-    try {
-      const decoded = decodeURIComponent(str);
-      const val = JSON.parse(decoded);
-      if (typeof val === 'object' && val !== null) return val;
-    } catch {}
-    try {
-      const decoded = decodeURIComponent(decodeURIComponent(str));
-      const val = JSON.parse(decoded);
-      if (typeof val === 'object' && val !== null) return val;
-    } catch {}
+
+    // Verify cryptographic HMAC signature
+    const verified = verifySessionTokenSync(raw);
+    if (verified) return verified;
+
     return null;
   } catch (err: any) {
     if (err?.digest === 'DYNAMIC_SERVER_USAGE' || err?.message?.includes?.('Dynamic server usage')) {
       throw err;
     }
-    console.warn('[getSessionData] Error reading cookie:', err);
+    console.warn('[getSessionData] Error reading or verifying session cookie:', err);
     return null;
   }
 }
@@ -166,25 +155,7 @@ export async function getCurrentEmployee() {
     } as any;
   }
 
-  // 3. Fallback to session data if DB query returns null but user has valid authenticated session
-  if (session && (session.role || session.email || session.id)) {
-    return {
-      id: typeof session.id === 'number' ? session.id : 0,
-      clerkUserId: String(session.id || session.employeeId || 'user'),
-      employeeId: String(session.employeeId || session.id || 'user'),
-      firstName: session.firstName || 'User',
-      lastName: session.lastName || '',
-      email: session.email || '',
-      role: (session.role || 'EMPLOYEE') as EmployeeRole,
-      status: (session.status || 'ACTIVE') as EmployeeStatus,
-      departmentId: session.departmentId || null,
-      branchId: session.branchId || null,
-      department: null,
-      branch: null,
-      manager: null,
-    } as any;
-  }
-
+  // 3. User is not found in database and is not the bootstrap Super Admin -> invalid session
   return null;
 }
 
@@ -345,9 +316,15 @@ export async function authenticateCredentials(
     const dbPassTrim = dbPass != null ? dbPass.trim() : null;
 
     let isPasswordCorrect = false;
+    let needsPasswordUpgrade = false;
 
-    // Direct plain text check
-    if (dbPass !== null) {
+    // 1. Check modern salted scrypt hash
+    if (dbPassTrim && isPasswordHashed(dbPassTrim)) {
+      isPasswordCorrect = verifyPasswordSync(password, dbPassTrim);
+    }
+
+    // 2. Fallback check: legacy plain text check
+    if (!isPasswordCorrect && dbPass !== null) {
       if (
         dbPass === password ||
         dbPassTrim === passTrim ||
@@ -355,11 +332,12 @@ export async function authenticateCredentials(
         dbPassTrim === password
       ) {
         isPasswordCorrect = true;
+        needsPasswordUpgrade = true;
       }
     }
 
-    // Hashes check (MD5 or SHA-256 in case password was hashed in DB)
-    if (!isPasswordCorrect && dbPassTrim) {
+    // 3. Fallback check: legacy hashes (MD5 or SHA-256 in case password was hashed with old methods)
+    if (!isPasswordCorrect && dbPassTrim && !isPasswordHashed(dbPassTrim)) {
       try {
         const md5Hex = crypto.createHash('md5').update(password).digest('hex');
         const sha256Hex = crypto.createHash('sha256').update(password).digest('hex');
@@ -368,14 +346,15 @@ export async function authenticateCredentials(
           dbPassTrim.toLowerCase() === sha256Hex
         ) {
           isPasswordCorrect = true;
+          needsPasswordUpgrade = true;
         }
       } catch (e) {
         console.warn('[authenticateCredentials] Hash comparison error:', e);
       }
     }
 
-    // Super Admin fallback check
-    if (!isPasswordCorrect) {
+    // 4. Super Admin fallback check
+    if (!isPasswordCorrect && Boolean(idpConfig.password)) {
       const isSuperAdminUser =
         employee.role === 'SUPER_ADMIN' ||
         inputLower === idpConfig.email ||
@@ -390,17 +369,19 @@ export async function authenticateCredentials(
           passTrim === idpConfig.password.trim()
         ) {
           isPasswordCorrect = true;
+          needsPasswordUpgrade = true;
         }
       }
     }
 
     // If password in DB was empty and this is super admin bootstrap
-    if (!isPasswordCorrect && (!dbPassTrim || dbPassTrim === '')) {
+    if (!isPasswordCorrect && (!dbPassTrim || dbPassTrim === '') && Boolean(idpConfig.password)) {
       if (
         password === idpConfig.password ||
         passTrim === idpConfig.password.trim()
       ) {
         isPasswordCorrect = true;
+        needsPasswordUpgrade = true;
       }
     }
 
@@ -410,6 +391,23 @@ export async function authenticateCredentials(
         error: 'Invalid email/Employee ID or password',
         status: 401,
       };
+    }
+
+    // Transparently upgrade legacy plain text / weak hash to salted scrypt in PostgreSQL
+    if (needsPasswordUpgrade) {
+      try {
+        const upgradedHash = hashPasswordSync(password);
+        prisma.employee
+          .update({
+            where: { id: employee.id },
+            data: { password: upgradedHash },
+          })
+          .catch((err) =>
+            console.warn('[authenticateCredentials] Background password migration error:', err)
+          );
+      } catch (err) {
+        console.warn('[authenticateCredentials] Password hashing upgrade error:', err);
+      }
     }
 
     const sessionData = {
@@ -439,8 +437,8 @@ export async function authenticateCredentials(
       candidateArray.includes(idpConfig.idp) ||
       candidateArray.includes('TSPL000') ||
       candidateArray.includes('EMP000')) &&
-    (password === idpConfig.password ||
-      passTrim === idpConfig.password.trim());
+    (Boolean(idpConfig.password) &&
+      (password === idpConfig.password || passTrim === idpConfig.password.trim()));
 
   if (isSuperAdminEnvMatch) {
     const adminSession = getHardcodedAdminSession();
@@ -455,7 +453,7 @@ export async function authenticateCredentials(
             firstName: adminSession.firstName,
             lastName: adminSession.lastName,
             email: adminSession.email,
-            password: password,
+            password: hashPasswordSync(password),
             role: 'SUPER_ADMIN',
             status: 'ACTIVE',
           },
