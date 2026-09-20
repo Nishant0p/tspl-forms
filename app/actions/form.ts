@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import { generateCustomSlug } from '@/lib/url';
 import { FormSchema, formSchema } from '@/schemas/form';
 import { FormElementInstance } from '../(dashboard)/_components/FormElements';
-import { canAccessForm, FormAccessBlockedError, FormAccessRecord, getFormAccessErrorMessage } from '@/lib/form-access';
+import { canAccessForm, FormAccessBlockedError, FormAccessRecord, getFormAccessErrorMessage, getAccessibleFormsWhere, getFormUserPermissions, FormUserPermissions } from '@/lib/form-access';
 import { decodeResponseToken } from '@/lib/response-token';
 import { redirect } from 'next/navigation';
 import { sendTsplWebhookNotification } from '@/lib/webhook';
@@ -56,7 +56,7 @@ function normalizeOptionalDate(value?: string | null) {
   return date;
 }
 
-/** Aggregate stats globally for all forms across the platform */
+/** Aggregate stats for all forms accessible to current user */
 export async function GetFormStats() {
   const user = await getCurrentUser();
 
@@ -64,7 +64,16 @@ export async function GetFormStats() {
     redirect('/sign-in');
   }
 
+  const employee = await getCurrentEmployee();
+  const superAdmin = (await isSuperAdmin()) || Boolean(
+    employee?.role === 'SUPER_ADMIN' ||
+    user?.role === 'SUPER_ADMIN'
+  );
+
+  const whereClause = await getAccessibleFormsWhere(user, employee, superAdmin);
+
   const stats = await prisma.form.aggregate({
+    where: whereClause,
     _sum: {
       visits: true,
       submissions: true,
@@ -91,15 +100,27 @@ export async function GetFormStats() {
 }
 
 /**
- * Returns real per-day counts for the last N days (default 7) for sparklines.
- * submissionsPerDay  — from FormSubmissions.submittedAt
- * visitsPerDay       — estimated: total visits spread weighted by submission activity
- * conversionPerDay   — submissions / estimated visits * 100
- * bouncePerDay       — 100 - conversionPerDay
+ * Returns real per-day counts for the last N days (default 7) for sparklines
+ * scoped to forms accessible to the user.
  */
 export async function GetDashboardSparklineData(days = 7) {
   const user = await getCurrentUser();
   if (!user) return null;
+
+  const employee = await getCurrentEmployee();
+  const superAdmin = (await isSuperAdmin()) || Boolean(
+    employee?.role === 'SUPER_ADMIN' ||
+    user?.role === 'SUPER_ADMIN'
+  );
+
+  const whereClause = await getAccessibleFormsWhere(user, employee, superAdmin);
+
+  // Accessible form IDs for submission filtering
+  const accessibleForms = await prisma.form.findMany({
+    where: whereClause,
+    select: { id: true },
+  });
+  const formIds = accessibleForms.map((f: any) => f.id);
 
   // Build an array of the last `days` date strings "YYYY-MM-DD"
   const dateLabels: string[] = [];
@@ -113,9 +134,12 @@ export async function GetDashboardSparklineData(days = 7) {
   since.setDate(since.getDate() - (days - 1));
   since.setHours(0, 0, 0, 0);
 
-  // Real submission counts grouped by day
+  // Real submission counts grouped by day for accessible forms
   const rawSubmissions = await prisma.formSubmissions.findMany({
-    where: { submittedAt: { gte: since } },
+    where: {
+      formId: { in: formIds },
+      submittedAt: { gte: since },
+    },
     select: { submittedAt: true },
   });
 
@@ -125,8 +149,9 @@ export async function GetDashboardSparklineData(days = 7) {
     submissionMap[key] = (submissionMap[key] || 0) + 1;
   }
 
-  // Total visits & submissions for ratio
+  // Total visits & submissions for ratio across accessible forms
   const totals = await prisma.form.aggregate({
+    where: whereClause,
     _sum: { visits: true, submissions: true },
   });
   const totalVisits = totals._sum.visits || 0;
@@ -206,7 +231,8 @@ export async function CreateForm(data: FormSchema & { branchId?: number | null }
     customShareUrl = generateCustomSlug(uniqueName);
   }
 
-  const selectedBranchId = branchId && typeof branchId === 'number' ? branchId : null;
+  const employee = await getCurrentEmployee();
+  const selectedBranchId = branchId && typeof branchId === 'number' ? branchId : (employee?.branchId || null);
 
   const form = await (prisma as any).form.create({
     data: {
@@ -295,7 +321,55 @@ async function resolveUserMap(userIds: string[]) {
   return userMap;
 }
 
-/** Get forms - scoped strictly to Creator, Super Admin, and explicit Editors / Viewers */
+/**
+ * Helper to strictly verify user permissions on a form.
+ * Ensures only Form Creator, Branch Admin (for this form's branch), Assigned Users, and Super Admin can access.
+ */
+export async function requireFormPermission(formId: number, level: 'VIEW' | 'EDIT' | 'DELETE' | 'MANAGE') {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new UserNotFoundErr();
+  }
+
+  const employee = await getCurrentEmployee();
+  const superAdmin = (await isSuperAdmin()) || Boolean(
+    employee?.role === 'SUPER_ADMIN' ||
+    user?.role === 'SUPER_ADMIN'
+  );
+
+  const form = await prisma.form.findFirst({
+    where: { id: formId },
+    include: {
+      branch: true,
+      allowedBranches: true,
+      allowedEmployees: true,
+      formViewerAccesses: true,
+    } as any,
+  });
+
+  if (!form) {
+    throw new Error('Form not found');
+  }
+
+  const perms = await getFormUserPermissions(form, user, employee, superAdmin);
+
+  if (level === 'VIEW' && !perms.canView) {
+    throw new ForbiddenError('You are not authorized to view this form.');
+  }
+  if (level === 'EDIT' && !perms.canEdit) {
+    throw new ForbiddenError('You are not authorized to edit this form.');
+  }
+  if (level === 'DELETE' && !perms.canDelete) {
+    throw new ForbiddenError('You are not authorized to delete this form.');
+  }
+  if (level === 'MANAGE' && !perms.canManageCollaborators) {
+    throw new ForbiddenError('You are not authorized to manage collaborators for this form.');
+  }
+
+  return { form, perms, user, employee, superAdmin };
+}
+
+/** Get forms - scoped strictly to Creator, Branch Admin, Assigned Users, and Super Admin */
 export async function GetForm() {
   const user = await getCurrentUser();
 
@@ -308,87 +382,36 @@ export async function GetForm() {
     employee?.role === 'SUPER_ADMIN' ||
     user?.role === 'SUPER_ADMIN'
   );
-  const isAdmin = superAdmin || ['ADMIN', 'HR', 'EDITOR', 'MANAGER'].includes(String(employee?.role || user?.role));
+
+  const whereClause = await getAccessibleFormsWhere(user, employee, superAdmin);
 
   let forms: any[] = [];
 
-  // Super Admin and Admin/HR/Editor/Manager can view all forms
-  if (superAdmin || isAdmin) {
+  try {
+    forms = await (prisma as any).form.findMany({
+      where: whereClause,
+      include: {
+        branch: true,
+        allowedBranches: true,
+        allowedEmployees: { include: { employee: true } },
+        formViewerAccesses: { include: { employee: true } },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  } catch (e) {
+    console.warn('[GetForm] Scoped forms query error, attempting fallback:', e);
     try {
       forms = await (prisma as any).form.findMany({
-        include: {
-          branch: true,
-          allowedEmployees: { include: { employee: true } },
-          formViewerAccesses: { include: { employee: true } },
-        },
+        where: whereClause,
         orderBy: {
           createdAt: 'desc',
         },
       });
-    } catch (e) {
-      console.warn('[GetForm] Admin full query error, attempting basic query:', e);
-      try {
-        forms = await (prisma as any).form.findMany({
-          orderBy: {
-            createdAt: 'desc',
-          },
-        });
-      } catch (e2) {
-        console.error('[GetForm] Failed to fetch forms from database:', e2);
-        forms = [];
-      }
-    }
-  } else {
-    // Collect all possible caller identifiers for matching creator
-    const userIds: string[] = [user.id];
-    if (employee?.clerkUserId) userIds.push(employee.clerkUserId);
-    if (employee?.employeeId) userIds.push(employee.employeeId);
-    if (employee?.email) userIds.push(employee.email.toLowerCase());
-    if (typeof employee?.id === 'number' && employee.id < 1000000) userIds.push(String(employee.id));
-
-    const empDbId = typeof employee?.id === 'number' && employee.id < 1000000 ? employee.id : null;
-
-    try {
-      forms = await (prisma as any).form.findMany({
-        where: {
-          OR: [
-            { published: true },
-            { userId: { in: userIds } },
-            ...(empDbId
-              ? [
-                  { allowedEmployees: { some: { employeeId: empDbId } } },
-                  { formViewerAccesses: { some: { employeeId: empDbId } } },
-                ]
-              : []),
-          ],
-        },
-        include: {
-          branch: true,
-          allowedEmployees: { include: { employee: true } },
-          formViewerAccesses: { include: { employee: true } },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
-    } catch (e) {
-      console.warn('[GetForm] User forms query error, falling back to basic query:', e);
-      try {
-        forms = await (prisma as any).form.findMany({
-          where: {
-            OR: [
-              { published: true },
-              { userId: { in: userIds } },
-            ],
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        });
-      } catch (e2) {
-        console.error('[GetForm] Failed user fallback query:', e2);
-        forms = [];
-      }
+    } catch (e2) {
+      console.error('[GetForm] Failed fallback query:', e2);
+      forms = [];
     }
   }
 
@@ -402,20 +425,35 @@ export async function GetForm() {
     }
   }
 
-  return forms.map((f: any) => {
-    const creator: { name: string; email?: string } = userMap.get(f.userId) ||
-      userMap.get(f.userId?.toLowerCase()) ||
-      { name: f.userId || 'User', email: undefined };
+  const enrichedForms = await Promise.all(
+    forms.map(async (f: any) => {
+      const creator: { name: string; email?: string } = userMap.get(f.userId) ||
+        userMap.get(f.userId?.toLowerCase()) ||
+        { name: f.userId || 'User', email: undefined };
 
-    return {
-      ...f,
-      user: {
-        name: creator.name,
-        email: creator.email,
-      },
-      createdByName: creator.name,
-    };
-  });
+      const perms = await getFormUserPermissions(f, user, employee, superAdmin);
+
+      return {
+        ...f,
+        user: {
+          name: creator.name,
+          email: creator.email,
+        },
+        createdByName: creator.name,
+        canView: perms.canView,
+        canEdit: perms.canEdit,
+        canDelete: perms.canDelete,
+        canManageCollaborators: perms.canManageCollaborators,
+        isCreator: perms.isCreator,
+        isBranchAdmin: perms.isBranchAdmin,
+        isAssignedEditor: perms.isAssignedEditor,
+        isAssignedViewer: perms.isAssignedViewer,
+        isSuperAdmin: perms.isSuperAdmin,
+      };
+    })
+  );
+
+  return enrichedForms;
 }
 
 export async function GetFormById(id: number | string) {
@@ -431,6 +469,10 @@ export async function GetFormById(id: number | string) {
   }
 
   const employee = await getCurrentEmployee();
+  const superAdmin = (await isSuperAdmin()) || Boolean(
+    employee?.role === 'SUPER_ADMIN' ||
+    user?.role === 'SUPER_ADMIN'
+  );
 
   try {
     const form = await prisma.form.findFirst({
@@ -438,6 +480,7 @@ export async function GetFormById(id: number | string) {
         id: numId,
       },
       include: {
+        branch: true,
         allowedRoles: true,
         allowedDepartments: true,
         allowedBranches: true,
@@ -458,57 +501,40 @@ export async function GetFormById(id: number | string) {
       return null;
     }
 
-    if (employee?.role === 'SUPER_ADMIN') {
-      return form;
-    }
+    const perms = await getFormUserPermissions(form, user, employee, superAdmin);
 
-  // Check creator
-  const userIds: string[] = [user.id];
-  if (employee?.clerkUserId) userIds.push(employee.clerkUserId);
-  if (employee?.employeeId) userIds.push(employee.employeeId);
-  if (employee?.email) userIds.push(employee.email.toLowerCase());
-  if (typeof employee?.id === 'number' && employee.id < 1000000) userIds.push(String(employee.id));
-
-  const isCreator = userIds.includes(form.userId);
-  const empDbId = typeof employee?.id === 'number' && employee.id < 1000000 ? employee.id : null;
-  const isAllowedEditor = empDbId && (form as any).allowedEmployees?.some((ae: any) => ae.employeeId === empDbId);
-  const isAllowedViewer = empDbId && (form as any).formViewerAccesses?.some((va: any) => va.employeeId === empDbId);
-
-    if (!isCreator && !isAllowedEditor && !isAllowedViewer) {
+    if (!perms.canView) {
       throw new ForbiddenError('You are not authorized to view or edit this form.');
     }
 
-    return form;
-  } catch (err) {
+    return {
+      ...form,
+      canView: perms.canView,
+      canEdit: perms.canEdit,
+      canDelete: perms.canDelete,
+      canManageCollaborators: perms.canManageCollaborators,
+      isCreator: perms.isCreator,
+      isBranchAdmin: perms.isBranchAdmin,
+      isAssignedEditor: perms.isAssignedEditor,
+      isAssignedViewer: perms.isAssignedViewer,
+      isSuperAdmin: perms.isSuperAdmin,
+    };
+  } catch (err: any) {
+    if (err instanceof ForbiddenError || err?.name === 'ForbiddenError') {
+      throw err;
+    }
     console.error('[GetFormById] Error querying form:', err);
     return null;
   }
 }
 
 export async function UpdateFormName(id: number, name: string) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    throw new UserNotFoundErr();
-  }
-
   const trimmedName = name?.trim();
   if (!trimmedName) {
     throw new Error('Form name cannot be empty');
   }
 
-  const form = await prisma.form.findFirst({
-    where: {
-      id,
-    },
-    select: {
-      id: true,
-    },
-  });
-
-  if (!form) {
-    throw new Error('Form not found');
-  }
+  await requireFormPermission(id, 'EDIT');
 
   return await prisma.form.update({
     where: {
@@ -521,24 +547,7 @@ export async function UpdateFormName(id: number, name: string) {
 }
 
 export async function UpdateFormContent(id: number, jsonContent: string) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    throw new UserNotFoundErr();
-  }
-
-  const form = await prisma.form.findFirst({
-    where: {
-      id,
-    },
-    select: {
-      id: true,
-    },
-  });
-
-  if (!form) {
-    throw new Error('Form not found');
-  }
+  await requireFormPermission(id, 'EDIT');
 
   return await prisma.form.update({
     where: {
@@ -551,21 +560,7 @@ export async function UpdateFormContent(id: number, jsonContent: string) {
 }
 
 export async function UpdateFormSettings(id: number, settings: FormSettingsInput) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    throw new UserNotFoundErr();
-  }
-
-  const form = await prisma.form.findFirst({
-    where: {
-      id,
-    },
-  });
-
-  if (!form) {
-    throw new Error('Form not found');
-  }
+  await requireFormPermission(id, 'EDIT');
 
   const accessMode = settings.accessMode;
   const isRestricted = accessMode === 'RESTRICTED';
@@ -625,11 +620,7 @@ export async function UpdateFormSettings(id: number, settings: FormSettingsInput
 }
 
 export async function PublishForm(id: number) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    throw new UserNotFoundErr();
-  }
+  await requireFormPermission(id, 'EDIT');
 
   return await prisma.form.update({
     data: {
@@ -832,19 +823,14 @@ export async function GetFormSubmissions(id: number | string) {
     throw new Error('Valid Form ID is required');
   }
 
-  const user = await getCurrentUser();
-
-  if (!user) {
-    throw new UserNotFoundErr();
-  }
-
-  const employee = await getCurrentEmployee();
+  const { perms } = await requireFormPermission(numId, 'VIEW');
 
   const form = await prisma.form.findFirst({
     where: {
       id: numId,
     },
     include: {
+      branch: true,
       allowedBranches: true,
       allowedEmployees: true,
       formViewerAccesses: true,
@@ -868,27 +854,19 @@ export async function GetFormSubmissions(id: number | string) {
     throw new Error('Form not found');
   }
 
-  if (employee?.role === 'SUPER_ADMIN') {
-    return form;
-  }
-
-  // Check creator or explicit permissions
-  const userIds: string[] = [user.id];
-  if (employee?.clerkUserId) userIds.push(employee.clerkUserId);
-  if (employee?.employeeId) userIds.push(employee.employeeId);
-  if (employee?.email) userIds.push(employee.email.toLowerCase());
-  if (typeof employee?.id === 'number' && employee.id < 1000000) userIds.push(String(employee.id));
-
-  const isCreator = userIds.includes(form.userId);
-  const empDbId = typeof employee?.id === 'number' && employee.id < 1000000 ? employee.id : null;
-  const isAllowedEditor = empDbId && (form as any).allowedEmployees?.some((ae: any) => ae.employeeId === empDbId);
-  const isAllowedViewer = empDbId && (form as any).formViewerAccesses?.some((va: any) => va.employeeId === empDbId);
-
-  if (!isCreator && !isAllowedEditor && !isAllowedViewer) {
-    throw new ForbiddenError('You are not authorized to view submissions for this form.');
-  }
-
-  return form;
+  return {
+    ...form,
+    FormSubmissions: (form as any).FormSubmissions || [],
+    canView: perms.canView,
+    canEdit: perms.canEdit,
+    canDelete: perms.canDelete,
+    canManageCollaborators: perms.canManageCollaborators,
+    isCreator: perms.isCreator,
+    isBranchAdmin: perms.isBranchAdmin,
+    isAssignedEditor: perms.isAssignedEditor,
+    isAssignedViewer: perms.isAssignedViewer,
+    isSuperAdmin: perms.isSuperAdmin,
+  };
 }
 
 export async function GetFormSubmissionsByShareUrl(shareUrl: string) {
@@ -989,11 +967,7 @@ export async function GetFormSubmissionsByShareUrl(shareUrl: string) {
 }
 
 export async function DeleteForm(id: number) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    throw new UserNotFoundErr();
-  }
+  await requireFormPermission(id, 'DELETE');
 
   return await prisma.form.deleteMany({
     where: {
@@ -1003,11 +977,7 @@ export async function DeleteForm(id: number) {
 }
 
 export async function deleteElementInstance(id: number, elementId: string) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    throw new UserNotFoundErr();
-  }
+  await requireFormPermission(id, 'EDIT');
 
   const getContent = await prisma.form.findFirst({
     where: {

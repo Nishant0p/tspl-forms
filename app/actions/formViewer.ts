@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { requireEmployee, getCurrentEmployee, getCurrentUser } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { generateResponseToken } from '@/lib/response-token';
+import { requireFormPermission } from './form';
 
 function formatTsplEmployeeId(id: string): string {
   let clean = (id || '').trim().toUpperCase();
@@ -27,6 +28,7 @@ export type FormCollaboratorUser = {
 
 export async function getFormCollaborators(formId: number) {
   const current = await requireEmployee();
+  await requireFormPermission(formId, 'VIEW');
 
   const form = await prisma.form.findUnique({
     where: { id: formId },
@@ -198,6 +200,7 @@ export async function assignFormCollaborator(
   accessType: 'EDITOR' | 'VIEWER'
 ) {
   await requireEmployee();
+  await requireFormPermission(formId, 'MANAGE');
 
   const form = await prisma.form.findUnique({
     where: { id: formId },
@@ -254,6 +257,7 @@ export async function assignFormCollaborator(
 
 export async function removeFormCollaborator(formId: number, employeeId: number) {
   await requireEmployee();
+  await requireFormPermission(formId, 'MANAGE');
 
   await prisma.$transaction(async (tx: any) => {
     await tx.formAllowedEmployee.deleteMany({
@@ -283,6 +287,7 @@ export async function createAndAssignNewCollaborator(data: {
   const current = await requireEmployee();
 
   const { formId, firstName, lastName, email, employeeId, password, accessType } = data;
+  await requireFormPermission(formId, 'MANAGE');
 
   const form = await prisma.form.findUnique({
     where: { id: formId },

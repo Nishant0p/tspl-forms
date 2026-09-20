@@ -242,8 +242,15 @@ function FormMiniPreview({ contentJson, formName }: { contentJson: string; formN
   );
 }
 
-export default function FormCard({ form, isAdmin = false }: { form: Form; isAdmin?: boolean }) {
-  const userName = (form as any).user?.name || (form as any).createdByName || (form as any).userId || 'User';
+export default function FormCard({ form, isAdmin = false }: { form: any; isAdmin?: boolean }) {
+  const userName = form.user?.name || form.createdByName || form.userId || 'User';
+
+  const canEdit = form.canEdit ?? true;
+  const canDelete = form.canDelete ?? isAdmin;
+  const canManageCollaborators = form.canManageCollaborators ?? isAdmin;
+  const isAssignedViewer = Boolean(form.isAssignedViewer);
+  const isAssignedEditor = Boolean(form.isAssignedEditor);
+  const hasActions = canManageCollaborators || canDelete;
 
   return (
     <Card className="min-h-[260px] flex flex-col justify-between overflow-hidden group hover:shadow-md transition-shadow rounded-xl">
@@ -255,10 +262,20 @@ export default function FormCard({ form, isAdmin = false }: { form: Form; isAdmi
           <CardTitle className="flex items-start justify-between gap-2">
             <span className="truncate text-base sm:text-lg font-bold" title={form.name}>{form.name}</span>
             <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-              {(form as any).branch && (
+              {form.branch && (
                 <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 flex items-center gap-1">
                   <GitBranch className="h-3 w-3" />
-                  {(form as any).branch.name}
+                  {form.branch.name}
+                </Badge>
+              )}
+              {isAssignedViewer && (
+                <Badge variant="outline" className="text-[10px] bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30">
+                  Assigned Viewer
+                </Badge>
+              )}
+              {isAssignedEditor && (
+                <Badge variant="outline" className="text-[10px] bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/30">
+                  Assigned Editor
                 </Badge>
               )}
               {form.published && <Badge className="text-zinc-50 text-[10px] px-2 py-0.5">Published</Badge>}
@@ -293,117 +310,147 @@ export default function FormCard({ form, isAdmin = false }: { form: Form; isAdmi
         {form.published && (
           <>
             <div className="grid grid-cols-2 gap-2 w-full">
-              <Button
-                asChild
-                variant="outline"
-                className="w-full min-h-[38px] gap-1.5 text-xs font-semibold hover:border-primary">
-                <Link href={`/builder/${form.id}`}>
-                  <Edit className="h-3.5 w-3.5 text-primary" />
-                  Edit Form
-                </Link>
-              </Button>
+              {isAssignedViewer ? (
+                <Button
+                  asChild
+                  variant="outline"
+                  className="w-full min-h-[38px] gap-1.5 text-xs font-semibold hover:border-primary">
+                  <Link href={`/forms/${form.id}`}>
+                    <Eye className="h-3.5 w-3.5 text-primary" />
+                    Overview
+                  </Link>
+                </Button>
+              ) : (
+                <Button
+                  asChild
+                  variant="outline"
+                  className="w-full min-h-[38px] gap-1.5 text-xs font-semibold hover:border-primary">
+                  <Link href={`/builder/${form.id}`}>
+                    <Edit className="h-3.5 w-3.5 text-primary" />
+                    Edit Form
+                  </Link>
+                </Button>
+              )}
               <Button
                 asChild
                 className="w-full min-h-[38px] gap-1.5 text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 shadow-sm transition-colors">
-                <Link href={`/builder/${form.id}?tab=responses`}>
+                <Link href={canEdit ? `/builder/${form.id}?tab=responses` : `/forms/${form.id}`}>
                   Submissions <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </Button>
             </div>
-            <div className="flex flex-col w-full gap-2 pt-2 border-t border-border/60">
-              <div className="flex w-full items-center justify-between gap-2 text-[11px] text-muted-foreground">
-                <span className="text-[11px] font-medium text-muted-foreground">Actions</span>
-                <span className="text-[11px] text-muted-foreground truncate text-right max-w-[190px]" title={`created by ${userName}`}>
-                  created by <span className="font-semibold text-foreground/90">{userName}</span>
-                </span>
+            {hasActions && (
+              <div className="flex flex-col w-full gap-2 pt-2 border-t border-border/60">
+                <div className="flex w-full items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                  <span className="text-[11px] font-medium text-muted-foreground">Actions</span>
+                  <span className="text-[11px] text-muted-foreground truncate text-right max-w-[190px]" title={`created by ${userName}`}>
+                    created by <span className="font-semibold text-foreground/90">{userName}</span>
+                  </span>
+                </div>
+                <div className={cn("grid gap-2 w-full", canManageCollaborators && canDelete ? "grid-cols-2" : "grid-cols-1")}>
+                  {canManageCollaborators && (
+                    <FormCollaboratorsModal
+                      formId={form.id}
+                      formName={form.name}
+                      shareUrl={form.shareUrl}
+                      trigger={
+                        <Button
+                          variant="outline"
+                          className="w-full min-h-[38px] gap-1.5 text-xs font-semibold border-blue-500/30 text-blue-600 hover:border-blue-500 hover:bg-blue-500/10 dark:text-blue-400"
+                        >
+                          <Users className="h-4 w-4" />
+                          <span>Collaborators</span>
+                        </Button>
+                      }
+                    />
+                  )}
+                  {canDelete && (
+                    <DeleteFormBtn
+                      formId={form.id}
+                      formName={form.name}
+                      trigger={
+                        <Button
+                          variant="outline"
+                          className="w-full min-h-[38px] gap-1.5 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-900/50 dark:hover:bg-rose-950/50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span>Delete</span>
+                        </Button>
+                      }
+                    />
+                  )}
+                </div>
               </div>
-              <div className={cn("grid gap-2 w-full", isAdmin ? "grid-cols-2" : "grid-cols-1")}>
-                {isAdmin && (
-                  <FormCollaboratorsModal
-                    formId={form.id}
-                    formName={form.name}
-                    shareUrl={form.shareUrl}
-                    trigger={
-                      <Button
-                        variant="outline"
-                        className="w-full min-h-[38px] gap-1.5 text-xs font-semibold border-blue-500/30 text-blue-600 hover:border-blue-500 hover:bg-blue-500/10 dark:text-blue-400"
-                      >
-                        <Users className="h-4 w-4" />
-                        <span>Collaborators</span>
-                      </Button>
-                    }
-                  />
-                )}
-                <DeleteFormBtn
-                  formId={form.id}
-                  formName={form.name}
-                  trigger={
-                    <Button
-                      variant="outline"
-                      className="w-full min-h-[38px] gap-1.5 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-900/50 dark:hover:bg-rose-950/50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span>Delete</span>
-                    </Button>
-                  }
-                />
-              </div>
-            </div>
+            )}
           </>
         )}
         {!form.published && (
           <div className="flex flex-col w-full gap-2">
-            {/* Big Edit Form button on top */}
-            <Button
-              asChild
-              className="w-full min-h-[38px] gap-2 text-xs sm:text-sm font-semibold text-zinc-50 bg-primary hover:bg-primary/90 shadow-sm">
-              <Link href={`/builder/${form.id}`}>
-                Edit Form <Edit className="h-4 w-4" />
-              </Link>
-            </Button>
+            {/* Big Edit or View Form button on top */}
+            {isAssignedViewer ? (
+              <Button
+                asChild
+                className="w-full min-h-[38px] gap-2 text-xs sm:text-sm font-semibold text-zinc-50 bg-primary hover:bg-primary/90 shadow-sm">
+                <Link href={`/forms/${form.id}`}>
+                  View Details <Eye className="h-4 w-4" />
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                asChild
+                className="w-full min-h-[38px] gap-2 text-xs sm:text-sm font-semibold text-zinc-50 bg-primary hover:bg-primary/90 shadow-sm">
+                <Link href={`/builder/${form.id}`}>
+                  Edit Form <Edit className="h-4 w-4" />
+                </Link>
+              </Button>
+            )}
 
             {/* Actions & Creator Header */}
-            <div className="flex flex-col w-full gap-2 pt-2 border-t border-border/60">
-              <div className="flex w-full items-center justify-between gap-2 text-[11px] text-muted-foreground">
-                <span className="text-[11px] font-medium text-muted-foreground">Actions</span>
-                <span className="text-[11px] text-muted-foreground truncate text-right max-w-[190px]" title={`created by ${userName}`}>
-                  created by <span className="font-semibold text-foreground/90">{userName}</span>
-                </span>
-              </div>
+            {hasActions && (
+              <div className="flex flex-col w-full gap-2 pt-2 border-t border-border/60">
+                <div className="flex w-full items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                  <span className="text-[11px] font-medium text-muted-foreground">Actions</span>
+                  <span className="text-[11px] text-muted-foreground truncate text-right max-w-[190px]" title={`created by ${userName}`}>
+                    created by <span className="font-semibold text-foreground/90">{userName}</span>
+                  </span>
+                </div>
 
-              {/* Bottom two buttons bigger side-by-side */}
-              <div className={cn("grid gap-2 w-full", isAdmin ? "grid-cols-2" : "grid-cols-1")}>
-                {isAdmin && (
-                  <FormCollaboratorsModal
-                    formId={form.id}
-                    formName={form.name}
-                    shareUrl={form.shareUrl}
-                    trigger={
-                      <Button
-                        variant="outline"
-                        className="w-full min-h-[38px] gap-1.5 text-xs font-semibold border-blue-500/30 text-blue-600 hover:border-blue-500 hover:bg-blue-500/10 dark:text-blue-400"
-                      >
-                        <Users className="h-4 w-4" />
-                        <span>Collaborators</span>
-                      </Button>
-                    }
-                  />
-                )}
-                <DeleteFormBtn
-                  formId={form.id}
-                  formName={form.name}
-                  trigger={
-                    <Button
-                      variant="outline"
-                      className="w-full min-h-[38px] gap-1.5 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-900/50 dark:hover:bg-rose-950/50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span>Delete</span>
-                    </Button>
-                  }
-                />
+                {/* Bottom buttons */}
+                <div className={cn("grid gap-2 w-full", canManageCollaborators && canDelete ? "grid-cols-2" : "grid-cols-1")}>
+                  {canManageCollaborators && (
+                    <FormCollaboratorsModal
+                      formId={form.id}
+                      formName={form.name}
+                      shareUrl={form.shareUrl}
+                      trigger={
+                        <Button
+                          variant="outline"
+                          className="w-full min-h-[38px] gap-1.5 text-xs font-semibold border-blue-500/30 text-blue-600 hover:border-blue-500 hover:bg-blue-500/10 dark:text-blue-400"
+                        >
+                          <Users className="h-4 w-4" />
+                          <span>Collaborators</span>
+                        </Button>
+                      }
+                    />
+                  )}
+                  {canDelete && (
+                    <DeleteFormBtn
+                      formId={form.id}
+                      formName={form.name}
+                      trigger={
+                        <Button
+                          variant="outline"
+                          className="w-full min-h-[38px] gap-1.5 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-900/50 dark:hover:bg-rose-950/50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span>Delete</span>
+                        </Button>
+                      }
+                    />
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </CardFooter>

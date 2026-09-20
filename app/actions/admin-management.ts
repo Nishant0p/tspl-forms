@@ -240,7 +240,45 @@ export async function getAvailableFormsForAssignment() {
     throw new ForbiddenError('Access denied.');
   }
 
+  const isSuper = caller.role === 'SUPER_ADMIN';
+  const callerIds = [
+    String(caller.id),
+    caller.employeeId,
+    caller.clerkUserId,
+    caller.email ? caller.email.toLowerCase() : '',
+  ].filter(Boolean);
+
+  let branchEmployeeIds: string[] = [];
+  if (!isSuper && caller.branchId) {
+    const branchEmps = await prisma.employee.findMany({
+      where: { branchId: caller.branchId },
+      select: { id: true, employeeId: true, clerkUserId: true, email: true },
+    });
+    branchEmployeeIds = branchEmps.flatMap((e) => [
+      String(e.id),
+      e.employeeId,
+      e.clerkUserId,
+      e.email ? e.email.toLowerCase() : '',
+    ]).filter(Boolean);
+  }
+
+  const whereClause: any = isSuper
+    ? {}
+    : {
+        OR: [
+          { userId: { in: callerIds } },
+          ...(caller.branchId
+            ? [
+                { branchId: caller.branchId },
+                { allowedBranches: { some: { branchId: caller.branchId } } },
+                ...(branchEmployeeIds.length > 0 ? [{ userId: { in: branchEmployeeIds } }] : []),
+              ]
+            : []),
+        ],
+      };
+
   const forms = await prisma.form.findMany({
+    where: whereClause,
     orderBy: { createdAt: 'desc' },
     select: {
       id: true,

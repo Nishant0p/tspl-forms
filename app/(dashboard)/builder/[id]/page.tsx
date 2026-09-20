@@ -1,7 +1,7 @@
 import FormBuilderClientWrapper from '@/app/(dashboard)/_components/FormBuilderClientWrapper';
 import { GetFormById } from '@/app/actions/form';
 import prisma from '@/lib/prisma';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import React from 'react';
 
 export default async function BuilderPage({
@@ -20,7 +20,22 @@ export default async function BuilderPage({
     notFound();
   }
 
-  const form = await GetFormById(numId);
+  let form: any = null;
+  try {
+    form = await GetFormById(numId);
+  } catch {
+    notFound();
+  }
+
+  if (!form) {
+    notFound();
+  }
+
+  // If user only has read-only viewer access, redirect to form overview/responses
+  if (form.canEdit === false) {
+    redirect(`/forms/${numId}`);
+  }
+
   const db = prisma as any;
 
   const [departments, branches, employees] = await Promise.all([
@@ -38,10 +53,6 @@ export default async function BuilderPage({
       },
     }),
   ]);
-
-  if (!form) {
-    notFound();
-  }
 
   const rawTab = typeof resolvedSearchParams?.tab === 'string' ? resolvedSearchParams.tab.toLowerCase() : '';
   const initialTab: 'questions' | 'responses' | 'settings' =

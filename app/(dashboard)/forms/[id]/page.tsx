@@ -49,7 +49,13 @@ export default async function FormDetailsPage({
     notFound();
   }
 
-  const form = await GetFormById(numId);
+  let form: any = null;
+  try {
+    form = await GetFormById(numId);
+  } catch {
+    notFound();
+  }
+
   const currentEmployee = await getCurrentEmployee();
   const isManagerOrAdmin = currentEmployee && ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'HR'].includes(currentEmployee.role);
 
@@ -327,7 +333,8 @@ async function SubMissionTable({ id }: { id: number }) {
   })
 
   const rows: Row[] = []
-  form.FormSubmissions.forEach((submission: any) => {
+  const submissionsList = (form as any).FormSubmissions || [];
+  submissionsList.forEach((submission: any) => {
     const content = JSON.parse(submission.content);
 
     const respondent = submission.employee
