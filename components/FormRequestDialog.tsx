@@ -56,7 +56,12 @@ export default function FormRequestDialog({ onCreated }: { onCreated?: () => voi
         reset();
         onCreated?.();
       } catch (err: any) {
-        toast({ title: 'Error', description: err.message, variant: 'destructive' });
+        const isMinified = err instanceof Error && (err.message.includes('441') || err.message.includes('Minified React error'));
+        toast({
+          title: 'Error',
+          description: isMinified ? 'Request could not be completed. Please try again later.' : (err?.message || 'Failed to submit request'),
+          variant: 'destructive',
+        });
       }
     });
   };

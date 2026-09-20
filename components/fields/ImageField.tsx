@@ -50,6 +50,7 @@ function toFilePayload(file: File, dataUrl: string) { return JSON.stringify({ na
 function readFileAsDataUrl(file: File) { return new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(reader.error); reader.readAsDataURL(file); }); }
 
 import FileViewerModal from '../FileViewerModal';
+import { toast } from '../ui/use-toast';
 
 function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValues }: { elementInstance: FormElementInstance; submitFunction?: SubmitFunction; isInvalid?: boolean; defaultValues?: string; }) {
   const element = elementInstance as CustomInstance;
@@ -73,6 +74,17 @@ function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValu
         onChange={async (e) => {
           const file = e.target.files?.[0];
           if (!file) return;
+
+          if (file.size > 15 * 1024 * 1024) {
+            toast({
+              title: 'Image too large',
+              description: 'Maximum image size allowed is 15 MB.',
+              variant: 'destructive',
+            });
+            e.target.value = '';
+            return;
+          }
+
           try {
             const dataUrl = await readFileAsDataUrl(file);
             const payload = toFilePayload(file, dataUrl);

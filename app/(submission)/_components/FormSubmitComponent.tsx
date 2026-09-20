@@ -193,10 +193,17 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
       } catch {}
       setSubmitted(true);
     } catch (error) {
+      let description = 'Something went wrong, please try again later';
+      if (error instanceof Error) {
+        if (error.message.includes('441') || error.message.includes('Minified React error') || error.message.includes('Body exceeded')) {
+          description = 'Submission failed because the form data or uploaded files exceeded the server limit. Please use smaller files and try again.';
+        } else {
+          description = error.message;
+        }
+      }
       toast({
         title: 'Error',
-        description:
-          error instanceof Error ? error.message : 'Something went wrong, please try again later',
+        description,
         variant: 'destructive',
       });
     } finally {

@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 
 import FileViewerModal from '../FileViewerModal';
 import { FileText } from 'lucide-react';
+import { toast } from '../ui/use-toast';
 
 const type: ElementsType = 'FileUploadField';
 const extraAttributes = { label: 'File Upload', helperText: '', required: false, accept: '*' };
@@ -96,6 +97,17 @@ function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValu
         onChange={async (e) => {
           const file = e.target.files?.[0];
           if (!file) return;
+
+          if (file.size > 15 * 1024 * 1024) {
+            toast({
+              title: 'File too large',
+              description: 'Maximum file size allowed is 15 MB.',
+              variant: 'destructive',
+            });
+            e.target.value = '';
+            return;
+          }
+
           try {
             const dataUrl = await readFileAsDataUrl(file);
             const payload = toFilePayload(file, dataUrl);

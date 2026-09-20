@@ -5,6 +5,7 @@ const nextConfig = {
   },
   experimental: {
     serverActions: {
+      bodySizeLimit: '20mb',
       allowedOrigins: ['forms.tsplgroup.in', 'localhost:3000'],
     },
   },
