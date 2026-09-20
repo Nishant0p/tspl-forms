@@ -1,3 +1,5 @@
+'use client';
+
 import { CheckBoxFieldFormElement } from '@/components/fields/CheckboxField';
 import { DateFieldFormElement } from '@/components/fields/DateField';
 import { EmailFieldFormElement } from '@/components/fields/EmailField';

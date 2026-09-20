@@ -64,7 +64,7 @@ export const DateFieldFormElement: FormElement = {
   validate: (formElement: FormElementInstance, currentValue: string): boolean => {
     const element = formElement as CustomInstance;
 
-    if (element.extraAttributes.required) {
+    if (element.extraAttributes?.required) {
       return !!currentValue && currentValue.trim().length > 0;
     }
 
@@ -83,7 +83,7 @@ function PropertiesComponent({
 
   const { updateElement } = useDesginerStore();
 
-  const { label, helperText, required } = element.extraAttributes;
+  const { label = 'Date Field', helperText = '', required = false } = element.extraAttributes || {};
 
   const form = useForm<propertiesType>({
     resolver: zodResolver(propertiesSchema),
@@ -95,7 +95,9 @@ function PropertiesComponent({
   });
 
   useEffect(() => {
-    form.reset(element.extraAttributes);
+    if (element.extraAttributes) {
+      form.reset(element.extraAttributes);
+    }
   }, [element, form]);
 
   function applyChanges(data: propertiesType) {
@@ -173,7 +175,7 @@ function DesignerComponent({
   elementInstance: FormElementInstance;
 }) {
   const element = elementInstance as CustomInstance;
-  const { label, required, helperText } = element.extraAttributes;
+  const { label = 'Date Field', required = false } = element.extraAttributes || {};
 
   return (
     <div className="flex w-full flex-col gap-2">
@@ -183,6 +185,7 @@ function DesignerComponent({
       </Label>
       <div className="relative flex items-center w-full">
         <Button
+          type="button"
           variant={'outline'}
           className="w-full justify-start text-left font-normal h-11 pl-3.5 pr-10 border-border rounded-xl pointer-events-none bg-background shadow-xs text-sm"
         >
@@ -190,7 +193,7 @@ function DesignerComponent({
           <span className="text-muted-foreground truncate">Select date (DD/MM/YYYY)</span>
         </Button>
       </div>
-      </div>
+    </div>
   );
 }
 
@@ -207,14 +210,25 @@ function FormComponent({
 }) {
   const element = elementInstance as CustomInstance;
 
-  const parseInitialDate = (val?: string) => {
-    if (!val) return undefined;
-    const d = new Date(val);
-    if (isValid(d)) return d;
+  const parseInitialDate = (val?: string): Date | undefined => {
+    if (!val || typeof val !== 'string') return undefined;
+    const trimmed = val.trim();
+    if (!trimmed) return undefined;
+
+    // 1. Try dd/MM/yyyy format (e.g. 20/09/2026)
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmed)) {
+      try {
+        const parsed = parse(trimmed, 'dd/MM/yyyy', new Date());
+        if (isValid(parsed)) return parsed;
+      } catch {}
+    }
+
+    // 2. Try ISO or standard Date string
     try {
-      const parsed = parse(val, 'dd/MM/yyyy', new Date());
-      if (isValid(parsed)) return parsed;
+      const d = new Date(trimmed);
+      if (isValid(d)) return d;
     } catch {}
+
     return undefined;
   };
 
@@ -222,6 +236,11 @@ function FormComponent({
   const [currentMonth, setCurrentMonth] = useState<Date>(() => date || new Date());
   const [open, setOpen] = useState(false);
   const [error, setError] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     setError(isInvalid === true);
@@ -237,7 +256,7 @@ function FormComponent({
     }
   }, [defaultValues]);
 
-  const { label, required, helperText } = element.extraAttributes;
+  const { label = 'Date Field', required = false } = element.extraAttributes || {};
 
   const handleSelectDate = (selected?: Date) => {
     setDate(selected);
@@ -378,7 +397,6 @@ function FormComponent({
             onSelect={handleSelectDate}
             month={currentMonth}
             onMonthChange={setCurrentMonth}
-            initialFocus
             className="rounded-lg p-0"
           />
 
@@ -389,7 +407,7 @@ function FormComponent({
               onClick={handleSetToday}
               className="text-foreground font-semibold hover:underline cursor-pointer flex items-center gap-1"
             >
-              <span>Today ({format(new Date(), 'dd/MM/yyyy')})</span>
+              <span>Today {mounted ? `(${format(new Date(), 'dd/MM/yyyy')})` : ''}</span>
             </button>
             {date && (
               <button
@@ -403,7 +421,6 @@ function FormComponent({
           </div>
         </PopoverContent>
       </Popover>
-
-      </div>
+    </div>
   );
 }

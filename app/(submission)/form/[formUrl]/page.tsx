@@ -1,4 +1,4 @@
-import { FormElementInstance } from '@/app/(dashboard)/_components/FormElements';
+import type { FormElementInstance } from '@/app/(dashboard)/_components/FormElements';
 import { GetFormContentByUrl } from '@/app/actions/form';
 import FormSubmitComponent from '../../_components/FormSubmitComponent';
 import { AuthRequiredError, ForbiddenError } from '@/lib/auth';

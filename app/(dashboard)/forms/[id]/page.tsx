@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { ReactNode } from 'react';
 import CardStat from '../../_components/CardStat';
-import { ElementsType, FormElementInstance } from '../../_components/FormElements';
+import type { ElementsType, FormElementInstance } from '../../_components/FormElements';
 import FormShareDialog from '../../_components/FormShareDialog';
 import VisitBtn from '../../_components/VisitBtn';
 import ExportXlsxBtn from '../../_components/ExportXlsxBtn';
