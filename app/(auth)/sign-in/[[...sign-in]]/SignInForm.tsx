@@ -48,7 +48,7 @@ export default function SignInForm() {
     const emailTrimmed = email.trim();
 
     try {
-      // 1. Try API login route
+      // 1. Try REST API login route
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -57,38 +57,56 @@ export default function SignInForm() {
         body: JSON.stringify({ emailOrEmpId: emailTrimmed, password }),
       });
 
-      let apiSuccess = false;
-      let apiError = '';
+      let result: any = null;
+      try {
+        result = await res.json();
+      } catch {
+        // Non-JSON response
+      }
 
-      if (res.ok) {
+      if (res.ok && result?.success) {
+        navigateAfterLogin();
+        return;
+      }
+
+      // If the API provided an explicit error (e.g. invalid credentials, account suspended, etc.)
+      if (result?.error) {
+        setError(result.error);
+        setLoading(false);
+        return;
+      }
+
+      if (res.status === 401 || res.status === 403) {
+        setError('Invalid email/Employee ID or password');
+        setLoading(false);
+        return;
+      }
+
+      // 2. Only fallback to server action if the API endpoint returned 404 (endpoint not found)
+      if (res.status === 404) {
         try {
-          const result = await res.json();
-          if (result?.success) {
-            apiSuccess = true;
-          } else {
-            apiError = result?.error || 'Invalid credentials';
+          const actionResult = await loginUser(emailTrimmed, password);
+          if (actionResult?.success) {
+            navigateAfterLogin();
+            return;
           }
-        } catch {
-          // non-json response
+          setError(actionResult?.error || 'Invalid email/Employee ID or password');
+        } catch (saErr: any) {
+          const msg = saErr?.message || '';
+          if (msg.includes('unexpected response') || msg.includes('Server Actions')) {
+            setError('Unable to sign in. Please verify your credentials or try again.');
+          } else {
+            setError(msg || 'Invalid email/Employee ID or password');
+          }
         }
-      }
-
-      if (apiSuccess) {
-        navigateAfterLogin();
+        setLoading(false);
         return;
       }
 
-      // 2. Fallback to server action if API returned error or 404
-      const actionResult = await loginUser(emailTrimmed, password);
-      if (actionResult?.success) {
-        navigateAfterLogin();
-        return;
-      }
-
-      setError(actionResult?.error || apiError || 'Invalid email/Employee ID or password');
+      setError(result?.error || 'Unable to sign in. Please verify your credentials.');
       setLoading(false);
     } catch (err: any) {
-      // 3. If fetch network error, fallback to server action directly
+      console.error('[SignInForm] Error during sign-in:', err);
       try {
         const actionResult = await loginUser(emailTrimmed, password);
         if (actionResult?.success) {
@@ -97,7 +115,12 @@ export default function SignInForm() {
         }
         setError(actionResult?.error || 'Invalid email/Employee ID or password');
       } catch (subErr: any) {
-        setError(subErr?.message || 'Unable to sign in. Please check your connection.');
+        const msg = subErr?.message || '';
+        if (msg.includes('unexpected response') || msg.includes('Server Actions')) {
+          setError('Unable to sign in. Please check your credentials or connection.');
+        } else {
+          setError(msg || 'Unable to sign in. Please check your connection.');
+        }
       }
       setLoading(false);
     }

@@ -9,6 +9,7 @@ const nextConfig = {
       allowedOrigins: [
         'forms.tsplgroup.in',
         'forms.tsplgroup.in.',
+        '*.tsplgroup.in',
         'tsplgroup.in',
         'tsplgroup.in.',
         'localhost:3000',

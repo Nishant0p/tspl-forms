@@ -15,64 +15,13 @@ function isPublic(pathname: string) {
 }
 
 export async function middleware(req: NextRequest) {
+  // Always let Server Actions proceed without header interference
+  if (req.headers.has('next-action')) {
+    return NextResponse.next();
+  }
+
   const { pathname } = req.nextUrl;
   const session = req.cookies.get('session_user')?.value;
-
-  // Normalize host & origin headers to prevent trailing-dot mismatch in Next.js Server Actions CSRF check
-  const requestHeaders = new Headers(req.headers);
-  let headersModified = false;
-
-  const origin = req.headers.get('origin');
-  if (origin) {
-    try {
-      const url = new URL(origin);
-      if (url.hostname.endsWith('.')) {
-        url.hostname = url.hostname.replace(/\.+$/, '');
-        requestHeaders.set('origin', url.origin);
-        headersModified = true;
-      }
-    } catch {
-      if (origin.includes('.tsplgroup.in.')) {
-        requestHeaders.set('origin', origin.replace(/\.tsplgroup\.in\./g, '.tsplgroup.in'));
-        headersModified = true;
-      }
-    }
-  }
-
-  const referer = req.headers.get('referer');
-  if (referer) {
-    try {
-      const url = new URL(referer);
-      if (url.hostname.endsWith('.')) {
-        url.hostname = url.hostname.replace(/\.+$/, '');
-        requestHeaders.set('referer', url.toString());
-        headersModified = true;
-      }
-    } catch {
-      if (referer.includes('.tsplgroup.in.')) {
-        requestHeaders.set('referer', referer.replace(/\.tsplgroup\.in\./g, '.tsplgroup.in'));
-        headersModified = true;
-      }
-    }
-  }
-
-  const xForwardedHost = req.headers.get('x-forwarded-host');
-  if (xForwardedHost && xForwardedHost.includes('.')) {
-    const cleaned = xForwardedHost.replace(/\.+(:|\/|$)/, '$1');
-    if (cleaned !== xForwardedHost) {
-      requestHeaders.set('x-forwarded-host', cleaned);
-      headersModified = true;
-    }
-  }
-
-  const host = req.headers.get('host');
-  if (host && host.includes('.')) {
-    const cleaned = host.replace(/\.+(:|\/|$)/, '$1');
-    if (cleaned !== host) {
-      requestHeaders.set('host', cleaned);
-      headersModified = true;
-    }
-  }
 
   let isAuthenticated = false;
   if (session) {
@@ -88,7 +37,7 @@ export async function middleware(req: NextRequest) {
   }
 
   if (isPublic(pathname)) {
-    return NextResponse.next(headersModified ? { request: { headers: requestHeaders } } : undefined);
+    return NextResponse.next();
   }
 
   // Protected route check
@@ -103,7 +52,7 @@ export async function middleware(req: NextRequest) {
     return response;
   }
 
-  return NextResponse.next(headersModified ? { request: { headers: requestHeaders } } : undefined);
+  return NextResponse.next();
 }
 
 export const config = {
