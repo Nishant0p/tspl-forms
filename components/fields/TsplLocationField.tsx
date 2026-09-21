@@ -275,30 +275,6 @@ function PropertiesComponent({
             </FormItem>
           )}
         />
-
-        <FormField
-          control={form.control}
-          name="required"
-          render={({ field }) => (
-            <FormItem className="flex items-center justify-between rounded-lg border p-3 shadow-xs">
-              <div className="space-y-0.5">
-                <FormLabel className="text-sm font-semibold">Required</FormLabel>
-                <FormDescription className="text-xs">
-                  Require valid PIN code and location before submission.
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={(checked) => {
-                    field.onChange(checked);
-                    form.handleSubmit(applyChanges)();
-                  }}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
       </form>
     </Form>
   );
@@ -330,9 +306,7 @@ function DesignerComponent({
           <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/30 text-primary bg-primary/5 uppercase font-bold tracking-wider">
             TSPL Location
           </Badge>
-          <span className="text-[10px] font-semibold text-muted-foreground">
-            API Verified
-          </span>
+
         </div>
       </div>
 
@@ -381,7 +355,7 @@ function DesignerComponent({
         )}
       </div>
 
-      </div>
+    </div>
   );
 }
 
@@ -746,6 +720,6 @@ function FormComponent({
         )}
       </div>
 
-      </div>
+    </div>
   );
 }

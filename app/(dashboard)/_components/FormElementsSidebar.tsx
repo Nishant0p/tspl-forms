@@ -55,7 +55,6 @@ export default function FormElementsSidebar() {
     FormElements.FileUploadField,
     FormElements.SignatureField,
     FormElements.ImageField,
-    FormElements.VideoField,
   ];
 
   return (

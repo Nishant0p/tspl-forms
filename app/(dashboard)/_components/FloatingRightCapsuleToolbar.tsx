@@ -8,7 +8,6 @@ import {
   Plus,
   Type,
   Image as ImageIcon,
-  Video,
   SplitSquareVertical,
   LayoutGrid,
   Sparkles,
@@ -111,22 +110,6 @@ export default function FloatingRightCapsuleToolbar({
           </TooltipContent>
         </Tooltip>
 
-        {/* 4. Add Video */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 sm:h-9 sm:w-9 rounded-full text-foreground hover:bg-muted hover:text-primary transition-all"
-              onClick={() => handleInsert('VideoField')}
-            >
-              <Video className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            <p className="font-semibold text-xs">Add Video Embed</p>
-          </TooltipContent>
-        </Tooltip>
 
         {/* 5. Add Section Header (==) */}
         <Tooltip>
