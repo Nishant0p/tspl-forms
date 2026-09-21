@@ -240,8 +240,8 @@ export async function CreateForm(data: FormSchema & { branchId?: number | null }
       name: uniqueName,
       description: description || '',
       content: content || '[]',
-      accessMode: selectedBranchId ? 'RESTRICTED' : 'PUBLIC',
-      loginRequired: selectedBranchId ? true : false,
+      accessMode: 'PUBLIC',
+      loginRequired: false,
       oneResponsePerUser: false,
       status: 'DRAFT',
       published: false,
@@ -634,12 +634,22 @@ export async function PublishForm(id: number) {
 }
 
 export async function GetFormContentByUrl(formUrl: string) {
-  const user = await getCurrentUser();
+  if (!formUrl) {
+    throw new Error('Form not found');
+  }
 
-  const form = await prisma.form.findUnique({
-    where: {
-      shareUrl: formUrl,
-    },
+  const cleanFormUrl = decodeURIComponent(formUrl).trim().replace(/^\/+/, '').replace(/\/+$/, '');
+  const numericId = Number(cleanFormUrl);
+  const isNumeric = !isNaN(numericId) && Number.isInteger(numericId) && String(numericId) === cleanFormUrl;
+
+  const form = await prisma.form.findFirst({
+    where: isNumeric
+      ? {
+          OR: [{ id: numericId }, { shareUrl: cleanFormUrl }],
+        }
+      : {
+          shareUrl: cleanFormUrl,
+        },
     include: {
       allowedRoles: true,
       allowedDepartments: true,
@@ -652,6 +662,7 @@ export async function GetFormContentByUrl(formUrl: string) {
     throw new Error('Form not found');
   }
 
+  const user = await getCurrentUser();
   const access = await canAccessForm(mapFormAccessRecord(form), user ? { id: user.id } : null);
 
   if (!access.allowed) {
@@ -664,9 +675,11 @@ export async function GetFormContentByUrl(formUrl: string) {
 
   return await prisma.form.update({
     select: {
+      id: true,
       name: true,
       description: true,
       content: true,
+      shareUrl: true,
     },
     data: {
       visits: {
@@ -674,7 +687,7 @@ export async function GetFormContentByUrl(formUrl: string) {
       },
     },
     where: {
-      shareUrl: formUrl,
+      id: form.id,
     },
   });
 }
@@ -687,12 +700,22 @@ export type SubmitFormResult = {
 
 export async function SubmitForm(formUrl: string, content: string): Promise<SubmitFormResult> {
   try {
-    const user = await getCurrentUser();
+    if (!formUrl) {
+      return { success: false, error: 'Form not found.' };
+    }
 
-    const form = await prisma.form.findUnique({
-      where: {
-        shareUrl: formUrl,
-      },
+    const cleanFormUrl = decodeURIComponent(formUrl).trim().replace(/^\/+/, '').replace(/\/+$/, '');
+    const numericId = Number(cleanFormUrl);
+    const isNumeric = !isNaN(numericId) && Number.isInteger(numericId) && String(numericId) === cleanFormUrl;
+
+    const form = await prisma.form.findFirst({
+      where: isNumeric
+        ? {
+            OR: [{ id: numericId }, { shareUrl: cleanFormUrl }],
+          }
+        : {
+            shareUrl: cleanFormUrl,
+          },
       include: {
         allowedRoles: true,
         allowedDepartments: true,
@@ -705,6 +728,7 @@ export async function SubmitForm(formUrl: string, content: string): Promise<Subm
       return { success: false, error: 'Form not found.' };
     }
 
+    const user = await getCurrentUser();
     const access = await canAccessForm(mapFormAccessRecord(form), user ? { id: user.id } : null);
 
     if (!access.allowed) {

@@ -6,8 +6,16 @@ const PUBLIC_ROUTES = ['/', '/platform', '/sign-in', '/access-denied'];
 function isPublic(pathname: string) {
   return (
     PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/')) ||
-    pathname.startsWith('/submit/') ||
+    pathname === '/form' ||
     pathname.startsWith('/form/') ||
+    pathname === '/submit' ||
+    pathname.startsWith('/submit/') ||
+    pathname === '/f' ||
+    pathname.startsWith('/f/') ||
+    pathname === '/p' ||
+    pathname.startsWith('/p/') ||
+    pathname === '/responses' ||
+    pathname.startsWith('/responses/') ||
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/api/') ||
     /\.[^/]+$/.test(pathname) // static files

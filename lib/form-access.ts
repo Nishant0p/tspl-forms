@@ -133,6 +133,15 @@ export async function canAccessForm(form: FormAccessRecord, user?: { id: string 
     return { allowed: false, reason: 'limit-reached' };
   }
 
+  // Published forms accessed via public link are 100% publicly accessible for guests to view and submit
+  if (form.published || status === 'PUBLISHED') {
+    // If oneResponsePerUser is configured and an authenticated employee is logged in, verify single submission
+    if (employee && form.oneResponsePerUser) {
+      return await canSubmitOnce(form, employee.id);
+    }
+    return { allowed: true };
+  }
+
   const accessMode = form.accessMode ?? 'PUBLIC';
 
   if (accessMode === 'PUBLIC') {
