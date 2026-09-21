@@ -75,10 +75,10 @@ function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValu
           const file = e.target.files?.[0];
           if (!file) return;
 
-          if (file.size > 15 * 1024 * 1024) {
+          if (file.size > 50 * 1024 * 1024) {
             toast({
               title: 'Image too large',
-              description: 'Maximum image size allowed is 15 MB.',
+              description: 'Maximum image size allowed is 50 MB.',
               variant: 'destructive',
             });
             e.target.value = '';

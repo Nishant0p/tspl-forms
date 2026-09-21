@@ -177,7 +177,38 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
       }
 
       const jsonContent = JSON.stringify(sanitizedValues);
-      const res = await SubmitForm(formUrl, jsonContent);
+      
+      let res: { success: boolean; submissionId?: number; error?: string } = { success: false };
+
+      // Submit via direct API route to avoid React Flight payload serialization limits and array nesting issues on large uploads/PDFs
+      try {
+        const apiResponse = await fetch(`/api/forms/${encodeURIComponent(formUrl)}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ content: jsonContent }),
+        });
+
+        if (apiResponse.ok) {
+          const data = await apiResponse.json();
+          if (data.success) {
+            res = { success: true, submissionId: data.submissionId };
+          } else {
+            res = { success: false, error: data.error || 'Submission failed.' };
+          }
+        } else {
+          const data = await apiResponse.json().catch(() => ({}));
+          if (data?.error) {
+            res = { success: false, error: data.error };
+          } else {
+            res = await SubmitForm(formUrl, jsonContent);
+          }
+        }
+      } catch {
+        // Fallback to Server Action if network fetch to API route encounters an error
+        res = await SubmitForm(formUrl, jsonContent);
+      }
 
       if (!res.success) {
         toast({
