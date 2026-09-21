@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,29 @@ interface FileViewerModalProps {
   title?: string;
 }
 
+// Convert base64 data URL to a binary Blob safely in chunks to avoid call stack limits
+function b64toBlob(dataUrl: string, defaultMime = 'application/pdf'): Blob | null {
+  try {
+    const parts = dataUrl.split(',');
+    if (parts.length < 2) return null;
+
+    const mimeMatch = parts[0].match(/:(.*?);/);
+    const mime = mimeMatch ? mimeMatch[1] : defaultMime;
+    const base64Data = parts[1];
+
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = new Uint8Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+
+    return new Blob([byteNumbers.buffer as ArrayBuffer], { type: mime });
+  } catch (err) {
+    console.error('Failed to convert base64 to Blob:', err);
+    return null;
+  }
+}
+
 export default function FileViewerModal({
   fileUrl,
   fileName = 'File Preview',
@@ -27,6 +50,7 @@ export default function FileViewerModal({
   title,
 }: FileViewerModalProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
 
   if (!fileUrl) return null;
 
@@ -56,7 +80,96 @@ export default function FileViewerModal({
     lowerUrl.startsWith('vbscript:') ||
     lowerUrl.startsWith('data:text/html');
 
-  const safeDownloadUrl = isDangerousScheme ? '#' : fileUrl;
+  // Create an active blob URL when modal is open to bypass Chrome data-URL iframe & navigation restrictions
+  useEffect(() => {
+    if (!isOpen || isDangerousScheme) {
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+        setBlobUrl(null);
+      }
+      return;
+    }
+
+    if (fileUrl.startsWith('data:')) {
+      const targetMime = isPdf
+        ? 'application/pdf'
+        : isImage
+        ? 'image/png'
+        : isVideo
+        ? 'video/mp4'
+        : 'application/octet-stream';
+
+      const blob = b64toBlob(fileUrl, targetMime);
+      if (blob) {
+        const objectUrl = URL.createObjectURL(blob);
+        setBlobUrl(objectUrl);
+
+        return () => {
+          URL.revokeObjectURL(objectUrl);
+        };
+      }
+    } else {
+      setBlobUrl(fileUrl);
+    }
+  }, [isOpen, fileUrl, isPdf, isImage, isVideo, isDangerousScheme]);
+
+  const activeDisplayUrl = blobUrl || fileUrl;
+
+  const handleDownload = () => {
+    if (isDangerousScheme) return;
+
+    if (blobUrl) {
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
+    }
+
+    if (fileUrl.startsWith('data:')) {
+      const blob = b64toBlob(fileUrl);
+      if (blob) {
+        const tempUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = tempUrl;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(tempUrl), 1000);
+        return;
+      }
+    }
+
+    const a = document.createElement('a');
+    a.href = fileUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const handleOpenNewTab = () => {
+    if (isDangerousScheme) return;
+
+    if (blobUrl) {
+      window.open(blobUrl, '_blank');
+      return;
+    }
+
+    if (fileUrl.startsWith('data:')) {
+      const blob = b64toBlob(fileUrl, isPdf ? 'application/pdf' : 'application/octet-stream');
+      if (blob) {
+        const tempUrl = URL.createObjectURL(blob);
+        window.open(tempUrl, '_blank');
+        return;
+      }
+    }
+
+    window.open(fileUrl, '_blank');
+  };
 
   const renderIcon = () => {
     if (isPdf) return <FileText className="h-4 w-4 text-red-500" />;
@@ -89,27 +202,28 @@ export default function FileViewerModal({
           <div className="flex items-center gap-2 mr-2">
             {!isDangerousScheme && (
               <>
-                <a
-                  href={safeDownloadUrl}
-                  download={fileName}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium transition-colors"
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleDownload}
+                  className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 h-8 font-medium transition-colors"
                   title="Download file"
                 >
                   <Download className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Download</span>
-                </a>
-                <a
-                  href={safeDownloadUrl}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium transition-colors"
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleOpenNewTab}
+                  className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 h-8 font-medium transition-colors"
                   title="Open in new tab"
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">New Tab</span>
-                </a>
+                </Button>
               </>
             )}
           </div>
@@ -125,16 +239,34 @@ export default function FileViewerModal({
               </p>
             </div>
           ) : isPdf ? (
-            <iframe
-              src={fileUrl}
-              title={fileName}
-              sandbox="allow-same-origin allow-forms"
-              className="w-full h-[65vh] rounded-md border border-border bg-white dark:bg-zinc-900"
-            />
+            <div className="w-full h-[65vh] flex flex-col rounded-md border border-border bg-white dark:bg-zinc-900 overflow-hidden shadow-xs">
+              <object
+                data={activeDisplayUrl}
+                type="application/pdf"
+                className="w-full h-full"
+              >
+                {/* Fallback if browser's native PDF plugin is disabled or unsupported */}
+                <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-3 bg-muted/20">
+                  <FileText className="h-12 w-12 text-red-500" />
+                  <h3 className="font-semibold text-foreground text-sm">{fileName}</h3>
+                  <p className="text-xs text-muted-foreground max-w-sm">
+                    Your browser could not preview this PDF inline. You can open it in a new tab or download it directly.
+                  </p>
+                  <div className="flex items-center gap-2 pt-2">
+                    <Button onClick={handleOpenNewTab} size="sm" className="gap-1.5 text-xs">
+                      <ExternalLink className="h-3.5 w-3.5" /> Open in New Tab
+                    </Button>
+                    <Button onClick={handleDownload} size="sm" variant="outline" className="gap-1.5 text-xs">
+                      <Download className="h-3.5 w-3.5" /> Download PDF
+                    </Button>
+                  </div>
+                </div>
+              </object>
+            </div>
           ) : isImage ? (
             <div className="flex items-center justify-center p-2 max-h-[65vh] w-full bg-slate-950/5 dark:bg-slate-950/40 rounded-lg">
               <img
-                src={fileUrl}
+                src={activeDisplayUrl}
                 alt={fileName}
                 className="max-h-[60vh] max-w-full object-contain rounded shadow-sm"
               />
@@ -142,7 +274,7 @@ export default function FileViewerModal({
           ) : isVideo ? (
             <div className="flex items-center justify-center p-2 max-h-[65vh] w-full bg-black rounded-lg">
               <video
-                src={fileUrl}
+                src={activeDisplayUrl}
                 controls
                 autoPlay
                 className="max-h-[60vh] max-w-full rounded shadow-sm"
@@ -155,14 +287,13 @@ export default function FileViewerModal({
               <p className="text-xs text-muted-foreground mt-1 mb-4">
                 This document cannot be previewed directly. Please download to view it.
               </p>
-              <a
-                href={safeDownloadUrl}
-                download={fileName}
+              <Button
+                onClick={handleDownload}
                 className="inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
               >
                 <Download className="h-3.5 w-3.5" />
                 Download Document
-              </a>
+              </Button>
             </div>
           )}
         </div>
