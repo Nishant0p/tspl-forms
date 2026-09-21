@@ -6,7 +6,14 @@ const nextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: '20mb',
-      allowedOrigins: ['forms.tsplgroup.in', 'localhost:3000'],
+      allowedOrigins: [
+        'forms.tsplgroup.in',
+        'forms.tsplgroup.in.',
+        'tsplgroup.in',
+        'tsplgroup.in.',
+        'localhost:3000',
+        '127.0.0.1:3000',
+      ],
     },
   },
   async headers() {
