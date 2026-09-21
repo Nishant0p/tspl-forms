@@ -238,13 +238,24 @@ type Row = { [key: string]: string } & {
 }
 
 async function SubMissionTable({ id }: { id: number }) {
-  const form = await GetFormSubmissions(Number(id));
+  let form: any = null;
+  try {
+    form = await GetFormSubmissions(Number(id));
+  } catch (err) {
+    console.error('[SubMissionTable] Error loading submissions:', err);
+    notFound();
+  }
 
   if (!form) {
     notFound();
   }
 
-  const formElements = JSON.parse(form.content) as FormElementInstance[];
+  let formElements: FormElementInstance[] = [];
+  try {
+    formElements = (typeof form.content === 'string' ? JSON.parse(form.content) : form.content) as FormElementInstance[];
+  } catch {
+    formElements = [];
+  }
 
   const columns: {
     id: string;
@@ -330,23 +341,28 @@ async function SubMissionTable({ id }: { id: number }) {
       default:
         break;
     }
-  })
+  });
 
-  const rows: Row[] = []
+  const rows: Row[] = [];
   const submissionsList = (form as any).FormSubmissions || [];
   submissionsList.forEach((submission: any) => {
-    const content = JSON.parse(submission.content);
+    let content: any = {};
+    try {
+      content = typeof submission.content === 'string' ? JSON.parse(submission.content) : (submission.content || {});
+    } catch {
+      content = {};
+    }
 
     const respondent = submission.employee
-      ? `${submission.employee.firstName} ${submission.employee.lastName}`
-      : 'Anonymous';
+      ? `${submission.employee.firstName} ${submission.employee.lastName}${submission.employee.employeeId ? ` (${submission.employee.employeeId})` : ''}`
+      : (submission.clerkUserId ? `User (${submission.clerkUserId})` : 'Anonymous');
 
     rows.push({
       ...content,
       submitted: submission.submittedAt || submission.createdAt,
       respondent,
-    })
-  })
+    });
+  });
 
   return (
     <>
@@ -377,25 +393,33 @@ async function SubMissionTable({ id }: { id: number }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map((row, index) => (
-            <TableRow key={index}>
-              <TableCell className='font-medium'>{row.respondent}</TableCell>
-              {columns.map((column) => (
-                <RowCell
-                  key={column.id}
-                  type={column.type}
-                  value={row[column.id]}
-                />
-              ))}
-              <TableCell className='text-right text-muted-foreground'>
-                {
-                  formatDistance(new Date(row.submitted), new Date(), {
-                    addSuffix: true
-                  })
-                }
+          {rows.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={columns.length + 2} className="h-32 text-center text-muted-foreground text-sm">
+                No responses submitted yet for this form.
               </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            rows.map((row, index) => (
+              <TableRow key={index}>
+                <TableCell className='font-medium'>{row.respondent}</TableCell>
+                {columns.map((column) => (
+                  <RowCell
+                    key={column.id}
+                    type={column.type}
+                    value={row[column.id]}
+                  />
+                ))}
+                <TableCell className='text-right text-muted-foreground'>
+                  {
+                    formatDistance(new Date(row.submitted), new Date(), {
+                      addSuffix: true
+                    })
+                  }
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
     </>

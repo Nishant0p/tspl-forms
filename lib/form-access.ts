@@ -243,30 +243,90 @@ export async function getAccessibleFormsWhere(user: any, employee: any, isSuper:
       : []),
   ];
 
-  // If Branch Admin (role === 'ADMIN') and has a branchId
-  if (employee?.role === 'ADMIN' && employee?.branchId) {
-    orConditions.push({ branchId: employee.branchId });
-    orConditions.push({ allowedBranches: { some: { branchId: employee.branchId } } });
+  const isAdmin = Boolean(employee?.role === 'ADMIN' || user?.role === 'ADMIN');
 
-    // Include forms created by any active employee belonging to this branch
+  if (isAdmin) {
+    let resolvedAdminDbId = empDbId;
+    let resolvedBranchId = employee?.branchId ?? user?.branchId ?? null;
+
+    if (!resolvedAdminDbId || !resolvedBranchId) {
+      try {
+        const adminEmp = await prisma.employee.findFirst({
+          where: {
+            OR: [
+              ...(user?.id
+                ? [
+                    { clerkUserId: { equals: String(user.id), mode: 'insensitive' as const } },
+                    { employeeId: { equals: String(user.id), mode: 'insensitive' as const } },
+                  ]
+                : []),
+              ...(user?.email ? [{ email: { equals: String(user.email).toLowerCase(), mode: 'insensitive' as const } }] : []),
+              ...(employee?.employeeId ? [{ employeeId: { equals: String(employee.employeeId), mode: 'insensitive' as const } }] : []),
+              ...(typeof employee?.id === 'number' && employee.id < 1000000 ? [{ id: employee.id }] : []),
+            ],
+          },
+          select: { id: true, branchId: true },
+        });
+        if (adminEmp) {
+          if (!resolvedAdminDbId) resolvedAdminDbId = adminEmp.id;
+          if (!resolvedBranchId) resolvedBranchId = adminEmp.branchId;
+        }
+      } catch (e) {
+        console.warn('Failed to resolve admin employee for forms where:', e);
+      }
+    }
+
+    if (resolvedBranchId) {
+      orConditions.push({ branchId: resolvedBranchId });
+      orConditions.push({ allowedBranches: { some: { branchId: resolvedBranchId } } });
+    }
+
+    // Include forms created by all team members of this Admin:
+    // 1. Employees in the same branch
+    // 2. Employees created by this Admin (createdById === resolvedAdminDbId)
+    // 3. Employees managed by this Admin (managerId === resolvedAdminDbId)
     try {
-      const branchEmployees = await prisma.employee.findMany({
-        where: { branchId: employee.branchId, status: 'ACTIVE' },
-        select: { id: true, clerkUserId: true, employeeId: true, email: true },
-      });
+      const teamMemberConditions: any[] = [];
+      if (resolvedBranchId) {
+        teamMemberConditions.push({ branchId: resolvedBranchId });
+      }
+      if (resolvedAdminDbId) {
+        teamMemberConditions.push({ createdById: resolvedAdminDbId });
+        teamMemberConditions.push({ managerId: resolvedAdminDbId });
+      }
 
-      const branchMemberIds = branchEmployees.flatMap((e) => [
-        e.clerkUserId,
-        e.employeeId,
-        e.email ? e.email.toLowerCase() : null,
-        String(e.id),
-      ]).filter(Boolean) as string[];
+      if (teamMemberConditions.length > 0) {
+        const teamMembers = await prisma.employee.findMany({
+          where: {
+            OR: teamMemberConditions,
+            role: { notIn: ['SUPER_ADMIN'] },
+          },
+          select: { id: true, clerkUserId: true, employeeId: true, email: true },
+        });
 
-      if (branchMemberIds.length > 0) {
-        orConditions.push({ userId: { in: branchMemberIds } });
+        const teamMemberIds = new Set<string>();
+        for (const m of teamMembers) {
+          if (m.clerkUserId) teamMemberIds.add(m.clerkUserId);
+          if (m.employeeId) {
+            teamMemberIds.add(m.employeeId);
+            teamMemberIds.add(m.employeeId.toLowerCase());
+            teamMemberIds.add(m.employeeId.toUpperCase());
+          }
+          if (m.email) {
+            teamMemberIds.add(m.email);
+            teamMemberIds.add(m.email.toLowerCase());
+          }
+          if (m.id) {
+            teamMemberIds.add(String(m.id));
+          }
+        }
+
+        if (teamMemberIds.size > 0) {
+          orConditions.push({ userId: { in: Array.from(teamMemberIds) } });
+        }
       }
     } catch (err) {
-      console.warn('Failed to resolve branch employees for form access query:', err);
+      console.warn('Failed to resolve branch/team employees for form access query:', err);
     }
   }
 
@@ -307,36 +367,86 @@ export async function getFormUserPermissions(
     ? Boolean((form as any).formViewerAccesses?.some((va: any) => va.employeeId === empDbId))
     : false;
 
+  const isAdmin = Boolean(employee?.role === 'ADMIN' || user?.role === 'ADMIN');
   let isBranchAdmin = false;
-  if (employee?.role === 'ADMIN' && employee?.branchId) {
-    if (form.branchId === employee.branchId) {
+
+  if (isAdmin) {
+    let resolvedAdminDbId = empDbId;
+    let resolvedBranchId = employee?.branchId ?? user?.branchId ?? null;
+
+    if (!resolvedAdminDbId || !resolvedBranchId) {
+      try {
+        const adminEmp = await prisma.employee.findFirst({
+          where: {
+            OR: [
+              ...(user?.id
+                ? [
+                    { clerkUserId: { equals: String(user.id), mode: 'insensitive' as const } },
+                    { employeeId: { equals: String(user.id), mode: 'insensitive' as const } },
+                  ]
+                : []),
+              ...(user?.email ? [{ email: { equals: String(user.email).toLowerCase(), mode: 'insensitive' as const } }] : []),
+              ...(employee?.employeeId ? [{ employeeId: { equals: String(employee.employeeId), mode: 'insensitive' as const } }] : []),
+              ...(typeof employee?.id === 'number' && employee.id < 1000000 ? [{ id: employee.id }] : []),
+            ],
+          },
+          select: { id: true, branchId: true },
+        });
+        if (adminEmp) {
+          if (!resolvedAdminDbId) resolvedAdminDbId = adminEmp.id;
+          if (!resolvedBranchId) resolvedBranchId = adminEmp.branchId;
+        }
+      } catch (e) {
+        console.warn('Failed to lookup admin employee for permissions:', e);
+      }
+    }
+
+    if (isCreator) {
+      isBranchAdmin = true;
+    } else if (resolvedBranchId && form.branchId === resolvedBranchId) {
       isBranchAdmin = true;
     } else if (
+      resolvedBranchId &&
       Array.isArray(form.allowedBranches) &&
-      form.allowedBranches.some((ab: any) => ab.branchId === employee.branchId)
+      form.allowedBranches.some((ab: any) => ab.branchId === resolvedBranchId)
     ) {
       isBranchAdmin = true;
-    } else if (isCreator) {
-      isBranchAdmin = true;
     } else {
-      // Check if creator belongs to this branch
+      // Check if creator belongs to this admin's branch or team (created by or managed by this admin)
       try {
+        const formUserIdStr = String(form.userId || '').trim();
+        const formUserIdNum = Number(formUserIdStr);
         const creatorEmp = await prisma.employee.findFirst({
           where: {
             OR: [
-              { clerkUserId: form.userId },
-              { employeeId: form.userId },
-              { email: form.userId?.toLowerCase() },
-              ...(Number(form.userId) ? [{ id: Number(form.userId) }] : []),
+              { clerkUserId: { equals: formUserIdStr, mode: 'insensitive' as const } },
+              { employeeId: { equals: formUserIdStr, mode: 'insensitive' as const } },
+              { email: { equals: formUserIdStr.toLowerCase(), mode: 'insensitive' as const } },
+              ...(!isNaN(formUserIdNum) && formUserIdNum > 0 && formUserIdNum < 1000000 ? [{ id: formUserIdNum }] : []),
             ],
           },
-          select: { branchId: true },
+          select: {
+            id: true,
+            branchId: true,
+            createdById: true,
+            managerId: true,
+            role: true,
+          },
         });
-        if (creatorEmp?.branchId === employee.branchId) {
-          isBranchAdmin = true;
+
+        if (creatorEmp && creatorEmp.role !== 'SUPER_ADMIN') {
+          if (resolvedBranchId && creatorEmp.branchId === resolvedBranchId) {
+            isBranchAdmin = true;
+          } else if (resolvedAdminDbId && creatorEmp.createdById === resolvedAdminDbId) {
+            isBranchAdmin = true;
+          } else if (resolvedAdminDbId && creatorEmp.managerId === resolvedAdminDbId) {
+            isBranchAdmin = true;
+          } else if (!resolvedBranchId && !creatorEmp.branchId) {
+            isBranchAdmin = true;
+          }
         }
       } catch (err) {
-        console.warn('Failed to verify creator branch for form permission:', err);
+        console.warn('Failed to verify creator branch/team for form permission:', err);
       }
     }
   }
