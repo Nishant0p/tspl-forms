@@ -355,9 +355,9 @@ export default function FormSubmitComponent({ formUrl, formName, formDescription
       </div>
 
       <div key={renderKey} className="relative z-10 flex w-full max-w-[640px] flex-col gap-4 py-2 sm:py-4">
-        {/* Top Banner Card (Above Form Header) - 100% width on all phones */}
+        {/* Top Banner Card (Above Form Header) */}
         {bannerElement && (
-          <div className="w-full overflow-hidden rounded-xl shadow-md border border-border/60">
+          <div className="w-full flex justify-center">
             {(() => {
               const BannerComponent = FormElements.BannerField.formComponent;
               return <BannerComponent elementInstance={bannerElement} />;

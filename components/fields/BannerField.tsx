@@ -28,11 +28,21 @@ import { Button } from '../ui/button';
 
 const type: ElementsType = 'BannerField';
 
+function formatDimension(val?: string, defaultVal = 'auto') {
+  if (!val || !val.trim()) return defaultVal;
+  const trimmed = val.trim();
+  if (/^\d+(\.\d+)?$/.test(trimmed)) {
+    return `${trimmed}px`;
+  }
+  return trimmed;
+}
+
 const extraAttributes = {
   imageUrl: '',
   title: '',
   subtitle: '',
   height: '200px',
+  width: '100%',
   textAlign: 'center' as 'left' | 'center' | 'right',
   overlay: false,
   preset: 'gradient-tspl',
@@ -43,6 +53,7 @@ const propertiesSchema = z.object({
   title: z.string().max(100).optional(),
   subtitle: z.string().max(250).optional(),
   height: z.string().default('200px'),
+  width: z.string().default('100%'),
   textAlign: z.enum(['left', 'center', 'right']).default('center'),
   overlay: z.boolean().default(false),
   preset: z.string().default('gradient-tspl'),
@@ -106,19 +117,24 @@ function BannerDisplay({
   extraAttrs: typeof extraAttributes;
   isDesigner?: boolean;
 }) {
-  const { imageUrl, title, subtitle, height, textAlign, overlay, preset } = extraAttrs;
+  const { imageUrl, title, subtitle, height, width, textAlign, overlay, preset } = extraAttrs;
 
   const isPreset = preset && preset !== 'custom' && PRESETS[preset];
   const bgStyle = isPreset
     ? { backgroundImage: PRESETS[preset].bg }
     : { backgroundImage: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #ffffff 50.5%, #ffffff 51.5%, #ea580c 52%, #f97316 100%)' };
 
+  const resolvedHeight = formatDimension(height, '200px');
+  const resolvedWidth = formatDimension(width, '100%');
+
   return (
     <div
-      className="relative flex w-full flex-col justify-end overflow-hidden rounded-xl shadow-md transition-all border border-border/50 min-h-[140px] sm:min-h-[180px]"
+      className="relative flex flex-col justify-end overflow-hidden rounded-xl shadow-md transition-all border border-border/50 mx-auto"
       style={{
         ...bgStyle,
-        height: height || '200px',
+        height: resolvedHeight,
+        width: resolvedWidth,
+        maxWidth: '100%',
       }}
     >
       {/* Explicit img element for fail-safe data URL & Web image display */}
@@ -200,6 +216,7 @@ function PropertiesComponent({
       title: element.extraAttributes.title || '',
       subtitle: element.extraAttributes.subtitle || '',
       height: element.extraAttributes.height || '200px',
+      width: element.extraAttributes.width || '100%',
       textAlign: (element.extraAttributes.textAlign as 'left' | 'center' | 'right') || 'center',
       overlay: element.extraAttributes.overlay ?? false,
       preset: element.extraAttributes.preset || 'custom',
@@ -209,6 +226,8 @@ function PropertiesComponent({
   useEffect(() => {
     form.reset({
       ...element.extraAttributes,
+      height: element.extraAttributes.height || '200px',
+      width: element.extraAttributes.width || '100%',
       textAlign: (element.extraAttributes.textAlign as 'left' | 'center' | 'right') || 'center',
     });
   }, [element, form]);
@@ -360,37 +379,71 @@ function PropertiesComponent({
           )}
         />
 
-        {/* Height control */}
-        <FormField
-          control={form.control}
-          name="height"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Banner Height</FormLabel>
-              <Select
-                value={field.value}
-                onValueChange={(val) => {
-                  field.onChange(val);
-                  form.handleSubmit(applyChanges)();
-                }}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="140px">Compact (140px)</SelectItem>
-                  <SelectItem value="200px">Medium (200px)</SelectItem>
-                  <SelectItem value="260px">Large (260px)</SelectItem>
-                  <SelectItem value="320px">Hero (320px)</SelectItem>
-                  <SelectItem value="50vh">Half Screen (50vh)</SelectItem>
-                  <SelectItem value="80vh">Full Screen (80vh)</SelectItem>
-                </SelectContent>
-              </Select>
-            </FormItem>
-          )}
-        />
+        {/* Height & Width Dimension Controls */}
+        <div className="space-y-3 rounded-lg border border-border p-3.5 bg-muted/20">
+          <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Banner Dimensions
+          </FormLabel>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField
+              control={form.control}
+              name="height"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-medium">Height</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="200px"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        applyChanges({
+                          ...form.getValues(),
+                          height: e.target.value,
+                        });
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') e.currentTarget.blur();
+                      }}
+                    />
+                  </FormControl>
+                  <FormDescription className="text-[10px] text-muted-foreground">
+                    e.g. 200px, 250, 40vh
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="width"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-medium">Width</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="100%"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        applyChanges({
+                          ...form.getValues(),
+                          width: e.target.value,
+                        });
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') e.currentTarget.blur();
+                      }}
+                    />
+                  </FormControl>
+                  <FormDescription className="text-[10px] text-muted-foreground">
+                    e.g. 100%, 600px, auto
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
 
         {/* Optional Title & Subtitle */}
         <div className="space-y-3 rounded-lg border border-border p-3">

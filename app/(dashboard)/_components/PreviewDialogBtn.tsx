@@ -105,7 +105,7 @@ export default function PreviewDialogBtn({
             
             {/* Top Banner Card (Above Form Header) */}
             {bannerElement && (
-              <div className="w-full overflow-hidden rounded-xl shadow-md border border-border/60">
+              <div className="w-full flex justify-center">
                 {(() => {
                   const BannerComponent = FormElements.BannerField.formComponent;
                   return <BannerComponent elementInstance={bannerElement} />;

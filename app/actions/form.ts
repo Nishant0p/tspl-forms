@@ -900,7 +900,7 @@ export async function GetFormSubmissionsByShareUrl(shareUrl: string) {
 
   const cleanShareUrl = decodeURIComponent(shareUrl).trim().replace(/^\/+/, '').replace(/\/+$/, '');
 
-  // Check if token is a randomized response token (12 to 15 chars)
+  // 1. Check if token is a randomized response token (12 to 15 chars)
   let formIdFromToken: number | null = null;
   if (cleanShareUrl.length >= 12 && cleanShareUrl.length <= 15) {
     try {
@@ -910,63 +910,48 @@ export async function GetFormSubmissionsByShareUrl(shareUrl: string) {
     }
   }
 
-  let form = null;
+  const numericId = Number(cleanShareUrl);
+  const isNumeric = !isNaN(numericId) && Number.isInteger(numericId) && String(numericId) === cleanShareUrl;
 
+  const orConditions: any[] = [];
   if (formIdFromToken) {
-    form = await prisma.form.findUnique({
-      where: {
-        id: formIdFromToken,
-      },
-      include: {
-        FormSubmissions: {
-          include: {
-            employee: {
-              include: {
-                department: true,
-                branch: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        },
-      },
-    });
+    orConditions.push({ id: formIdFromToken });
   }
+  if (isNumeric) {
+    orConditions.push({ id: numericId });
+  }
+  orConditions.push({ shareUrl: cleanShareUrl });
 
-  // Fallback to lookup by shareUrl if not resolved by token or for legacy shareUrls
-  if (!form) {
-    form = await prisma.form.findUnique({
-      where: {
-        shareUrl: cleanShareUrl,
-      },
-      include: {
-        FormSubmissions: {
-          include: {
-            employee: {
-              include: {
-                department: true,
-                branch: true,
-              },
+  const form = await prisma.form.findFirst({
+    where: {
+      OR: orConditions,
+    },
+    include: {
+      FormSubmissions: {
+        include: {
+          employee: {
+            include: {
+              department: true,
+              branch: true,
             },
           },
-          orderBy: {
-            createdAt: 'desc',
-          },
+        },
+        orderBy: {
+          createdAt: 'desc',
         },
       },
-    });
-  }
+    },
+  });
 
   if (!form) {
     throw new Error('Form not found');
   }
 
-  // Enforce VIEW permission (Creator, Branch Admin, Super Admin, Assigned Collaborator)
-  await requireFormPermission(form.id, 'VIEW');
-
-  return form;
+  // Public responses link: anyone with the shareable responses link can view responses directly without signing in
+  return {
+    ...form,
+    FormSubmissions: form.FormSubmissions || [],
+  };
 }
 
 export async function DeleteForm(id: number) {
