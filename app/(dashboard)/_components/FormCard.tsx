@@ -259,30 +259,33 @@ export default function FormCard({ form, isAdmin = false }: { form: any; isAdmin
         <FormMiniPreview contentJson={form.content} formName={form.name} />
 
         <CardHeader className="p-3.5 sm:p-4 pb-1 sm:pb-2">
-          <CardTitle className="flex items-start justify-between gap-2">
-            <span className="truncate text-base sm:text-lg font-bold" title={form.name}>{form.name}</span>
-            <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-              {form.branch && (
-                <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 flex items-center gap-1">
-                  <GitBranch className="h-3 w-3" />
-                  {form.branch.name}
-                </Badge>
-              )}
-              {isAssignedViewer && (
-                <Badge variant="outline" className="text-[10px] bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30">
-                  Assigned Viewer
-                </Badge>
-              )}
-              {isAssignedEditor && (
-                <Badge variant="outline" className="text-[10px] bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/30">
-                  Assigned Editor
-                </Badge>
-              )}
-              {form.published && <Badge className="text-zinc-50 text-[10px] px-2 py-0.5">Published</Badge>}
-              {!form.published && <Badge variant="destructive" className="text-[10px] px-2 py-0.5">Draft</Badge>}
-            </div>
+          <CardTitle className="text-base sm:text-lg font-bold tracking-tight">
+            <span className="truncate block" title={form.name}>{form.name}</span>
           </CardTitle>
-          <CardDescription className="flex items-center justify-between text-xs text-muted-foreground pt-1 gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap pt-1">
+            {form.published ? (
+              <Badge className="text-zinc-50 text-[10px] px-2 py-0.5">Published</Badge>
+            ) : (
+              <Badge variant="destructive" className="text-[10px] px-2 py-0.5">Draft</Badge>
+            )}
+            {form.branch && (
+              <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 flex items-center gap-1">
+                <GitBranch className="h-3 w-3" />
+                {form.branch.name}
+              </Badge>
+            )}
+            {isAssignedViewer && (
+              <Badge variant="outline" className="text-[10px] bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30">
+                Assigned Viewer
+              </Badge>
+            )}
+            {isAssignedEditor && (
+              <Badge variant="outline" className="text-[10px] bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/30">
+                Assigned Editor
+              </Badge>
+            )}
+          </div>
+          <CardDescription className="flex items-center justify-between text-xs text-muted-foreground pt-1.5 gap-2">
             <span className="truncate">
               {formatDistance(form.createdAt, new Date(), {
                 addSuffix: true,

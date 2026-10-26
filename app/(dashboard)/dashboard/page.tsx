@@ -48,9 +48,9 @@ export default async function DashboardPage() {
       <Separator className="my-2 sm:my-4" />
 
       {/* Forms Grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Suspense
-          fallback={[...Array(4)].map((_, i) => (
+          fallback={[...Array(6)].map((_, i) => (
             <FormCardSkeleton key={i} />
           ))}>
           <FormCards />
