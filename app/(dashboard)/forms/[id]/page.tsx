@@ -27,6 +27,7 @@ import FormViewerManager from '../../_components/FormViewerManager';
 import { getCurrentEmployee } from '@/lib/auth';
 import FileViewerModal from '@/components/FileViewerModal';
 import DeleteFormBtn from '../../_components/DeleteFormBtn';
+import CopyFormBtn from '../../_components/CopyFormBtn';
 import EditableFormName from '../../_components/EditableFormName';
 
 import {
@@ -120,6 +121,18 @@ export default async function FormDetailsPage({
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
                   <p>Edit Form</p>
+                </TooltipContent>
+              </Tooltip>
+
+              {/* Make a Copy */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <CopyFormBtn formId={form.id} formName={form.name} iconOnly />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>Make a Copy</p>
                 </TooltipContent>
               </Tooltip>
 

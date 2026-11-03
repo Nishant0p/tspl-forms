@@ -8,6 +8,7 @@ import { FormElementInstance } from '../(dashboard)/_components/FormElements';
 import { canAccessForm, FormAccessBlockedError, FormAccessRecord, getFormAccessErrorMessage, getAccessibleFormsWhere, getFormUserPermissions, FormUserPermissions } from '@/lib/form-access';
 import { decodeResponseToken } from '@/lib/response-token';
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 import { sendTsplWebhookNotification } from '@/lib/webhook';
 
 class UserNotFoundErr extends Error {}
@@ -992,4 +993,82 @@ export async function deleteElementInstance(id: number, elementId: string) {
       content: JSON.stringify(newContent),
     },
   });
+}
+
+export async function DuplicateForm(formId: number, customName?: string) {
+  const numId = Number(formId);
+  if (!formId || isNaN(numId) || numId <= 0) {
+    throw new Error('Valid Form ID is required');
+  }
+
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new UserNotFoundErr();
+  }
+
+  const { form: originalForm } = await requireFormPermission(numId, 'VIEW');
+
+  const baseName = customName?.trim() || `Copy of ${originalForm.name}`;
+  let uniqueName = baseName;
+  let count = 1;
+  while (true) {
+    const existing = await prisma.form.findFirst({
+      where: {
+        name: uniqueName,
+      },
+    });
+    if (!existing) break;
+    uniqueName = `${baseName} (${count})`;
+    count++;
+  }
+
+  let customShareUrl = generateCustomSlug(uniqueName);
+  while (true) {
+    const existingShare = await prisma.form.findUnique({
+      where: { shareUrl: customShareUrl },
+    });
+    if (!existingShare) break;
+    customShareUrl = generateCustomSlug(uniqueName);
+  }
+
+  const employee = await getCurrentEmployee();
+  const selectedBranchId = originalForm.branchId || employee?.branchId || null;
+
+  // Copy elements only (content), start with 0 visits, 0 submissions, and DRAFT status
+  const duplicatedForm = await (prisma as any).form.create({
+    data: {
+      userId: user.id,
+      name: uniqueName,
+      description: originalForm.description || '',
+      content: originalForm.content || '[]',
+      accessMode: 'PUBLIC',
+      loginRequired: false,
+      oneResponsePerUser: false,
+      status: 'DRAFT',
+      published: false,
+      shareUrl: customShareUrl,
+      branchId: selectedBranchId,
+      allowedBranches: selectedBranchId
+        ? {
+            create: {
+              branchId: selectedBranchId,
+            },
+          }
+        : undefined,
+    },
+  });
+
+  if (!duplicatedForm) {
+    throw new Error('Failed to copy form');
+  }
+
+  revalidatePath('/', 'layout');
+  revalidatePath('/dashboard');
+  revalidatePath(`/forms/${duplicatedForm.id}`);
+  revalidatePath(`/builder/${duplicatedForm.id}`);
+
+  return {
+    id: duplicatedForm.id,
+    name: duplicatedForm.name,
+  };
 }

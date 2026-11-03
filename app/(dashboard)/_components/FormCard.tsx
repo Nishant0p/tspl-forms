@@ -12,10 +12,11 @@ import {
 } from '@/components/ui/card';
 import { Form } from '@prisma/client';
 import { formatDistance } from 'date-fns';
-import { ArrowRight, Edit, Eye, FileText, GitBranch, Layout, Star, StickyNote, Users, Trash2 } from 'lucide-react';
+import { ArrowRight, Copy, Edit, Eye, FileText, GitBranch, Layout, Star, StickyNote, Users, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
+import CopyFormBtn from './CopyFormBtn';
 import DeleteFormBtn from './DeleteFormBtn';
 import FormCollaboratorsModal from '@/components/FormCollaboratorsModal';
 
@@ -250,7 +251,7 @@ export default function FormCard({ form, isAdmin = false }: { form: any; isAdmin
   const canManageCollaborators = form.canManageCollaborators ?? isAdmin;
   const isAssignedViewer = Boolean(form.isAssignedViewer);
   const isAssignedEditor = Boolean(form.isAssignedEditor);
-  const hasActions = canManageCollaborators || canDelete;
+  const hasActions = true;
 
   return (
     <Card className="min-h-[260px] flex flex-col justify-between overflow-hidden group hover:shadow-md transition-shadow rounded-xl">
@@ -350,7 +351,20 @@ export default function FormCard({ form, isAdmin = false }: { form: any; isAdmin
                     created by <span className="font-semibold text-foreground/90">{userName}</span>
                   </span>
                 </div>
-                <div className={cn("grid gap-2 w-full", canManageCollaborators && canDelete ? "grid-cols-2" : "grid-cols-1")}>
+                <div className="flex items-center gap-1.5 w-full">
+                  <CopyFormBtn
+                    formId={form.id}
+                    formName={form.name}
+                    trigger={
+                      <Button
+                        variant="outline"
+                        className="flex-1 min-h-[38px] px-2 gap-1.5 text-xs font-semibold border-amber-500/30 text-amber-700 hover:border-amber-500 hover:bg-amber-500/10 dark:text-amber-400"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                        <span>Copy</span>
+                      </Button>
+                    }
+                  />
                   {canManageCollaborators && (
                     <FormCollaboratorsModal
                       formId={form.id}
@@ -359,10 +373,10 @@ export default function FormCard({ form, isAdmin = false }: { form: any; isAdmin
                       trigger={
                         <Button
                           variant="outline"
-                          className="w-full min-h-[38px] gap-1.5 text-xs font-semibold border-blue-500/30 text-blue-600 hover:border-blue-500 hover:bg-blue-500/10 dark:text-blue-400"
+                          className="flex-1 min-h-[38px] px-2 gap-1.5 text-xs font-semibold border-blue-500/30 text-blue-600 hover:border-blue-500 hover:bg-blue-500/10 dark:text-blue-400"
                         >
-                          <Users className="h-4 w-4" />
-                          <span>Collaborators</span>
+                          <Users className="h-3.5 w-3.5" />
+                          <span className="truncate">Collaborators</span>
                         </Button>
                       }
                     />
@@ -374,10 +388,14 @@ export default function FormCard({ form, isAdmin = false }: { form: any; isAdmin
                       trigger={
                         <Button
                           variant="outline"
-                          className="w-full min-h-[38px] gap-1.5 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-900/50 dark:hover:bg-rose-950/50"
+                          className={cn(
+                            "min-h-[38px] px-2.5 gap-1.5 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-900/50 dark:hover:bg-rose-950/50",
+                            canManageCollaborators ? "w-auto" : "flex-1"
+                          )}
+                          title="Delete Form"
                         >
-                          <Trash2 className="h-4 w-4" />
-                          <span>Delete</span>
+                          <Trash2 className="h-3.5 w-3.5" />
+                          {!canManageCollaborators && <span>Delete</span>}
                         </Button>
                       }
                     />
@@ -419,7 +437,20 @@ export default function FormCard({ form, isAdmin = false }: { form: any; isAdmin
                 </div>
 
                 {/* Bottom buttons */}
-                <div className={cn("grid gap-2 w-full", canManageCollaborators && canDelete ? "grid-cols-2" : "grid-cols-1")}>
+                <div className="flex items-center gap-1.5 w-full">
+                  <CopyFormBtn
+                    formId={form.id}
+                    formName={form.name}
+                    trigger={
+                      <Button
+                        variant="outline"
+                        className="flex-1 min-h-[38px] px-2 gap-1.5 text-xs font-semibold border-amber-500/30 text-amber-700 hover:border-amber-500 hover:bg-amber-500/10 dark:text-amber-400"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                        <span>Copy</span>
+                      </Button>
+                    }
+                  />
                   {canManageCollaborators && (
                     <FormCollaboratorsModal
                       formId={form.id}
@@ -428,10 +459,10 @@ export default function FormCard({ form, isAdmin = false }: { form: any; isAdmin
                       trigger={
                         <Button
                           variant="outline"
-                          className="w-full min-h-[38px] gap-1.5 text-xs font-semibold border-blue-500/30 text-blue-600 hover:border-blue-500 hover:bg-blue-500/10 dark:text-blue-400"
+                          className="flex-1 min-h-[38px] px-2 gap-1.5 text-xs font-semibold border-blue-500/30 text-blue-600 hover:border-blue-500 hover:bg-blue-500/10 dark:text-blue-400"
                         >
-                          <Users className="h-4 w-4" />
-                          <span>Collaborators</span>
+                          <Users className="h-3.5 w-3.5" />
+                          <span className="truncate">Collaborators</span>
                         </Button>
                       }
                     />
@@ -443,10 +474,14 @@ export default function FormCard({ form, isAdmin = false }: { form: any; isAdmin
                       trigger={
                         <Button
                           variant="outline"
-                          className="w-full min-h-[38px] gap-1.5 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-900/50 dark:hover:bg-rose-950/50"
+                          className={cn(
+                            "min-h-[38px] px-2.5 gap-1.5 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-900/50 dark:hover:bg-rose-950/50",
+                            canManageCollaborators ? "w-auto" : "flex-1"
+                          )}
+                          title="Delete Form"
                         >
-                          <Trash2 className="h-4 w-4" />
-                          <span>Delete</span>
+                          <Trash2 className="h-3.5 w-3.5" />
+                          {!canManageCollaborators && <span>Delete</span>}
                         </Button>
                       }
                     />
