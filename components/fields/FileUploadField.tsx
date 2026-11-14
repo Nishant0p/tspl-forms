@@ -13,6 +13,7 @@ import { Input } from '../ui/input';
 import { cn } from '@/lib/utils';
 
 import FileViewerModal from '../FileViewerModal';
+import CompressFileModal from '../CompressFileModal';
 import { toast } from '../ui/use-toast';
 
 const type: ElementsType = 'FileUploadField';
@@ -21,7 +22,7 @@ const extraAttributes = {
   helperText: '',
   required: false,
   accept: '*',
-  maxFileSizeMB: 50,
+  maxFileSizeMB: 2,
 };
 
 const propertiesSchema = z.object({
@@ -29,7 +30,7 @@ const propertiesSchema = z.object({
   helperText: z.string().optional(),
   required: z.boolean().default(false),
   accept: z.string().max(100),
-  maxFileSizeMB: z.coerce.number().min(1).max(100).default(50),
+  maxFileSizeMB: z.coerce.number().min(1).max(100).default(2),
 });
 
 export const FileUploadFieldFormElement: FormElement = {
@@ -58,7 +59,7 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
       helperText: element.extraAttributes.helperText,
       required: element.extraAttributes.required,
       accept: element.extraAttributes.accept,
-      maxFileSizeMB: element.extraAttributes.maxFileSizeMB ?? 50,
+      maxFileSizeMB: (!element.extraAttributes.maxFileSizeMB || element.extraAttributes.maxFileSizeMB === 50) ? 2 : element.extraAttributes.maxFileSizeMB,
     },
   });
 
@@ -68,7 +69,7 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
       helperText: element.extraAttributes.helperText,
       required: element.extraAttributes.required,
       accept: element.extraAttributes.accept,
-      maxFileSizeMB: element.extraAttributes.maxFileSizeMB ?? 50,
+      maxFileSizeMB: (!element.extraAttributes.maxFileSizeMB || element.extraAttributes.maxFileSizeMB === 50) ? 2 : element.extraAttributes.maxFileSizeMB,
     });
   }, [element, form]);
 
@@ -152,7 +153,7 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
                 />
               </FormControl>
               <FormDescription className="text-xs">
-                Allowed file size up to 100 MB (Default: 50 MB)
+                Allowed file size up to 100 MB (Default: 2 MB)
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -165,7 +166,9 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
 
 function DesignerComponent({ elementInstance }: { elementInstance: FormElementInstance }) {
   const element = elementInstance as CustomInstance;
-  const { label, helperText, required, accept, maxFileSizeMB = 50 } = element.extraAttributes;
+  const rawMaxMB = element.extraAttributes.maxFileSizeMB;
+  const maxFileSizeMB = (!rawMaxMB || rawMaxMB === 50) ? 2 : rawMaxMB;
+  const { label, helperText, required, accept } = element.extraAttributes;
   return (
     <div className="flex w-full flex-col gap-2">
       <Label className="mr-2 text-foreground font-semibold text-sm">
@@ -208,6 +211,9 @@ function FormComponent({
   const element = elementInstance as CustomInstance;
   const [value, setValue] = useState(defaultValues || '');
   const [error, setError] = useState(false);
+  const [showCompressModal, setShowCompressModal] = useState(false);
+  const [rejectedFileSize, setRejectedFileSize] = useState<string>('');
+  const [rejectedFileName, setRejectedFileName] = useState<string>('');
   const [fileUrl, setFileUrl] = useState(() => {
     if (!defaultValues) return '';
     try {
@@ -229,15 +235,17 @@ function FormComponent({
     setError(isInvalid === true);
   }, [isInvalid]);
 
+  const rawMaxMB = element.extraAttributes.maxFileSizeMB;
+  const maxFileSizeMB = (!rawMaxMB || rawMaxMB === 50) ? 2 : rawMaxMB;
+
   const {
     label,
     helperText,
     required,
     accept,
-    maxFileSizeMB = 50,
   } = element.extraAttributes;
 
-  const maxBytes = (maxFileSizeMB || 50) * 1024 * 1024;
+  const maxBytes = (maxFileSizeMB || 2) * 1024 * 1024;
 
   return (
     <div className="flex w-full flex-col gap-2">
@@ -253,9 +261,13 @@ function FormComponent({
           if (!file) return;
 
           if (file.size > maxBytes) {
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            setRejectedFileSize(sizeMB);
+            setRejectedFileName(file.name);
+            setShowCompressModal(true);
             toast({
               title: 'File too large',
-              description: `Maximum file size allowed is ${maxFileSizeMB} MB. Please upload a smaller file.`,
+              description: `Selected file is ${sizeMB} MB. Maximum allowed is 2 MB. Please compress the file.`,
               variant: 'destructive',
             });
             e.target.value = '';
@@ -292,6 +304,13 @@ function FormComponent({
           <FileViewerModal fileUrl={fileUrl} fileName={fileName} />
         </div>
       )}
+      <CompressFileModal
+        open={showCompressModal}
+        onOpenChange={setShowCompressModal}
+        fileType={accept && accept.includes('pdf') ? 'pdf' : 'file'}
+        actualSizeMB={rejectedFileSize}
+        fileName={rejectedFileName}
+      />
     </div>
   );
 }

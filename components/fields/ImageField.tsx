@@ -43,19 +43,35 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
 function DesignerComponent({ elementInstance }: { elementInstance: FormElementInstance }) {
   const element = elementInstance as CustomInstance;
   const { label, helperText, required } = element.extraAttributes;
-  return <div className="flex w-full flex-col gap-2"><Label className="mr-2 text-foreground">{label}{required && <span className="ml-2 text-red-500">*</span>}</Label><div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">Image upload / image response</div></div>;
+  return (
+    <div className="flex w-full flex-col gap-2">
+      <Label className="mr-2 text-foreground font-semibold text-sm">
+        {label}
+        {required && <span className="ml-2 text-red-500 font-bold">*</span>}
+      </Label>
+      <div className="rounded-md border border-dashed p-3.5 text-xs text-muted-foreground flex flex-col gap-1 bg-muted/20">
+        <div>Accepts: <span className="font-mono text-foreground font-medium">Images (PNG, JPG, WEBP)</span></div>
+        <div>Max upload limit: <span className="font-semibold text-foreground">2 MB</span></div>
+      </div>
+      {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
+    </div>
+  );
 }
 
 function toFilePayload(file: File, dataUrl: string) { return JSON.stringify({ name: file.name, type: file.type, size: file.size, dataUrl }); }
 function readFileAsDataUrl(file: File) { return new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(reader.error); reader.readAsDataURL(file); }); }
 
 import FileViewerModal from '../FileViewerModal';
+import CompressFileModal from '../CompressFileModal';
 import { toast } from '../ui/use-toast';
 
 function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValues }: { elementInstance: FormElementInstance; submitFunction?: SubmitFunction; isInvalid?: boolean; defaultValues?: string; }) {
   const element = elementInstance as CustomInstance;
   const [value, setValue] = useState(defaultValues || '');
   const [error, setError] = useState(false);
+  const [showCompressModal, setShowCompressModal] = useState(false);
+  const [rejectedFileSize, setRejectedFileSize] = useState<string>('');
+  const [rejectedFileName, setRejectedFileName] = useState<string>('');
   const [preview, setPreview] = useState(() => {
     if (!defaultValues) return '';
     try { return JSON.parse(defaultValues).dataUrl || ''; } catch { return defaultValues; }
@@ -75,10 +91,14 @@ function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValu
           const file = e.target.files?.[0];
           if (!file) return;
 
-          if (file.size > 50 * 1024 * 1024) {
+          if (file.size > 2 * 1024 * 1024) {
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            setRejectedFileSize(sizeMB);
+            setRejectedFileName(file.name);
+            setShowCompressModal(true);
             toast({
               title: 'Image too large',
-              description: 'Maximum image size allowed is 50 MB.',
+              description: `Selected image is ${sizeMB} MB. Maximum allowed is 2 MB. Please compress the image.`,
               variant: 'destructive',
             });
             e.target.value = '';
@@ -99,12 +119,23 @@ function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValu
           }
         }}
       />
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        <span>{helperText || 'Supported formats: PNG, JPG, JPEG, WEBP'}</span>
+        <span className="font-medium text-foreground/80">Max: 2 MB</span>
+      </div>
       {preview && (
         <div className="flex items-center gap-3 mt-1">
           <img src={preview} alt="Preview" className="max-h-24 rounded-md object-contain border border-border" />
           <FileViewerModal fileUrl={preview} fileName="Uploaded Image" fileType="image" />
         </div>
       )}
+      <CompressFileModal
+        open={showCompressModal}
+        onOpenChange={setShowCompressModal}
+        fileType="image"
+        actualSizeMB={rejectedFileSize}
+        fileName={rejectedFileName}
+      />
     </div>
   );
 }
