@@ -383,7 +383,7 @@ async function SubMissionTable({ id }: { id: number }) {
         <div>
           <h2 className="text-2xl font-bold">Table Submissions</h2>
           <p className="text-sm text-muted-foreground">
-            Total responses: {rows.length}
+            Total responses: {form.totalSubmissions ?? rows.length}{form.totalSubmissions > rows.length ? ` (Showing first ${rows.length} chunk)` : ''}
           </p>
         </div>
         <ExportXlsxBtn formTitle={form.name} columns={columns} rows={rows} />
@@ -435,6 +435,11 @@ async function SubMissionTable({ id }: { id: number }) {
           )}
         </TableBody>
       </Table>
+      {form.hasMore && (
+        <div className="mt-3 p-3 text-center text-xs text-muted-foreground bg-muted/20 rounded-lg border">
+          Showing recent {rows.length} of {form.totalSubmissions} responses. To explore all chunks, view via Form Builder &gt; Responses tab.
+        </div>
+      )}
     </>
   );
 }

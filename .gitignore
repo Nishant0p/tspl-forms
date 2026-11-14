@@ -49,3 +49,4 @@ next-env.d.ts
 
 # Built Visual Studio Code Extensions
 *.vsix
+code.md

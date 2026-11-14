@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { GetFormSubmissions } from '@/app/actions/form';
+import { GetFormSubmissions, GetFormSubmissionsChunk } from '@/app/actions/form';
 import {
   Table,
   TableBody,
@@ -35,18 +35,42 @@ import { FormElementInstance, ElementsType } from './FormElements';
 
 export default function FormBuilderResponsesTab({ formId }: { formId: number }) {
   const [formData, setFormData] = useState<any>(null);
+  const [submissionsList, setSubmissionsList] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    GetFormSubmissions(formId)
+    GetFormSubmissions(formId, 1, 25)
       .then((data) => {
         setFormData(data);
+        setSubmissionsList(data.FormSubmissions || []);
+        setHasMore(Boolean(data.hasMore));
+        setTotalCount(data.totalSubmissions || (data.FormSubmissions || []).length);
       })
       .catch((err) => {
         console.error('Failed to load submissions', err);
       })
       .finally(() => setLoading(false));
   }, [formId]);
+
+  const handleLoadMore = async () => {
+    setLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      const chunk = await GetFormSubmissionsChunk(formId, nextPage, 25);
+      setSubmissionsList((prev) => [...prev, ...(chunk.submissions || [])]);
+      setPage(nextPage);
+      setHasMore(chunk.hasMore);
+      if (chunk.totalSubmissions) setTotalCount(chunk.totalSubmissions);
+    } catch (err) {
+      console.error('Failed to load next chunk of submissions', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -161,7 +185,7 @@ export default function FormBuilderResponsesTab({ formId }: { formId: number }) 
     }
   });
 
-  const rows = FormSubmissions.map((sub: any) => {
+  const rows = submissionsList.map((sub: any) => {
     let content: any = {};
     try {
       content = JSON.parse(sub.content || '{}');
@@ -187,14 +211,14 @@ export default function FormBuilderResponsesTab({ formId }: { formId: number }) 
         <div>
           <div className="flex items-center gap-2.5">
             <h2 className="text-2xl font-black text-foreground">
-              {FormSubmissions.length} Responses
+              {totalCount} Responses
             </h2>
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 text-xs font-semibold">
               ● Active
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Real-time collected submissions for this form.
+            Loaded {submissionsList.length} of {totalCount} collected submissions in chunks.
           </p>
         </div>
 
@@ -305,6 +329,23 @@ export default function FormBuilderResponsesTab({ formId }: { formId: number }) 
               )}
             </TableBody>
           </Table>
+          {hasMore && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t bg-muted/10">
+              <span className="text-xs text-muted-foreground">
+                Showing {submissionsList.length} of {totalCount} responses
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="gap-2 text-xs font-semibold h-8"
+              >
+                {loadingMore && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                Load Next Chunk (25 more)
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>

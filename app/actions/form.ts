@@ -216,6 +216,9 @@ export async function CreateForm(data: FormSchema & { branchId?: number | null }
       where: {
         name: uniqueName,
       },
+      select: {
+        id: true,
+      },
     });
     if (!existing) break;
     uniqueName = `${name} (${count})`;
@@ -227,6 +230,9 @@ export async function CreateForm(data: FormSchema & { branchId?: number | null }
   while (true) {
     const existingShare = await prisma.form.findUnique({
       where: { shareUrl: customShareUrl },
+      select: {
+        id: true,
+      },
     });
     if (!existingShare) break;
     customShareUrl = generateCustomSlug(uniqueName);
@@ -842,7 +848,11 @@ export async function SubmitForm(formUrl: string, content: string): Promise<Subm
   }
 }
 
-export async function GetFormSubmissions(id: number | string) {
+export async function GetFormSubmissions(
+  id: number | string,
+  page: number = 1,
+  pageSize: number = 25
+) {
   const numId = Number(id);
   if (!id || isNaN(numId) || numId <= 0) {
     throw new Error('Valid Form ID is required');
@@ -850,6 +860,11 @@ export async function GetFormSubmissions(id: number | string) {
 
   const { perms } = await requireFormPermission(numId, 'VIEW');
 
+  const safePage = Math.max(1, Number(page) || 1);
+  const safePageSize = Math.min(100, Math.max(1, Number(pageSize) || 25));
+  const skip = (safePage - 1) * safePageSize;
+
+  // 1. Fetch form metadata without all submissions array to avoid memory/NAPI overflow
   const form = await prisma.form.findFirst({
     where: {
       id: numId,
@@ -859,19 +874,6 @@ export async function GetFormSubmissions(id: number | string) {
       allowedBranches: true,
       allowedEmployees: true,
       formViewerAccesses: true,
-      FormSubmissions: {
-        include: {
-          employee: {
-            include: {
-              department: true,
-              branch: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      },
     } as any,
   });
 
@@ -879,9 +881,41 @@ export async function GetFormSubmissions(id: number | string) {
     throw new Error('Form not found');
   }
 
+  // 2. Count total submissions without loading content
+  const totalSubmissions = await prisma.formSubmissions.count({
+    where: {
+      formId: numId,
+    },
+  });
+
+  // 3. Load only a chunk of submissions
+  const submissionsChunk = await prisma.formSubmissions.findMany({
+    where: {
+      formId: numId,
+    },
+    take: safePageSize,
+    skip: skip,
+    include: {
+      employee: {
+        include: {
+          department: true,
+          branch: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
   return {
     ...form,
-    FormSubmissions: (form as any).FormSubmissions || [],
+    FormSubmissions: submissionsChunk || [],
+    totalSubmissions,
+    currentPage: safePage,
+    pageSize: safePageSize,
+    totalPages: Math.ceil(totalSubmissions / safePageSize) || 1,
+    hasMore: skip + submissionsChunk.length < totalSubmissions,
     canView: perms.canView,
     canEdit: perms.canEdit,
     canDelete: perms.canDelete,
@@ -891,6 +925,52 @@ export async function GetFormSubmissions(id: number | string) {
     isAssignedEditor: perms.isAssignedEditor,
     isAssignedViewer: perms.isAssignedViewer,
     isSuperAdmin: perms.isSuperAdmin,
+  };
+}
+
+export async function GetFormSubmissionsChunk(
+  formId: number | string,
+  page: number = 1,
+  pageSize: number = 25
+) {
+  const numId = Number(formId);
+  if (!formId || isNaN(numId) || numId <= 0) {
+    throw new Error('Valid Form ID is required');
+  }
+
+  await requireFormPermission(numId, 'VIEW');
+
+  const safePage = Math.max(1, Number(page) || 1);
+  const safePageSize = Math.min(100, Math.max(1, Number(pageSize) || 25));
+  const skip = (safePage - 1) * safePageSize;
+
+  const totalSubmissions = await prisma.formSubmissions.count({
+    where: { formId: numId },
+  });
+
+  const submissions = await prisma.formSubmissions.findMany({
+    where: { formId: numId },
+    take: safePageSize,
+    skip: skip,
+    include: {
+      employee: {
+        include: {
+          department: true,
+          branch: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  return {
+    submissions: submissions || [],
+    totalSubmissions,
+    currentPage: safePage,
+    pageSize: safePageSize,
+    hasMore: skip + submissions.length < totalSubmissions,
   };
 }
 
@@ -1016,6 +1096,9 @@ export async function DuplicateForm(formId: number, customName?: string) {
       where: {
         name: uniqueName,
       },
+      select: {
+        id: true,
+      },
     });
     if (!existing) break;
     uniqueName = `${baseName} (${count})`;
@@ -1026,6 +1109,9 @@ export async function DuplicateForm(formId: number, customName?: string) {
   while (true) {
     const existingShare = await prisma.form.findUnique({
       where: { shareUrl: customShareUrl },
+      select: {
+        id: true,
+      },
     });
     if (!existingShare) break;
     customShareUrl = generateCustomSlug(uniqueName);
