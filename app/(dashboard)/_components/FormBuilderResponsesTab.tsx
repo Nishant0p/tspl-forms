@@ -238,7 +238,7 @@ export default function FormBuilderResponsesTab({ formId }: { formId: number }) 
               </Button>
             }
           />
-          <ExportXlsxBtn formTitle={formData.name} columns={columns} rows={rows} />
+          <ExportXlsxBtn formTitle={formData.name} columns={columns} rows={rows} formId={formId} />
         </div>
       </div>
 
@@ -386,10 +386,11 @@ function renderCellValue(type: ElementsType, value: any) {
     case 'SignatureField':
       try {
         const parsed = JSON.parse(value);
-        if (parsed?.dataUrl) {
+        const resolvedUrl = parsed?.url || parsed?.dataUrl;
+        if (resolvedUrl) {
           return (
             <FileViewerModal
-              fileUrl={parsed.dataUrl}
+              fileUrl={resolvedUrl}
               fileName={parsed.name || 'View File'}
               fileType={parsed.type || 'image'}
             />

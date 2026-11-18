@@ -386,7 +386,7 @@ async function SubMissionTable({ id }: { id: number }) {
             Total responses: {form.totalSubmissions ?? rows.length}{form.totalSubmissions > rows.length ? ` (Showing first ${rows.length} chunk)` : ''}
           </p>
         </div>
-        <ExportXlsxBtn formTitle={form.name} columns={columns} rows={rows} />
+        <ExportXlsxBtn formTitle={form.name} columns={columns} rows={rows} formId={form.id} />
       </div>
       <Table>
         <TableHeader>
@@ -486,28 +486,29 @@ function RowCell({ type, value }: { type: ElementsType, value: string }) {
     case "VideoField":
     case "SignatureField":
       try {
-        const parsed = JSON.parse(value) as { name?: string; dataUrl?: string; type?: string };
-        if (parsed?.dataUrl) {
+        const parsed = JSON.parse(value) as { name?: string; dataUrl?: string; url?: string; type?: string };
+        const fileUrl = parsed?.url || parsed?.dataUrl;
+        if (fileUrl) {
           const fileName = parsed.name || (type === 'FileUploadField' ? 'Uploaded File / CV' : type);
           if (type === 'VideoField') {
             node = (
               <div className="flex items-center gap-2">
-                <video controls className='max-h-16 max-w-32 rounded-md' src={parsed.dataUrl} />
-                <FileViewerModal fileUrl={parsed.dataUrl} fileName={fileName} fileType={parsed.type || 'video'} />
+                <video controls className='max-h-16 max-w-32 rounded-md' src={fileUrl} />
+                <FileViewerModal fileUrl={fileUrl} fileName={fileName} fileType={parsed.type || 'video'} />
               </div>
             );
           } else if (type === 'ImageField' || type === 'SignatureField') {
             node = (
               <div className="flex items-center gap-2">
-                <img alt={fileName} className='max-h-16 max-w-32 rounded-md object-contain border border-border' src={parsed.dataUrl} />
-                <FileViewerModal fileUrl={parsed.dataUrl} fileName={fileName} fileType={parsed.type || 'image'} />
+                <img alt={fileName} className='max-h-16 max-w-32 rounded-md object-contain border border-border' src={fileUrl} />
+                <FileViewerModal fileUrl={fileUrl} fileName={fileName} fileType={parsed.type || 'image'} />
               </div>
             );
           } else {
             node = (
               <div className="flex items-center gap-2">
                 <span className='text-sm font-medium truncate max-w-[150px]' title={fileName}>{fileName}</span>
-                <FileViewerModal fileUrl={parsed.dataUrl} fileName={fileName} fileType={parsed.type} />
+                <FileViewerModal fileUrl={fileUrl} fileName={fileName} fileType={parsed.type} />
               </div>
             );
           }

@@ -4,7 +4,7 @@ import { ElementsType, FormElement, FormElementInstance, SubmitFunction } from '
 import { useDesginerStore } from '@/store/store';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Label } from '@radix-ui/react-label';
-import { Upload, FileText } from 'lucide-react';
+import { Upload, FileText, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -211,13 +211,15 @@ function FormComponent({
   const element = elementInstance as CustomInstance;
   const [value, setValue] = useState(defaultValues || '');
   const [error, setError] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [showCompressModal, setShowCompressModal] = useState(false);
   const [rejectedFileSize, setRejectedFileSize] = useState<string>('');
   const [rejectedFileName, setRejectedFileName] = useState<string>('');
   const [fileUrl, setFileUrl] = useState(() => {
     if (!defaultValues) return '';
     try {
-      return JSON.parse(defaultValues).dataUrl || '';
+      const parsed = JSON.parse(defaultValues);
+      return parsed.url || parsed.dataUrl || '';
     } catch {
       return defaultValues;
     }
@@ -275,20 +277,57 @@ function FormComponent({
           }
 
           try {
-            const dataUrl = await readFileAsDataUrl(file);
-            const payload = toFilePayload(file, dataUrl);
+            setUploading(true);
+            let finalUrl = '';
+
+            try {
+              const formData = new FormData();
+              formData.append('file', file);
+              const uploadRes = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+              });
+              const uploadJson = await uploadRes.json();
+              if (uploadJson.success && uploadJson.url) {
+                finalUrl = uploadJson.url;
+              }
+            } catch (netErr) {
+              console.warn('[FileUploadField] Direct upload error, falling back:', netErr);
+            }
+
+            if (!finalUrl) {
+              finalUrl = await readFileAsDataUrl(file);
+            }
+
+            const payload = JSON.stringify({
+              name: file.name,
+              type: file.type,
+              size: file.size,
+              url: finalUrl,
+              dataUrl: finalUrl,
+            });
+
             setValue(payload);
             setFileName(file.name);
-            setFileUrl(dataUrl);
+            setFileUrl(finalUrl);
+            setUploading(false);
+
             if (!submitFunction) return;
             const valid = FileUploadFieldFormElement.validate(element, payload);
             setError(!valid);
             submitFunction(element.id, payload);
           } catch {
+            setUploading(false);
             setError(true);
           }
         }}
       />
+      {uploading && (
+        <div className="flex items-center gap-2 text-xs text-primary font-medium">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          <span>Uploading file to storage...</span>
+        </div>
+      )}
       <div className="flex items-center justify-between text-[11px] text-muted-foreground">
         <span>
           {helperText || `Supported formats: ${accept === '*' ? 'PDF, Documents, Images' : accept}`}

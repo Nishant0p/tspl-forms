@@ -239,23 +239,48 @@ function PropertiesComponent({
     });
   }
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      form.setValue('imageUrl', dataUrl);
-      form.setValue('preset', 'custom');
-      const updated = {
-        ...form.getValues(),
-        imageUrl: dataUrl,
-        preset: 'custom',
+    let finalUrl = '';
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const json = await res.json();
+      if (json.success && json.url) {
+        finalUrl = json.url;
+      }
+    } catch (err) {
+      console.warn('[BannerField] Upload error:', err);
+    }
+
+    if (!finalUrl) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        form.setValue('imageUrl', dataUrl);
+        form.setValue('preset', 'custom');
+        const updated = {
+          ...form.getValues(),
+          imageUrl: dataUrl,
+          preset: 'custom',
+        };
+        applyChanges(updated);
       };
-      applyChanges(updated);
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    form.setValue('imageUrl', finalUrl);
+    form.setValue('preset', 'custom');
+    const updated = {
+      ...form.getValues(),
+      imageUrl: finalUrl,
+      preset: 'custom',
     };
-    reader.readAsDataURL(file);
+    applyChanges(updated);
   };
 
   const handleRemoveImage = () => {

@@ -163,21 +163,44 @@ function PropertiesComponent({
     });
   }
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      form.setValue('imageUrl', dataUrl);
-      const updated = {
-        ...form.getValues(),
-        imageUrl: dataUrl,
+    let finalUrl = '';
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const json = await res.json();
+      if (json.success && json.url) {
+        finalUrl = json.url;
+      }
+    } catch (err) {
+      console.warn('[ThankYouField] Upload error:', err);
+    }
+
+    if (!finalUrl) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        form.setValue('imageUrl', dataUrl);
+        const updated = {
+          ...form.getValues(),
+          imageUrl: dataUrl,
+        };
+        applyChanges(updated);
       };
-      applyChanges(updated);
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    form.setValue('imageUrl', finalUrl);
+    const updated = {
+      ...form.getValues(),
+      imageUrl: finalUrl,
     };
-    reader.readAsDataURL(file);
+    applyChanges(updated);
   };
 
   const handleRemoveImage = () => {

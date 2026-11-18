@@ -233,7 +233,7 @@ export default function ResponsesViewerClient({ form }: ResponsesViewerClientPro
               <RefreshCw className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Refresh</span>
             </Button>
-            <ExportXlsxBtn formTitle={form.name} columns={columns} rows={allRows} />
+            <ExportXlsxBtn formTitle={form.name} columns={columns} rows={allRows} formId={form.id} shareUrl={form.shareUrl} />
           </div>
         </div>
       </header>
@@ -466,10 +466,11 @@ function renderCellValue(type: ElementsType, value: any) {
     case 'SignatureField':
       try {
         const parsed = JSON.parse(value);
-        if (parsed?.dataUrl) {
+        const resolvedUrl = parsed?.url || parsed?.dataUrl;
+        if (resolvedUrl) {
           return (
             <FileViewerModal
-              fileUrl={parsed.dataUrl}
+              fileUrl={resolvedUrl}
               fileName={parsed.name || `${type === 'SignatureField' ? 'Signature' : 'Document'}`}
               fileType={parsed.type || 'image'}
             />

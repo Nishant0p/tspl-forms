@@ -10,6 +10,7 @@ import { decodeResponseToken } from '@/lib/response-token';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { sendTsplWebhookNotification } from '@/lib/webhook';
+import { redis, redisLpush, redisRpush, redisLrange, redisIncr, redisGet, redisSet, redisDel } from '@/lib/redis';
 
 class UserNotFoundErr extends Error {}
 
@@ -554,7 +555,8 @@ export async function UpdateFormName(id: number, name: string) {
 }
 
 export async function UpdateFormContent(id: number, jsonContent: string) {
-  await requireFormPermission(id, 'EDIT');
+  const { form } = await requireFormPermission(id, 'EDIT');
+  await redisDel(`form:content:${form.shareUrl}`, `form:content:${id}`);
 
   return await prisma.form.update({
     where: {
@@ -627,7 +629,8 @@ export async function UpdateFormSettings(id: number, settings: FormSettingsInput
 }
 
 export async function PublishForm(id: number) {
-  await requireFormPermission(id, 'EDIT');
+  const { form } = await requireFormPermission(id, 'EDIT');
+  await redisDel(`form:content:${form.shareUrl}`, `form:content:${id}`);
 
   return await prisma.form.update({
     data: {
@@ -680,7 +683,8 @@ export async function GetFormContentByUrl(formUrl: string) {
     throw new FormAccessBlockedError(access.reason, getFormAccessErrorMessage(access.reason));
   }
 
-  return await prisma.form.update({
+  const cacheKey = `form:content:${cleanFormUrl}`;
+  const updatedForm = await prisma.form.update({
     select: {
       id: true,
       name: true,
@@ -697,6 +701,11 @@ export async function GetFormContentByUrl(formUrl: string) {
       id: form.id,
     },
   });
+
+  // Cache in Redis for 5 minutes
+  await redisSet(cacheKey, JSON.stringify(updatedForm), 300);
+
+  return updatedForm;
 }
 
 export type SubmitFormResult = {
@@ -805,6 +814,35 @@ export async function SubmitForm(formUrl: string, content: string): Promise<Subm
       },
     });
 
+    // Synchronize new submission to Redis list via LPUSH for ultra-fast response retrieval
+    try {
+      const redisSubmissionPayload = {
+        id: submission.id,
+        formId: form.id,
+        employeeId: targetEmployeeId,
+        clerkUserId: user?.id ?? null,
+        content,
+        createdAt: new Date().toISOString(),
+        submittedAt: new Date().toISOString(),
+        employee: employee
+          ? {
+              id: employee.id,
+              employeeId: employee.employeeId,
+              firstName: employee.firstName,
+              lastName: employee.lastName,
+              email: employee.email,
+              department: null,
+              branch: null,
+            }
+          : null,
+      };
+      await redisLpush(`form:${form.id}:submissions`, JSON.stringify(redisSubmissionPayload));
+      await redisIncr(`form:${form.id}:submissions_count`);
+      await redisDel(`form:content:${cleanFormUrl}`, `form:content:${form.shareUrl}`, `form:content:${form.id}`);
+    } catch (redisErr) {
+      console.warn('[SubmitForm] Non-fatal Redis sync error:', redisErr);
+    }
+
     // Increment submissions count safely (non-fatal if count update fails)
     try {
       await prisma.form.update({
@@ -888,8 +926,20 @@ export async function GetFormSubmissions(
     },
   });
 
-  // 3. Load only a chunk of submissions
-  const submissionsChunk = await prisma.formSubmissions.findMany({
+  // 3. Load from Redis first (LRANGE)
+  let cachedSubmissions: any[] = [];
+  const redisKey = `form:${numId}:submissions`;
+  const cached = await redisLrange(redisKey, skip, skip + safePageSize - 1);
+  if (cached && cached.length > 0) {
+    try {
+      cachedSubmissions = cached.map((c) => JSON.parse(c));
+    } catch {
+      cachedSubmissions = [];
+    }
+  }
+
+  // 3. Load chunk of submissions (or fallback to DB)
+  const submissionsChunk = cachedSubmissions.length > 0 ? cachedSubmissions : await prisma.formSubmissions.findMany({
     where: {
       formId: numId,
     },
@@ -948,7 +998,17 @@ export async function GetFormSubmissionsChunk(
     where: { formId: numId },
   });
 
-  const submissions = await prisma.formSubmissions.findMany({
+  let cachedChunk: any[] = [];
+  const cachedStrings = await redisLrange(`form:${numId}:submissions`, skip, skip + safePageSize - 1);
+  if (cachedStrings && cachedStrings.length > 0) {
+    try {
+      cachedChunk = cachedStrings.map((s) => JSON.parse(s));
+    } catch {
+      cachedChunk = [];
+    }
+  }
+
+  const submissions = cachedChunk.length > 0 ? cachedChunk : await prisma.formSubmissions.findMany({
     where: { formId: numId },
     take: safePageSize,
     skip: skip,
@@ -971,6 +1031,113 @@ export async function GetFormSubmissionsChunk(
     currentPage: safePage,
     pageSize: safePageSize,
     hasMore: skip + submissions.length < totalSubmissions,
+  };
+}
+
+/**
+ * Fetches all responses for a form in one complete set for full Excel export.
+ * Checks Redis first, then PostgreSQL.
+ */
+export async function GetAllFormSubmissionsForExport(identifier: number | string) {
+  if (!identifier) {
+    throw new Error('Form identifier is required');
+  }
+
+  const cleanIdentifier = String(identifier).trim();
+  const numId = Number(cleanIdentifier);
+  const isNumeric = !isNaN(numId) && Number.isInteger(numId) && numId > 0 && String(numId) === cleanIdentifier;
+
+  let resolvedFormId = isNumeric ? numId : null;
+  let formName = 'Form';
+
+  if (isNumeric) {
+    await requireFormPermission(numId, 'VIEW');
+    const formMeta = await prisma.form.findUnique({
+      where: { id: numId },
+      select: { id: true, name: true },
+    });
+    if (formMeta) {
+      formName = formMeta.name;
+    }
+  } else {
+    // Decode token or match shareUrl
+    let formIdFromToken: number | null = null;
+    if (cleanIdentifier.length >= 12 && cleanIdentifier.length <= 15) {
+      try {
+        formIdFromToken = decodeResponseToken(cleanIdentifier);
+      } catch {}
+    }
+
+    const formMeta = await prisma.form.findFirst({
+      where: {
+        OR: [
+          ...(formIdFromToken ? [{ id: formIdFromToken }] : []),
+          { shareUrl: cleanIdentifier },
+        ],
+      },
+      select: { id: true, name: true },
+    });
+
+    if (!formMeta) {
+      throw new Error('Form not found');
+    }
+    resolvedFormId = formMeta.id;
+    formName = formMeta.name;
+  }
+
+  if (!resolvedFormId) {
+    throw new Error('Form not found');
+  }
+
+  // 1. Try Redis first: LRANGE form:id:submissions 0 -1 (entire list)
+  let allSubmissions: any[] = [];
+  try {
+    const cachedStrings = await redisLrange(`form:${resolvedFormId}:submissions`, 0, -1);
+    if (cachedStrings && cachedStrings.length > 0) {
+      allSubmissions = cachedStrings.map((s) => JSON.parse(s));
+    }
+  } catch (redisErr) {
+    console.warn('[GetAllFormSubmissionsForExport] Redis fetch failed:', redisErr);
+  }
+
+  // 2. If Redis empty or has fewer than DB count, fetch all from PostgreSQL
+  if (allSubmissions.length === 0) {
+    allSubmissions = await prisma.formSubmissions.findMany({
+      where: { formId: resolvedFormId },
+      select: {
+        id: true,
+        content: true,
+        clerkUserId: true,
+        createdAt: true,
+        submittedAt: true,
+        employee: {
+          select: {
+            id: true,
+            employeeId: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    // Populate Redis in background
+    if (allSubmissions.length > 0) {
+      const stringified = allSubmissions.map((s) => JSON.stringify(s));
+      redisRpush(`form:${resolvedFormId}:submissions`, ...stringified).catch(() => {});
+    }
+  }
+
+  return {
+    success: true,
+    formId: resolvedFormId,
+    formName,
+    submissions: allSubmissions,
+    totalCount: allSubmissions.length,
   };
 }
 
@@ -1007,8 +1174,42 @@ export async function GetFormSubmissionsByShareUrl(shareUrl: string) {
     where: {
       OR: orConditions,
     },
-    include: {
-      FormSubmissions: {
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      visits: true,
+      submissions: true,
+      content: true,
+      shareUrl: true,
+      status: true,
+      published: true,
+      createdAt: true,
+    },
+  });
+
+  if (!form) {
+    throw new Error('Form not found');
+  }
+
+  // Check Redis for cached submissions (super fast!)
+  let formSubmissions: any[] = [];
+  try {
+    const cachedStrings = await redisLrange(`form:${form.id}:submissions`, 0, 99);
+    if (cachedStrings && cachedStrings.length > 0) {
+      formSubmissions = cachedStrings.map((s) => JSON.parse(s));
+    }
+  } catch (redisErr) {
+    console.warn('[GetFormSubmissionsByShareUrl] Redis cache read failed:', redisErr);
+  }
+
+  // Fallback to PostgreSQL if Redis is empty or offline
+  if (formSubmissions.length === 0) {
+    try {
+      formSubmissions = await prisma.formSubmissions.findMany({
+        where: {
+          formId: form.id,
+        },
         include: {
           employee: {
             include: {
@@ -1020,18 +1221,23 @@ export async function GetFormSubmissionsByShareUrl(shareUrl: string) {
         orderBy: {
           createdAt: 'desc',
         },
-      },
-    },
-  });
+        take: 100,
+      });
 
-  if (!form) {
-    throw new Error('Form not found');
+      // Populate Redis in the background so subsequent page visits are instantaneous
+      if (formSubmissions.length > 0) {
+        const stringified = formSubmissions.map((s) => JSON.stringify(s));
+        redisRpush(`form:${form.id}:submissions`, ...stringified).catch(() => {});
+      }
+    } catch (dbErr) {
+      console.error('[GetFormSubmissionsByShareUrl] DB query failed:', dbErr);
+      formSubmissions = [];
+    }
   }
 
-  // Public responses link: anyone with the shareable responses link can view responses directly without signing in
   return {
     ...form,
-    FormSubmissions: form.FormSubmissions || [],
+    FormSubmissions: formSubmissions,
   };
 }
 

@@ -4,7 +4,7 @@ import { ElementsType, FormElement, FormElementInstance, SubmitFunction } from '
 import { useDesginerStore } from '@/store/store';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Label } from '@radix-ui/react-label';
-import { Image as ImageIcon } from 'lucide-react';
+import { Image as ImageIcon, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -13,6 +13,9 @@ import { Input } from '../ui/input';
 import { Switch } from '../ui/switch';
 import { Textarea } from '../ui/textarea';
 import { cn } from '@/lib/utils';
+import FileViewerModal from '../FileViewerModal';
+import CompressFileModal from '../CompressFileModal';
+import { toast } from '../ui/use-toast';
 
 const type: ElementsType = 'ImageField';
 const extraAttributes = { label: 'Image Field', helperText: '', required: false };
@@ -25,7 +28,10 @@ export const ImageFieldFormElement: FormElement = {
   designerComponent: DesignerComponent,
   formComponent: FormComponent,
   propertiesComponent: PropertiesComponent,
-  validate: (formElement: FormElementInstance, currentValue: string) => { const element = formElement as CustomInstance; return !element.extraAttributes.required || currentValue.length > 0; },
+  validate: (formElement: FormElementInstance, currentValue: string) => {
+    const element = formElement as CustomInstance;
+    return !element.extraAttributes.required || currentValue.length > 0;
+  },
 };
 
 type CustomInstance = FormElementInstance & { extraAttributes: typeof extraAttributes };
@@ -36,8 +42,31 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
   const { updateElement } = useDesginerStore();
   const form = useForm<propertiesType>({ resolver: zodResolver(propertiesSchema), defaultValues: element.extraAttributes });
   useEffect(() => { form.reset(element.extraAttributes); }, [element, form]);
-  function applyChanges(data: propertiesType) { updateElement(element.id, { ...element, extraAttributes: { ...element.extraAttributes, label: data.label, helperText: data.helperText } }); }
-  return <Form {...form}><form onBlur={form.handleSubmit(applyChanges)} onSubmit={(e) => e.preventDefault()} className="space-y-4"><FormField control={form.control} name="label" render={({ field }) => (<FormItem><FormLabel>Label</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /></form></Form>;
+  function applyChanges(data: propertiesType) {
+    updateElement(element.id, {
+      ...element,
+      extraAttributes: { ...element.extraAttributes, label: data.label, helperText: data.helperText },
+    });
+  }
+  return (
+    <Form {...form}>
+      <form onBlur={form.handleSubmit(applyChanges)} onSubmit={(e) => e.preventDefault()} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="label"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Label</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  );
 }
 
 function DesignerComponent({ elementInstance }: { elementInstance: FormElementInstance }) {
@@ -58,31 +87,54 @@ function DesignerComponent({ elementInstance }: { elementInstance: FormElementIn
   );
 }
 
-function toFilePayload(file: File, dataUrl: string) { return JSON.stringify({ name: file.name, type: file.type, size: file.size, dataUrl }); }
-function readFileAsDataUrl(file: File) { return new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(reader.error); reader.readAsDataURL(file); }); }
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
 
-import FileViewerModal from '../FileViewerModal';
-import CompressFileModal from '../CompressFileModal';
-import { toast } from '../ui/use-toast';
-
-function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValues }: { elementInstance: FormElementInstance; submitFunction?: SubmitFunction; isInvalid?: boolean; defaultValues?: string; }) {
+function FormComponent({
+  elementInstance,
+  submitFunction,
+  isInvalid,
+  defaultValues,
+}: {
+  elementInstance: FormElementInstance;
+  submitFunction?: SubmitFunction;
+  isInvalid?: boolean;
+  defaultValues?: string;
+}) {
   const element = elementInstance as CustomInstance;
   const [value, setValue] = useState(defaultValues || '');
   const [error, setError] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [showCompressModal, setShowCompressModal] = useState(false);
   const [rejectedFileSize, setRejectedFileSize] = useState<string>('');
   const [rejectedFileName, setRejectedFileName] = useState<string>('');
   const [preview, setPreview] = useState(() => {
     if (!defaultValues) return '';
-    try { return JSON.parse(defaultValues).dataUrl || ''; } catch { return defaultValues; }
+    try {
+      const parsed = JSON.parse(defaultValues);
+      return parsed.url || parsed.dataUrl || '';
+    } catch {
+      return defaultValues;
+    }
   });
-  useEffect(() => { setError(isInvalid === true); }, [isInvalid]);
+
+  useEffect(() => {
+    setError(isInvalid === true);
+  }, [isInvalid]);
+
   const { label, helperText, required } = element.extraAttributes;
 
   return (
     <div className="flex w-full flex-col gap-2">
-      <Label className={cn('mr-2 text-foreground', error && 'text-red-500')}>
-        {label}{required && <span className="ml-2 text-red-500">*</span>}
+      <Label className={cn('mr-2 text-foreground font-medium', error && 'text-red-500')}>
+        {label}
+        {required && <span className="ml-2 text-red-500 font-bold">*</span>}
       </Label>
       <Input
         type="file"
@@ -106,19 +158,56 @@ function FormComponent({ elementInstance, submitFunction, isInvalid, defaultValu
           }
 
           try {
-            const dataUrl = await readFileAsDataUrl(file);
-            const payload = toFilePayload(file, dataUrl);
+            setUploading(true);
+            let finalUrl = '';
+
+            try {
+              const formData = new FormData();
+              formData.append('file', file);
+              const uploadRes = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+              });
+              const uploadJson = await uploadRes.json();
+              if (uploadJson.success && uploadJson.url) {
+                finalUrl = uploadJson.url;
+              }
+            } catch (netErr) {
+              console.warn('[ImageField] Direct upload error, falling back:', netErr);
+            }
+
+            if (!finalUrl) {
+              finalUrl = await readFileAsDataUrl(file);
+            }
+
+            const payload = JSON.stringify({
+              name: file.name,
+              type: file.type,
+              size: file.size,
+              url: finalUrl,
+              dataUrl: finalUrl,
+            });
+
             setValue(payload);
-            setPreview(dataUrl);
+            setPreview(finalUrl);
+            setUploading(false);
+
             if (!submitFunction) return;
             const valid = ImageFieldFormElement.validate(element, payload);
             setError(!valid);
             submitFunction(element.id, payload);
           } catch {
+            setUploading(false);
             setError(true);
           }
         }}
       />
+      {uploading && (
+        <div className="flex items-center gap-2 text-xs text-primary font-medium">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          <span>Uploading image to storage...</span>
+        </div>
+      )}
       <div className="flex items-center justify-between text-[11px] text-muted-foreground">
         <span>{helperText || 'Supported formats: PNG, JPG, JPEG, WEBP'}</span>
         <span className="font-medium text-foreground/80">Max: 2 MB</span>
