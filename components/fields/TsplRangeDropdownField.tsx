@@ -304,7 +304,7 @@ function PropertiesComponent({
                   }}
                 />
               </FormControl>
-              <FormDescription>Appended to each number (e.g. "2024").</FormDescription>
+              <FormDescription>Appended to each number (e.g. &quot;2024&quot;).</FormDescription>
               <FormMessage />
             </FormItem>
           )}
