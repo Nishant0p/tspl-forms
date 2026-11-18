@@ -65,8 +65,8 @@ export async function migrateAllUploadsToCDN() {
 
   console.log('[Migrate Uploads] Starting migration of base64 images & PDFs to CDN storage...');
 
-  // 1. Process FormSubmissions
-  const submissions = await prisma.formSubmissions.findMany({
+  // 1. Process FormSubmissions (Fetch IDs first to prevent Rust NAPI string buffer overflow)
+  const submissionRefs = await prisma.formSubmissions.findMany({
     where: {
       content: {
         contains: 'data:',
@@ -74,14 +74,27 @@ export async function migrateAllUploadsToCDN() {
     },
     select: {
       id: true,
-      content: true,
+    },
+    orderBy: {
+      id: 'asc',
     },
   });
 
-  console.log(`[Migrate Uploads] Found ${submissions.length} submissions containing base64 data.`);
+  console.log(`[Migrate Uploads] Found ${submissionRefs.length} submissions containing base64 data. Processing one-by-one...`);
 
-  for (const sub of submissions) {
+  for (let i = 0; i < submissionRefs.length; i++) {
+    const { id } = submissionRefs[i];
     try {
+      const sub = await prisma.formSubmissions.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          content: true,
+        },
+      });
+
+      if (!sub || !sub.content) continue;
+
       let contentObj: any = null;
       try {
         contentObj = JSON.parse(sub.content);
@@ -136,13 +149,13 @@ export async function migrateAllUploadsToCDN() {
         migratedSubmissions++;
       }
     } catch (subErr) {
-      console.error(`[Migrate Uploads] Error migrating submission #${sub.id}:`, subErr);
+      console.error(`[Migrate Uploads] Error migrating submission #${id}:`, subErr);
     }
   }
 
-  // 2. Process Forms (form templates, banners, etc.)
+  // 2. Process Forms (form templates, banners, etc.) - Fetch IDs first
   let migratedForms = 0;
-  const forms = await prisma.form.findMany({
+  const formRefs = await prisma.form.findMany({
     where: {
       content: {
         contains: 'data:image/',
@@ -150,14 +163,27 @@ export async function migrateAllUploadsToCDN() {
     },
     select: {
       id: true,
-      content: true,
+    },
+    orderBy: {
+      id: 'asc',
     },
   });
 
-  console.log(`[Migrate Uploads] Found ${forms.length} forms containing base64 images in content.`);
+  console.log(`[Migrate Uploads] Found ${formRefs.length} forms containing base64 images in content. Processing one-by-one...`);
 
-  for (const form of forms) {
+  for (let j = 0; j < formRefs.length; j++) {
+    const { id } = formRefs[j];
     try {
+      const form = await prisma.form.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          content: true,
+        },
+      });
+
+      if (!form || !form.content) continue;
+
       let formContent: any = null;
       try {
         formContent = JSON.parse(form.content);
@@ -192,7 +218,7 @@ export async function migrateAllUploadsToCDN() {
         migratedForms++;
       }
     } catch (formErr) {
-      console.error(`[Migrate Uploads] Error migrating form #${form.id}:`, formErr);
+      console.error(`[Migrate Uploads] Error migrating form #${id}:`, formErr);
     }
   }
 

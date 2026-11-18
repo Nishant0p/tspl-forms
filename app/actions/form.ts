@@ -1100,35 +1100,49 @@ export async function GetAllFormSubmissionsForExport(identifier: number | string
     console.warn('[GetAllFormSubmissionsForExport] Redis fetch failed:', redisErr);
   }
 
-  // 2. If Redis empty or has fewer than DB count, fetch all from PostgreSQL
+  // 2. If Redis empty or has fewer than DB count, fetch all from PostgreSQL in safe chunks
   if (allSubmissions.length === 0) {
-    allSubmissions = await prisma.formSubmissions.findMany({
-      where: { formId: resolvedFormId },
-      select: {
-        id: true,
-        content: true,
-        clerkUserId: true,
-        createdAt: true,
-        submittedAt: true,
-        employee: {
-          select: {
-            id: true,
-            employeeId: true,
-            firstName: true,
-            lastName: true,
-            email: true,
+    const CHUNK_SIZE = 25;
+    let skip = 0;
+
+    while (true) {
+      const batch = await prisma.formSubmissions.findMany({
+        where: { formId: resolvedFormId },
+        select: {
+          id: true,
+          content: true,
+          clerkUserId: true,
+          createdAt: true,
+          submittedAt: true,
+          employee: {
+            select: {
+              id: true,
+              employeeId: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: CHUNK_SIZE,
+        skip,
+      });
+
+      if (!batch || batch.length === 0) break;
+      allSubmissions.push(...batch);
+      if (batch.length < CHUNK_SIZE) break;
+      skip += CHUNK_SIZE;
+    }
 
     // Populate Redis in background
     if (allSubmissions.length > 0) {
-      const stringified = allSubmissions.map((s) => JSON.stringify(s));
-      redisRpush(`form:${resolvedFormId}:submissions`, ...stringified).catch(() => {});
+      try {
+        const stringified = allSubmissions.map((s) => JSON.stringify(s));
+        redisRpush(`form:${resolvedFormId}:submissions`, ...stringified).catch(() => {});
+      } catch {}
     }
   }
 

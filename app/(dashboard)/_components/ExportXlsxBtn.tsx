@@ -90,13 +90,16 @@ export default function ExportXlsxBtn({
             try {
               const parsed = JSON.parse(val);
               if (typeof parsed === 'object' && parsed !== null) {
-                val = parsed.formatted || parsed.name || parsed.url || parsed.dataUrl || JSON.stringify(parsed);
+                val = parsed.formatted || parsed.name || parsed.url || (parsed.dataUrl ? `[Uploaded File: ${parsed.name || 'image/doc'}]` : '') || JSON.stringify(parsed);
               }
             } catch {
-              // keep original string
+              // If raw base64 string, don't dump megabytes into Excel cell
+              if (val.startsWith('data:')) {
+                val = '[Uploaded Image/File]';
+              }
             }
           } else if (typeof val === 'object') {
-            val = val.formatted || val.name || val.url || val.dataUrl || JSON.stringify(val);
+            val = val.formatted || val.name || val.url || (val.dataUrl ? `[Uploaded File: ${val.name || 'image/doc'}]` : '') || JSON.stringify(val);
           }
 
           formattedRow[col.label || col.id] = val;
